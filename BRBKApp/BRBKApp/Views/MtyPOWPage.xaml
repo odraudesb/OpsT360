@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.MtyPOWPage">
+ 
+    <ContentPage.Content>
+        <ScrollView>
+            <StackLayout>
+              
+                <!--<FlexLayout Padding="15" Direction="Column" FlexLayout.Grow="1">
+                    <Frame BorderColor="{StaticResource Light}"
+                       CornerRadius="10"
+                       HasShadow="True">
+                        <StackLayout Spacing="3" Padding="15">
+
+                            
+                        </StackLayout>
+                    </Frame>
+                </FlexLayout>-->
+
+                <FlexLayout Padding="15" Direction="Column" FlexLayout.Grow="1">
+                    <Frame BorderColor="{StaticResource Light}"
+                       CornerRadius="10"
+                       HasShadow="True">
+                        <StackLayout Spacing="3" Padding="15">
+
+                            <Label Style="{StaticResource LabelStyle}" Text="Vessel Visit" />
+                            <Picker Grid.Row="0" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListNave}" 
+                                        ItemDisplayBinding="{Binding Valor}" 
+                                        SelectedItem="{Binding SelectedNave}"
+                                        TextColor="Black">
+
+                            </Picker>
+
+                            <Label Style="{StaticResource LabelStyle}" Text="Crane" />
+                            <Picker Grid.Row="0" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListGrua}" 
+                                        ItemDisplayBinding="{Binding Valor}" 
+                                        SelectedItem="{Binding SelectedGrua}"
+                                        TextColor="Black">
+
+                            </Picker>
+
+
+                            <StackLayout Padding="0,20,0,0" Orientation="Horizontal">
+                                <Button Text="Cancel" Command="{Binding CancelCommand}"  BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                <Button Text="Save" Command="{Binding SaveChangesCommand}" BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                            </StackLayout>
+                        </StackLayout>
+                    </Frame>
+                </FlexLayout>
+
+            </StackLayout>
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>

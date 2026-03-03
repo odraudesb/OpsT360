@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:BRBKApp.ViewModels"
+             Title="Home"
+             
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:pv="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView"
+             mc:Ignorable="d"
+             
+             x:Class="BRBKApp.Views.HomePage">
+    
+    
+    <!--<ContentPage.Content>
+        
+        <StackLayout BackgroundColor="{StaticResource Dark}">
+
+            --><!--<Grid  BackgroundColor="{StaticResource Dark}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                --><!-- 1. Profile picture--><!--
+                <Image Grid.Row="0" Source="aboutus_img.png" VerticalOptions="Start" />
+                --><!-- Here add the code that is being explained in the next block--><!--
+            </Grid>--><!--
+
+
+            <Label TextColor="White" Text="Welcome to Xamarin.Forms!"
+                VerticalOptions="CenterAndExpand" 
+                HorizontalOptions="CenterAndExpand" />
+            
+            
+            
+            
+            
+        </StackLayout>
+        
+        
+        
+    </ContentPage.Content>-->
+    <Grid Padding="20,50,20,20"  BackgroundColor="{StaticResource Dark}" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!--<Image Grid.Row="0" Source="logo_contecon.png"  />-->
+        <!-- 1. Profile picture-->
+        <Image Grid.Row="1" Source="logo_contecon.png" VerticalOptions="StartAndExpand" HorizontalOptions="CenterAndExpand" />
+        <!-- 2. Contact informaqtion frame-->
+        <StackLayout IsVisible="false" Grid.Row="2" Padding="0"  BackgroundColor="Transparent" VerticalOptions="EndAndExpand" HorizontalOptions="CenterAndExpand">
+            <pv:PancakeView CornerRadius="20" Padding="41" BackgroundColor="White" >
+                <!-- Blocks: 3 and 4 -->
+                <Grid Padding="0" RowSpacing="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- 3. Phone & message buttons-->
+                    <!--<Button Grid.Row="0" Grid.Column="1" Style="{StaticResource stlContactBtn}" HorizontalOptions="End"   ImageSource="Phone"/>
+                    <Button Grid.Row="0" Grid.Column="2" Style="{StaticResource stlContactBtn}" HorizontalOptions="Start" ImageSource="Correo"/>-->
+                    <!-- 4. Contact information-->
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="CGSA" FontAttributes="Bold" FontSize="30"/>
+                    <Label Grid.Row="1" Grid.Column="0" Text="Guayaquil" TextColor="#a5a2a2" FontSize="16"/>
+                    <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Padding="0,10,0,0" FontSize="16"  >
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Bienvenidos al sistema " FontAttributes="Bold" />
+                                <Span Text="                                                        La innovación tecnológica en las Terminales portuarias desempeña un papel preponderante y estratégico en el avance del Comercio Exterior de los países. La convergencia de los datos, infraestructura y conectividad mediante plataformas eficientes, apoyan a este propósito."  />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <!--4. Contact information: Board inforation-->
+                    <!--<Label Grid.Row="3" Grid.Column="0" Text="Publications" Style="{StaticResource stlBoardTitle}" />
+                    <Label Grid.Row="4" Grid.Column="0" Text="678" Style="{StaticResource stlBoardDesc}"/>
+
+                    <Label Grid.Row="3" Grid.Column="1" Text="Following" Style="{StaticResource stlBoardTitle}"/>
+                    <Label Grid.Row="4" Grid.Column="1" Text="340" Style="{StaticResource stlBoardDesc}"/>
+
+                    <Label Grid.Row="3" Grid.Column="2" Text="Followers" Style="{StaticResource stlBoardTitle}"/>
+                    <Label Grid.Row="4" Grid.Column="2" Text="67k" Style="{StaticResource stlBoardDesc}"/>-->
+                    <!--4. Contact information: Follow button-->
+                    <!--<Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" TextColor="White" BackgroundColor="#2193f3" Text="Follow" Margin="0,20,0,2" FontAttributes="Bold" FontSize="17" HeightRequest="45"/>-->
+                </Grid>
+            </pv:PancakeView>
+        </StackLayout>
+        <!--<Image Grid.Row="3" Source="banner.png" VerticalOptions="StartAndExpand" HorizontalOptions="CenterAndExpand" />-->
+    </Grid>
+
+</ContentPage>

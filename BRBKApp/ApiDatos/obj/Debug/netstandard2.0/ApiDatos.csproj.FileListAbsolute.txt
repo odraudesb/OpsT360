@@ -1,0 +1,58 @@
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll.config
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.deps.json
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.pdb
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiModels.dll
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ViewModel.dll
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ApiModels.pdb
+D:\test2\ApiDatos\bin\Debug\netstandard2.0\ViewModel.pdb
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.AssemblyReference.cache
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.GeneratedMSBuildEditorConfig.editorconfig
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.CoreCompileInputs.cache
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.sourcelink.json
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.Up2Date
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.dll
+D:\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll.config
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.deps.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiModels.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ViewModel.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ApiModels.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\bin\Debug\netstandard2.0\ViewModel.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.AssemblyReference.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.CoreCompileInputs.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.sourcelink.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.Up2Date
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.pdb
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll.config
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.deps.json
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.pdb
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiModels.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ViewModel.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiModels.pdb
+C:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ViewModel.pdb
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.AssemblyReference.cache
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.GeneratedMSBuildEditorConfig.editorconfig
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.CoreCompileInputs.cache
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.CopyComplete
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.dll
+C:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.pdb
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll.config
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.deps.json
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.dll
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiDatos.pdb
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiModels.dll
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ViewModel.dll
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ApiModels.pdb
+D:\Proyect\BRBKApp\ApiDatos\bin\Debug\netstandard2.0\ViewModel.pdb
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.AssemblyReference.cache
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.GeneratedMSBuildEditorConfig.editorconfig
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.CoreCompileInputs.cache
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.csproj.Up2Date
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.dll
+D:\Proyect\BRBKApp\ApiDatos\obj\Debug\netstandard2.0\ApiDatos.pdb

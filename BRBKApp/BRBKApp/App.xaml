@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Application xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BRBKApp.App">
+    <!--
+        Define global resources and styles here, that apply to all pages in your app.
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Primary">#E23B1B</Color>
+            <Color x:Key="Secondary">#e34224</Color>
+            <Color x:Key="Focus">#ED8976</Color>
+
+            <Color x:Key="Dark">#383837</Color>
+            <Color x:Key="DarkLight">#605f5e</Color>
+            <Color x:Key="Light">#eeecec</Color>
+
+            <Style TargetType="Button">
+                <Setter Property="TextColor" Value="White"></Setter>
+                <Setter Property="VisualStateManager.VisualStateGroups">
+                    <VisualStateGroupList>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal">
+                                <VisualState.Setters>
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                </VisualState.Setters>
+                            </VisualState>
+                            <VisualState x:Name="Disabled">
+                                <VisualState.Setters>
+                                    <Setter Property="BackgroundColor" Value="#332196F3" />
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </Setter>
+            </Style>
+            <Style x:Key="LabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="Black"/>
+                <Setter Property="Font" Value="Large"/>
+            </Style>
+            <Style x:Key="LabelStyleMed" TargetType="Label">
+                <Setter Property="TextColor" Value="Black"/>
+                <Setter Property="Font" Value="Medium" />
+            </Style>
+            <Style x:Key="LabelStyleSmall" TargetType="Label">
+                <Setter Property="TextColor" Value="Black"/>
+                <Setter Property="Font" Value="Small"/>
+                <Setter Property="VerticalOptions" Value="Center"/>
+                <Setter Property="HorizontalOptions" Value="Center"/>
+            </Style>
+
+
+
+
+            <Style x:Key="stlContactBtn" TargetType="Button">
+                <Setter Property="TranslationY"     Value="-50"/>
+                <Setter Property="TranslationX"     Value="45"/>
+                <Setter Property="BackgroundColor"  Value="#2193f3"/>
+                <Setter Property="WidthRequest"     Value="56"/>
+                <Setter Property="HeightRequest"    Value="56"/>
+                <Setter Property="CornerRadius"     Value="28"/>
+            </Style>
+
+            <Style x:Key="stlBoardTitle" TargetType="Label">
+                <Setter Property="Padding"           Value="0,30,0,5"/>
+                <Setter Property="TextColor"         Value="#a5a2a2"/>
+                <Setter Property="FontSize"          Value="16"/>
+                <Setter Property="HorizontalOptions" Value="Center"/>
+            </Style>
+
+            <Style x:Key="stlBoardDesc" TargetType="Label">
+                <Setter Property="FontAttributes"    Value="Bold"/>
+                <Setter Property="FontSize"          Value="16" />
+                <Setter Property="HorizontalOptions" Value="Center"/>
+            </Style>
+
+            <Style x:Key="stlMainFrame" TargetType="Frame">
+                <!--<Setter Property="TranslationY"    Value="{OnPlatform iOS='-150', Android='-33'}"/>
+                <Setter Property="HeightRequest"   Value="{OnPlatform iOS='120', Android='228'}"/>-->
+                <Setter Property="HasShadow"       Value="False" />
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

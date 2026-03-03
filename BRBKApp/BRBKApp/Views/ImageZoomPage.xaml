@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BRBKApp.Views.ImageZoomPage"
+             BackgroundColor="Black">
+    <ContentPage.Content>
+        <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
+            <!-- Imagen ampliada -->
+            <Image x:Name="ZoomedImage" 
+                   Aspect="AspectFit" 
+                   VerticalOptions="Center" 
+                   HorizontalOptions="Center" />
+
+            <!-- Botón de cerrar -->
+            <Button Text="Cerrar" 
+                    BackgroundColor="Gray" 
+                    TextColor="White" 
+                    WidthRequest="100" 
+                    HeightRequest="40" 
+                    CornerRadius="10" 
+                    Clicked="OnCloseClicked" />
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

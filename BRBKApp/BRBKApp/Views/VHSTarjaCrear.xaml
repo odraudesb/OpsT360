@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             BackgroundColor="#80000000"
+             x:Class="BRBKApp.Views.VHSTarjaCrear"
+             Padding="0">
+    <ContentPage.Content>
+        <Grid VerticalOptions="CenterAndExpand" HorizontalOptions="CenterAndExpand">
+            <Frame BackgroundColor="White" CornerRadius="20" Padding="20" HasShadow="True" WidthRequest="320" VerticalOptions="Center" HorizontalOptions="Center">
+                <StackLayout Spacing="15">
+                    <Label Text="{Binding NumeroOrden}" FontSize="20" HorizontalOptions="Center"/>
+                    <Entry Placeholder="Contenido" Text="{Binding Contenido}" x:Name="entryContenido"/>
+                    <Editor Placeholder="Observación" Text="{Binding Observacion}" x:Name="entryObservacion" HeightRequest="100" />
+                    <Label Style="{StaticResource LabelStyle}" Text="Photos"  />
+                    <FlexLayout Direction="Row" VerticalOptions="Start" JustifyContent="SpaceAround">
+                        <Frame BorderColor="{StaticResource Light}" Padding="0" Margin="5">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource0, Mode=TwoWay}" x:Name="ImageTrabajo0" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="0" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0" x:Name="FrameFoto1">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource1, Mode=TwoWay}" x:Name="ImageTrabajo1" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="1" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource2, Mode=TwoWay}" x:Name="ImageTrabajo2" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="2" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource3, Mode=TwoWay}" x:Name="ImageTrabajo3" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="3" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                    </FlexLayout>
+                    <FlexLayout Direction="Row" VerticalOptions="Start" JustifyContent="SpaceAround">
+                        <Frame BorderColor="{StaticResource Light}" Padding="0" Margin="5">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource4, Mode=TwoWay}" x:Name="ImageTrabajo4" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="4" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0" x:Name="FrameFoto5">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource5, Mode=TwoWay}" x:Name="ImageTrabajo5" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="5" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource6, Mode=TwoWay}" x:Name="ImageTrabajo6" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="6" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                        <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                            <StackLayout Orientation="Vertical" Padding="0">
+                                <Image Source="{Binding ImageSource7, Mode=TwoWay}" x:Name="ImageTrabajo7" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" HeightRequest="100" WidthRequest="100">
+                                    <Image.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="7" NumberOfTapsRequired="1" />
+                                    </Image.GestureRecognizers>
+                                </Image>
+                            </StackLayout>
+                        </Frame>
+                    </FlexLayout>
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="10">
+                        <Button Text="Guardar" Command="{Binding AddCommand}"
+                                BackgroundColor="OrangeRed" TextColor="White"
+                                WidthRequest="100" HeightRequest="35" CornerRadius="10" />
+                        <Button Text="Cancelar" Command="{Binding CancelCommand}"
+                                BackgroundColor="Gray" TextColor="White"
+                                WidthRequest="100" HeightRequest="35" CornerRadius="10" />
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>

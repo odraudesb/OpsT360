@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BRBKApp.Views.CediNovedadDetalleTarjaPage"
+             BackgroundColor="#F0F4F8">
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="10">
+            <Label Text="{Binding NumeroTarja}" FontAttributes="Bold" FontSize="18" HorizontalOptions="Center"/>
+
+            <Picker Title="Seleccione el tipo de novedad"
+                    ItemsSource="{Binding TiposNovedad}"
+                    ItemDisplayBinding="{Binding Nombre}"
+                    SelectedItem="{Binding SelectedTipoNovedad}" />
+
+            <Editor Placeholder="Ingrese la descripción de la novedad..."
+                    Text="{Binding DescripcionDetalle}"
+                    HeightRequest="100" />
+
+            <Label Text="Fotos" FontAttributes="Bold" Margin="0,10,0,0" />
+
+            <!-- Grid de fotos perfectamente alineado -->
+            <Grid ColumnSpacing="5" RowSpacing="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Fila 1 -->
+                <Frame Grid.Row="0" Grid.Column="0" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource0}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="0"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="0" Grid.Column="1" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource1}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="1"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="0" Grid.Column="2" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource2}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="2"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="0" Grid.Column="3" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource3}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="3"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+
+                <!-- Fila 2 -->
+                <Frame Grid.Row="1" Grid.Column="0" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource4}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="4"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="1" Grid.Column="1" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource5}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="5"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="1" Grid.Column="2" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource6}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="6"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+                <Frame Grid.Row="1" Grid.Column="3" BorderColor="LightGray" Padding="0">
+                    <Image Source="{Binding ImageSource7}" HeightRequest="100" WidthRequest="100">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="7"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </Frame>
+            </Grid>
+
+            <StackLayout Orientation="Horizontal" Spacing="20" HorizontalOptions="Center" Margin="0,10,0,0">
+                <Button Text="Guardar" Command="{Binding SaveCommand}" BackgroundColor="OrangeRed" TextColor="White" WidthRequest="120"/>
+                <Button Text="Cancelar" Command="{Binding CancelCommand}" BackgroundColor="Gray" TextColor="White" WidthRequest="120"/>
+            </StackLayout>
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

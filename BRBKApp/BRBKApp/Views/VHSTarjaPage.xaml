@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pv="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView" 
+             xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:vm="clr-namespace:BRBKApp.ViewModels"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.VHSTarjaPage"
+             x:Name="VHSTarjaPageName">
+    <ContentPage.Content>
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <StackLayout Padding="5,5,5,0">
+                <CollectionView SelectionMode="Single"  ItemsSource="{Binding TarjaList}" >
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <StackLayout Padding="0,0,0,0" Margin="0,0,0,5">
+                                <Frame Margin="5" Padding="5" BorderColor="LightGray">
+                                    <Grid ColumnSpacing="5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackLayout Grid.Column="0">
+                                            <Label Text="{Binding TarjaId}" />
+                                            <Label Text="{Binding Mensaje}" LineBreakMode="WordWrap"/>
+                                        </StackLayout>
+                                        <StackLayout Grid.Column="1" >
+                                            <Button Text="Detalles" HorizontalOptions="End" VerticalOptions="CenterAndExpand"  WidthRequest="120" HeightRequest="35" CornerRadius="20"
+                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:VHSTarjaViewModel}}, Path=CommandTarja}" CommandParameter="{Binding .}"/>
+                                        </StackLayout>
+                                    </Grid>
+                                </Frame>
+                            </StackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </StackLayout>
+        </RefreshView>
+    </ContentPage.Content>
+</ContentPage>

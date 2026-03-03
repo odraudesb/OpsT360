@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage 
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:BRBKApp.ViewModels"
+    x:Class="BRBKApp.Views.CediVehiculosDespachoPage"
+    Title="Vehículos Despacho"
+    BackgroundColor="#F0F4F8">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Style TargetType="Label">
+                <Setter Property="FontSize" Value="14" />
+            </Style>
+            <Style x:Key="KeyLabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="#FF5722" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+            <Style x:Key="ValueLabelStyle" TargetType="Label">
+                <Setter Property="TextColor" Value="#333333" />
+                <Setter Property="VerticalOptions" Value="Start" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.Content>
+        <StackLayout Padding="10" Spacing="10">
+            <Frame CornerRadius="20" BackgroundColor="White" Padding="15" HasShadow="True">
+                <StackLayout Spacing="10">
+                    <Entry 
+                        Placeholder="Número de Pase Puerta" 
+                        Text="{Binding NumeroPasePuerta}" 
+                        Keyboard="Numeric"
+                        BackgroundColor="#FFFFFF"
+                        TextColor="#333333"/>
+                    <Button 
+                        Text="Consultar"
+                        Command="{Binding ConsultarCommand}"
+                        BackgroundColor="#FF5722"
+                        TextColor="White"
+                        HeightRequest="40"
+                        CornerRadius="10"/>
+                </StackLayout>
+            </Frame>
+
+            <Label Text="No hay vehículos registrados." 
+                   HorizontalOptions="Center" 
+                   VerticalOptions="Center"
+                   TextColor="Gray"
+                   FontSize="16"
+                   IsVisible="{Binding IsListaVacia}"/>
+
+            <ListView 
+                ItemsSource="{Binding ListaVehiculos}"
+                VerticalOptions="FillAndExpand"
+                SeparatorVisibility="None"
+                HasUnevenRows="True"
+                ItemTapped="ListView_ItemTapped">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <Frame Margin="5" Padding="10" CornerRadius="20" BackgroundColor="White" HasShadow="True">
+                                <Grid ColumnSpacing="5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackLayout Grid.Column="0" Spacing="2">
+                                        <Label Text="{Binding VehiculoDespachadoID}" Style="{StaticResource KeyLabelStyle}"/>
+                                        <Label Text="Detalle Tarja ID:" Style="{StaticResource KeyLabelStyle}" />
+                                        <Label Text="{Binding DetalleTarjaID}" Style="{StaticResource ValueLabelStyle}" />
+                                        <Label Text="{Binding Mensaje}" Style="{StaticResource ValueLabelStyle}" LineBreakMode="WordWrap"/>
+                                    </StackLayout>
+                                    <ImageButton 
+    Source="icon_next.png"
+    Command="{Binding BindingContext.ConsultarDetalleCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+    CommandParameter="{Binding .}" 
+                                        WidthRequest="20"
+    HeightRequest="20"
+    BackgroundColor="Transparent"
+    Margin="0,0,5,0"
+    VerticalOptions="Center"
+    HorizontalOptions="End"/>
+
+                                </Grid>
+                            </Frame>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

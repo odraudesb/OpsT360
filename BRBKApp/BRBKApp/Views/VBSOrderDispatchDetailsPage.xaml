@@ -1,0 +1,138 @@
+﻿<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pv="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView" 
+             xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:vm="clr-namespace:BRBKApp.ViewModels"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.VBSOrderDispatchDetailsPage">
+
+    <ContentPage.Content>
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+        <ScrollView>
+            <StackLayout>
+
+                <FlexLayout Padding="15,15,15,0" Direction="Column" FlexLayout.Grow="1">
+                    <Frame BorderColor="{StaticResource Light}"
+                       BackgroundColor="{StaticResource Light}"
+                       CornerRadius="10"
+                       HasShadow="True">
+                        <StackLayout>
+                            <FlexLayout Direction="Column" >
+                                <Label Style="{StaticResource LabelStyle}" FontAttributes="Bold" x:Name="Container" Text="{Binding Container,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" x:Name="TasksLabel" Text="{Binding TasksLabel,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Temperature" Text="{Binding Temperature,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Types" Text="{Binding Types,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Comentary" Text="{Binding Comentary,Mode=OneWay}" />
+                            </FlexLayout>
+                        </StackLayout>
+                    </Frame>
+                </FlexLayout>
+                
+                <FlexLayout Padding="15" Direction="Column" FlexLayout.Grow="1">
+                        <Frame BorderColor="{StaticResource Light}"
+                            CornerRadius="10"
+                            HasShadow="True">
+
+                        <!--<RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">-->
+                        <Grid BackgroundColor="#F3F5F9" RowSpacing="0" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="465"/>
+                            </Grid.RowDefinitions>
+
+                            <CollectionView Grid.Row="0" Margin="5" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"
+                                SelectionMode="None" ItemsSource="{Binding MyAgenda,Mode=TwoWay}">
+                                <CollectionView.ItemsLayout>
+                                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>
+                                </CollectionView.ItemsLayout>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <pv:PancakeView BackgroundColor="White" VerticalOptions="StartAndExpand" 
+                                            HorizontalOptions="FillAndExpand">
+
+                                            <Grid VerticalOptions="StartAndExpand" HorizontalOptions="FillAndExpand">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <BoxView BackgroundColor="{Binding Color}" WidthRequest="3" HorizontalOptions="Start" VerticalOptions="FillAndExpand"/>
+                                                <behaviors:Expander Grid.Column="1">
+                                                    <behaviors:Expander.Header>
+                                                        <Grid HorizontalOptions="FillAndExpand">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="5.5*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackLayout HorizontalOptions="Center" VerticalOptions="Center">
+                                                                <Label Text="{Binding QTY}" TextColor="Black" FontSize="22" HorizontalOptions="Center"/>
+                                                                <Label Text="Pallets" TextColor="Black" FontSize="10" HorizontalOptions="Center" Margin="0,-10,0,0"/>
+                                                            </StackLayout>
+                                                            <BoxView Grid.Column="1" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" 
+                                                         VerticalOptions="FillAndExpand"/>
+                                                            <StackLayout Grid.Column="2" HorizontalOptions="Start" VerticalOptions="Center" Margin="20">
+                                                                <Label Text="{Binding Topic}" TextColor="Black" FontSize="15"/>
+                                                                <Label Text="{Binding Duration}" TextColor="#2F3246" FontAttributes="Bold,Italic" FontSize="12" Margin="0,-10,0,0"/>
+                                                            </StackLayout>
+                                                            <BoxView Grid.Column="3" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" 
+                                                         VerticalOptions="FillAndExpand"/>
+                                                            <StackLayout Grid.Column="3" HorizontalOptions="Center" VerticalOptions="Center">
+                                                                <ImageButton Source="icon_next.png"
+                                                                 BackgroundColor="Transparent"
+                                                                 WidthRequest="37"
+                                                                 Command="{Binding Source={RelativeSource AncestorType={Type vm:VBSOrderDispatchDetailsViewModel}}, Path=NavTaskCommand}"
+                                                                 CommandParameter="{Binding Id}"
+                                                                 HorizontalOptions="Center"
+                                                                 VerticalOptions="CenterAndExpand"/>
+                                                            </StackLayout>
+                                                        </Grid>
+                                                    </behaviors:Expander.Header>
+                                                    <Grid HorizontalOptions="FillAndExpand">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="3.5*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <BoxView Grid.Column="1" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" 
+                                                     VerticalOptions="FillAndExpand"/>
+                                                        <StackLayout Grid.Column="2" Spacing="10">
+                                                            <Label Text="Task Detail" TextColor="Black" Opacity="0.5" FontSize="10" Margin="20,0"/>
+                                                            <StackLayout BindableLayout.ItemsSource="{Binding Details}" HorizontalOptions="Start" VerticalOptions="Center" Margin="20,0,0,20">
+                                                                <BindableLayout.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Label TextColor="#2F3246" FontSize="12">
+                                                                            <Label.FormattedText>
+                                                                                <FormattedString>
+                                                                                    <FormattedString.Spans>
+                                                                                        <Span Text="{Binding Time}"/>
+                                                                                        <Span Text=" : "/>
+                                                                                        <Span Text="{Binding Name}" FontAttributes="Bold"/>
+                                                                                    </FormattedString.Spans>
+                                                                                </FormattedString>
+                                                                            </Label.FormattedText>
+                                                                        </Label>
+                                                                    </DataTemplate>
+                                                                </BindableLayout.ItemTemplate>
+                                                            </StackLayout>
+                                                        </StackLayout>
+                                                    </Grid>
+                                                </behaviors:Expander>
+                                            </Grid>
+                                        </pv:PancakeView>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                            <!--<Button Grid.Row="0" Text="+" BorderColor="#2b3c3c" BorderWidth="1" FontAttributes="Bold" BackgroundColor="#ea5d39" BorderRadius="35" TextColor="White" HorizontalOptions="End" WidthRequest="70" HeightRequest="70" Margin="0,0,20,22" VerticalOptions="End"/>-->
+                            <ImageButton Grid.Column="0" IsVisible="{Binding esVisible,Mode=OneWay}" Source="{Binding BtnIcon}" BorderColor="#2b3c3c" BackgroundColor="Transparent"  HorizontalOptions="End"  Margin="0,0,20,22" VerticalOptions="End" WidthRequest="70" HeightRequest="70" Command="{Binding AddCommand}"></ImageButton>
+                        </Grid>
+                        <!--</RefreshView>-->
+                    </Frame>
+                </FlexLayout>
+            </StackLayout>
+        </ScrollView>
+
+        </RefreshView>
+    </ContentPage.Content>
+</ContentPage>

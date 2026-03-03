@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{51E68BB1-AEC3-4FE3-BD81-D575206AF2A8}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>N4Ws</RootNamespace>
+    <AssemblyName>N4Ws</AssemblyName>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Entidad\Bill_TransactionResponse.cs" />
+    <Compile Include="Entidad\BreakBulkLoadTruck.cs" />
+    <Compile Include="Entidad\CGSAComputeReeferExpoWS.cs" />
+    <Compile Include="Entidad\CGSAComputeAndSplitReeferHoursWS.cs" />
+    <Compile Include="Entidad\Gate.cs" />
+    <Compile Include="Entidad\GroovyCodeExtension.cs" />
+    <Compile Include="Entidad\GroovyDischarge.cs" />
+    <Compile Include="Entidad\HPU.cs" />
+    <Compile Include="Entidad\ICU_API.cs" />
+    <Compile Include="Entidad\InvoiceRequest.cs" />
+    <Compile Include="Entidad\InvoiceResult.cs" />
+    <Compile Include="Entidad\InvoiceTypeConfig.cs" />
+    <Compile Include="Entidad\N4Basic.cs" />
+    <Compile Include="Entidad\N4Configuration.cs" />
+    <Compile Include="Entidad\N4Generic.cs" />
+    <Compile Include="Entidad\GroovyPOW.cs" />
+    <Compile Include="Entidad\PowerLineHour.cs" />
+    <Compile Include="Entidad\ReeferMonitor.cs" />
+    <Compile Include="Entidad\ReeferMonitoringReturn.cs" />
+    <Compile Include="Entidad\ReeferMonitoringSupply.cs" />
+    <Compile Include="Entidad\Servicios.cs" />
+    <Compile Include="N4Esquema\ArgobasicService.cs" />
+    <Compile Include="N4Esquema\ArgogenericService.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SerializacionHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AccesoDatos\AccesoDatos.csproj">
+      <Project>{69b1835f-3af8-4063-a784-80c69670307a}</Project>
+      <Name>AccesoDatos</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Configuraciones\Configuraciones.csproj">
+      <Project>{4d0a2b47-a4cd-4cde-bf7b-767fef8339e3}</Project>
+      <Name>Configuraciones</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,14 @@
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiDatos.dll.config
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiDatos.deps.json
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiDatos.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiDatos.pdb
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiModels.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ViewModel.dll
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ApiModels.pdb
+C:\Proyect\BRBKApp\ApiDatos\bin\Release\netstandard2.0\ViewModel.pdb
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.csproj.AssemblyReference.cache
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.GeneratedMSBuildEditorConfig.editorconfig
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.csproj.CoreCompileInputs.cache
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.csproj.CopyComplete
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.dll
+C:\Proyect\BRBKApp\ApiDatos\obj\Release\netstandard2.0\ApiDatos.pdb

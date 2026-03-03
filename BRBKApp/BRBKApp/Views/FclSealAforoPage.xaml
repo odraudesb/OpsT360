@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.FclSealAforoPage">
+ 
+    <ContentPage.Content>
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <StackLayout>
+
+                  
+                    <FlexLayout Padding="15" Direction="Column" FlexLayout.Grow="1">
+                        <Frame BorderColor="{StaticResource Light}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                            <StackLayout Spacing="3" Padding="15">
+
+                                <StackLayout>
+
+                                    <FlexLayout Direction="Column" >
+                                        <StackLayout Spacing="3" Padding="1">
+                                            <Label Style="{StaticResource LabelStyle}" Text="Containers" />
+                                            <Grid 
+                                                    ColumnDefinitions="*,30"
+                                                    ColumnSpacing="10">
+                                                <Entry Placeholder="Number Container" PlaceholderColor="Gray" Grid.Column="0" Keyboard="Text"  Text="{Binding TxtNumContainer,Mode=TwoWay}" BackgroundColor="{StaticResource Light}" FontSize="Large" TextColor="Black"></Entry>
+                                                <ImageButton Grid.Column="1" IsVisible="false" Source="{Binding BtnIcon}" BackgroundColor="Transparent" HorizontalOptions="Center" Command="{Binding ConsultCommand}"></ImageButton>
+                                            </Grid>
+                                        </StackLayout>
+                                    </FlexLayout>
+                                </StackLayout>
+
+                                <!--<FlexLayout Padding="0,5,0,0" Direction="Column" FlexLayout.Grow="1">
+                                    <Frame BorderColor="{StaticResource Light}"
+                                               BackgroundColor="{StaticResource Light}"
+                                               CornerRadius="10"
+                                               HasShadow="True">
+                                        <StackLayout>
+                                            <FlexLayout Direction="Column">
+                                                <Label Style="{StaticResource LabelStyleMed}"  x:Name="DataContainers" Text="{Binding DataContainers,Mode=OneWay}" />
+                                            </FlexLayout>
+                                        </StackLayout>
+                                    </Frame>
+                                </FlexLayout>-->
+
+                                <Label Style="{StaticResource LabelStyle}" Text="Seal CGSA"/>
+                                <Entry Text="{Binding TxtSealCGSA,Mode=TwoWay}" FontSize="Medium" x:Name="clave" TextColor="{StaticResource Dark}" IsPassword="True" BackgroundColor="{StaticResource Light}" Opacity=".9"  />
+
+                                <Label Style="{StaticResource LabelStyle}" Text="Seals" />
+                                <Editor Placeholder="Seal 1" FontSize="Small" Text="{Binding TxtSeal1,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="500" TextColor="Black" BackgroundColor="{StaticResource Light}" />
+
+                                <Editor Placeholder="Seal 2" FontSize="Small" Text="{Binding TxtSeal2,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="500" TextColor="Black" BackgroundColor="{StaticResource Light}" />
+
+                                <Editor Placeholder="Seal 3" FontSize="Small" Text="{Binding TxtSeal3,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="500" TextColor="Black" BackgroundColor="{StaticResource Light}" />
+
+                                <!--<Editor Placeholder="Seal 4" FontSize="Small" Text="{Binding TxtSeal4,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="500" TextColor="Black" BackgroundColor="{StaticResource Light}" />-->
+
+                                <!--<Label Style="{StaticResource LabelStyle}" Text="Position"/>
+                                <Entry Text="{Binding TxtPosition,Mode=TwoWay}" FontSize="Medium" x:Name="position" TextColor="{StaticResource Dark}" IsPassword="False" BackgroundColor="{StaticResource Light}" Opacity=".9"  />-->
+
+
+                                <Label Style="{StaticResource LabelStyle}" Text="Photos"  />
+                                <FlexLayout Direction="Row" VerticalOptions="Start" JustifyContent="SpaceAround">
+                                    <Frame BorderColor="{StaticResource Light}" Padding="0" Margin="5">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource,Mode=TwoWay}" x:Name="ImageTrabajo" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="0"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0" x:Name="FrameFoto1" >
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource1,Mode=TwoWay}" x:Name="ImageTrabajo1" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="1"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource2,Mode=TwoWay}" x:Name="ImageTrabajo2" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="2"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource3,Mode=TwoWay}" x:Name="ImageTrabajo3" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="3"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                </FlexLayout>
+
+                                <StackLayout Padding="0,20,0,0" Orientation="Horizontal">
+                                    <Button Text="Cancel" Command="{Binding CancelCommand}"  BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                    <Button Text="Save" Command="{Binding SaveChangesCommand}" BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                </StackLayout>
+                            </StackLayout>
+                        </Frame>
+                    </FlexLayout>
+
+                </StackLayout>
+            </ScrollView>
+        </RefreshView>
+    </ContentPage.Content>
+</ContentPage>

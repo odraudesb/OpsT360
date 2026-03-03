@@ -1,0 +1,34 @@
+D:\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.deps.json
+D:\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.dll
+D:\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.pdb
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.AssemblyReference.cache
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.GeneratedMSBuildEditorConfig.editorconfig
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.CoreCompileInputs.cache
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.sourcelink.json
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.dll
+D:\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.deps.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\bin\Debug\netstandard2.0\ApiModels.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.AssemblyReference.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.CoreCompileInputs.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.sourcelink.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ApiModels\obj\Debug\netstandard2.0\ApiModels.pdb
+C:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.deps.json
+C:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.dll
+C:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.pdb
+C:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.AssemblyReference.cache
+C:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.GeneratedMSBuildEditorConfig.editorconfig
+C:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.CoreCompileInputs.cache
+C:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.dll
+C:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.pdb
+D:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.deps.json
+D:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.dll
+D:\Proyect\BRBKApp\ApiModels\bin\Debug\netstandard2.0\ApiModels.pdb
+D:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.AssemblyReference.cache
+D:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.GeneratedMSBuildEditorConfig.editorconfig
+D:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.csproj.CoreCompileInputs.cache
+D:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.dll
+D:\Proyect\BRBKApp\ApiModels\obj\Debug\netstandard2.0\ApiModels.pdb

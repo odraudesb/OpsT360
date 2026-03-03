@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             BackgroundColor="#80000000"
+             x:Class="BRBKApp.Views.CediAgregarEvidenciaEntrega"
+             Padding="0">
+
+    <ContentPage.Content>
+        <Grid VerticalOptions="CenterAndExpand" HorizontalOptions="CenterAndExpand">
+            <Frame BackgroundColor="White"
+                   CornerRadius="20"
+                   Padding="20"
+                   HasShadow="True"
+                   WidthRequest="350"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center">
+                <StackLayout Spacing="15">
+                    <Label Text="Evidencia de Entrega"
+                           FontSize="20"
+                           HorizontalOptions="Center"/>
+
+                    <Editor Placeholder="Observación"
+                            Text="{Binding Observacion}"
+                            HeightRequest="80"/>
+
+                    <Label Text="Fotos de Evidencia" />
+
+                    <!-- Primera fila de 4 fotos -->
+                    <FlexLayout Direction="Row" JustifyContent="SpaceAround" AlignItems="Start">
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image0}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="0"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image1}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="1"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image2}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="2"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image3}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="3"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                    </FlexLayout>
+
+                    <!-- Segunda fila de 4 fotos -->
+                    <FlexLayout Direction="Row" JustifyContent="SpaceAround" AlignItems="Start">
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image4}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="4"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image5}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="5"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image6}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="6"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                        <Frame BorderColor="LightGray" Padding="0" Margin="5">
+                            <Image Source="{Binding Image7}"
+                                   HeightRequest="100"
+                                   WidthRequest="100">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="7"/>
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Frame>
+                    </FlexLayout>
+
+                    <StackLayout Orientation="Horizontal"
+                                 HorizontalOptions="Center"
+                                 Spacing="10">
+                        <Button Text="Grabar Evidencia"
+                                Command="{Binding GrabarCommand}"
+                                BackgroundColor="#4CAF50"
+                                TextColor="White"
+                                WidthRequest="150"/>
+                        <Button Text="Cerrar"
+                                Command="{Binding CerrarCommand}"
+                                BackgroundColor="Gray"
+                                TextColor="White"
+                                WidthRequest="100"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>

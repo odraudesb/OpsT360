@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pv="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView" 
+             xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:vm="clr-namespace:BRBKApp.ViewModels"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.VHSOrdenTrabajoPage"
+             x:Name="VHSOrdenTrabajoPageName">
+    <ContentPage.Content>
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <StackLayout Padding="15,15,15,0">
+                <!-- Label que se muestra si no hay datos -->
+                <Label Text="No hay elementos disponibles." HorizontalOptions="Center" VerticalOptions="Center" 
+                        TextColor="Gray" FontSize="Medium" IsVisible="{Binding IsListaVacia}" />
+                <CollectionView SelectionMode="Single"  ItemsSource="{Binding OrdenesTrabajo}" >
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <StackLayout Padding="0,10,0,0">
+                                <Frame Margin="0,10,0,0" Padding="5" BorderColor="LightGray">
+                                    <Grid ColumnSpacing="5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackLayout Grid.Column="0">
+                                            <Label Text="{Binding NumeroOrden}" />
+                                            <Label Text="{Binding Mensaje}" LineBreakMode="WordWrap"/>
+                                        </StackLayout>
+                                        <StackLayout Grid.Column="1" >
+                                            <Button Text="Crear Tarja" HorizontalOptions="End" VerticalOptions="CenterAndExpand"  WidthRequest="120" HeightRequest="35" CornerRadius="20"
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:VHSOrdenTrabajoViewModel}}, Path=ButtonCommand}" CommandParameter="{Binding .}"/>
+                                        </StackLayout>
+                                    </Grid>
+                                </Frame>
+                            </StackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </StackLayout>
+        </RefreshView>
+    </ContentPage.Content>
+</ContentPage>

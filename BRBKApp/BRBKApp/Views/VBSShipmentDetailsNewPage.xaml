@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+              xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.VBSShipmentDetailsNewPage">
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding CancelCommand}">
+            <BackButtonBehavior.TextOverride>
+                <OnPlatform x:TypeArguments="x:String">
+                    <OnPlatform.Platforms>
+                        <On Platform="iOS" Value="Go Back" />
+                    </OnPlatform.Platforms>
+                </OnPlatform>
+            </BackButtonBehavior.TextOverride>
+        </BackButtonBehavior>
+    </Shell.BackButtonBehavior>
+    <ContentPage.Content>
+        <ScrollView>
+            <StackLayout>
+                <FlexLayout Padding="15,10,15,0" Direction="Column" FlexLayout.Grow="1">
+                    <Frame BorderColor="{StaticResource Light}"
+                       BackgroundColor="{StaticResource Light}"
+                       CornerRadius="10"
+                       HasShadow="True">
+                        <StackLayout>
+                            <FlexLayout Direction="Column" >
+                                <Label Style="{StaticResource LabelStyle}" FontAttributes="Bold" x:Name="Container" Text="{Binding Container,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Comentary" Text="{Binding Comentary,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" x:Name="TasksLabel" Text="{Binding TasksLabel,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Temperature" Text="{Binding Temperature,Mode=OneWay}" />
+                                <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Types" Text="{Binding Types,Mode=OneWay}" />
+                            </FlexLayout>
+
+                        </StackLayout>
+                    </Frame>
+                </FlexLayout>
+
+                <FlexLayout Padding="15,1,15,0" Direction="Column" FlexLayout.Grow="1">
+                    <Frame BorderColor="{StaticResource Light}"
+                       CornerRadius="10"
+                       HasShadow="True">
+                        <StackLayout Spacing="1" Padding="10,0,10,0">
+
+
+                            <Grid Padding="10"  >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Label Grid.Row="0" Style="{StaticResource LabelStyle}" Text="Source" />
+                                <Picker Grid.Row="0" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListOrigen}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedOrigen}"
+                                        TextColor="Black">
+
+                                </Picker>
+
+                                <Label Grid.Row="1" Style="{StaticResource LabelStyle}" Text="Box Code" />
+                                <Editor x:Name="txtBoxCode" Grid.Row="1" Grid.Column="1" FontSize="Small" Text="{Binding CodeBoxEntry,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="200" TextColor="Black" BackgroundColor="{StaticResource Light}" />
+
+
+                                <Label Grid.Row="2" Style="{StaticResource LabelStyle}" Text="Hold" />
+                                <Picker Grid.Row="2" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListHold}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedHold}"
+                                        TextColor="Black">
+
+                                </Picker>
+
+                                <Label Grid.Row="3" Style="{StaticResource LabelStyle}" Text="Deck" />
+                                <Picker Grid.Row="3" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListDeck}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedDeck}"
+                                        TextColor="Black">
+
+                                </Picker>
+
+                                <Label Grid.Row="4" Style="{StaticResource LabelStyle}" Text="Brand" />
+                                <Picker Grid.Row="4" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListBrand}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedBrand}"
+                                        TextColor="Black">
+
+                                </Picker>
+
+                                <Label Grid.Row="5" Style="{StaticResource LabelStyle}" Text="Modality" />
+                                <Picker Grid.Row="5" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListModalidad}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedModalidad}"
+                                        TextColor="Black">
+
+                                </Picker>
+                            </Grid>
+
+                            <Label Style="{StaticResource LabelStyle}" Text="Qty Box" />
+                            <Grid Padding="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Entry Grid.Column="0" Text="{Binding Value ,Mode=TwoWay}" BindingContext="{x:Reference stepperS}"  Keyboard="Numeric" BackgroundColor="{StaticResource Light}" TextColor="Black" FontSize="Medium"/>
+                                <Stepper Grid.Column="1" Minimum="0" Maximum="9999" x:Name="stepperS" Increment="1.00" Value="{Binding QtyEntry ,Mode=TwoWay}" Background="{StaticResource Primary}" />
+                            </Grid>
+
+
+                            <behaviors:Expander  IsExpanded="False">
+                                <behaviors:Expander.Header >
+                                    <Label Text="Aditional Options +"
+                                           FontAttributes="Bold"
+                                           FontSize="Large" />
+                                </behaviors:Expander.Header>
+                                <Grid Padding="5"  >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                   
+                                    <Label Grid.Row="0" Style="{StaticResource LabelStyle}" Text="Events" />
+                                    <Picker Grid.Row="0" Grid.Column="1" HorizontalOptions="FillAndExpand" 
+                                        FontSize="Small" 
+                                        BackgroundColor="{StaticResource Light}" 
+                                        Title="--Select--" 
+                                        ItemsSource="{Binding ListEvents}" 
+                                        ItemDisplayBinding="{Binding Descripcion}" 
+                                        SelectedItem="{Binding SelectedEvents}"
+                                        TextColor="Black">
+
+                                    </Picker>
+
+
+                                    <Label Grid.Row="1" Style="{StaticResource LabelStyle}" Text="Note" />
+                                    <Editor x:Name="txtNotas" Grid.Row="1" Grid.Column="1" FontSize="Small" Text="{Binding ObservacionEntry,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="200" TextColor="Black" BackgroundColor="{StaticResource Light}" />
+                                </Grid>
+                            </behaviors:Expander>
+
+                            
+                            
+
+
+                            <Label Style="{StaticResource LabelStyle}" Text="Photos"  />
+                            <FlexLayout Direction="Row" VerticalOptions="Start" JustifyContent="SpaceAround">
+                                <Frame BorderColor="{StaticResource Light}" Padding="0" Margin="5">
+                                    <StackLayout Orientation="Vertical" Padding="3">
+                                        <Image Source="{Binding ImageSource,Mode=TwoWay}" x:Name="ImageTrabajo" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                    WidthRequest="100">
+                                            <Image.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding TapCommand}"
+                                                    CommandParameter="0"
+                                                    NumberOfTapsRequired="1" />
+                                            </Image.GestureRecognizers>
+                                        </Image>
+                                    </StackLayout>
+                                </Frame>
+                                <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0" x:Name="FrameFoto1" >
+                                    <StackLayout Orientation="Vertical" Padding="3">
+                                        <Image Source="{Binding ImageSource1,Mode=TwoWay}" x:Name="ImageTrabajo1" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                    WidthRequest="100">
+                                            <Image.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding TapCommand}"
+                                                    CommandParameter="1"
+                                                    NumberOfTapsRequired="1" />
+                                            </Image.GestureRecognizers>
+                                        </Image>
+                                    </StackLayout>
+                                </Frame>
+                                <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                    <StackLayout Orientation="Vertical" Padding="3">
+                                        <Image Source="{Binding ImageSource2,Mode=TwoWay}" x:Name="ImageTrabajo2" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                    WidthRequest="100">
+                                            <Image.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding TapCommand}"
+                                                    CommandParameter="2"
+                                                    NumberOfTapsRequired="1" />
+                                            </Image.GestureRecognizers>
+                                        </Image>
+                                    </StackLayout>
+                                </Frame>
+                                <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                    <StackLayout Orientation="Vertical" Padding="3">
+                                        <Image Source="{Binding ImageSource3,Mode=TwoWay}" x:Name="ImageTrabajo3" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                    WidthRequest="100">
+                                            <Image.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding TapCommand}"
+                                                    CommandParameter="3"
+                                                    NumberOfTapsRequired="1" />
+                                            </Image.GestureRecognizers>
+                                        </Image>
+                                    </StackLayout>
+                                </Frame>
+                            </FlexLayout>
+
+                            <StackLayout Padding="0,20,0,0" Orientation="Horizontal">
+                                <Button Text="Cancel" Command="{Binding CancelCommand}"  BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                <Button Text="Save" Command="{Binding SaveChangesCommand}" BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                            </StackLayout>
+                        </StackLayout>
+                    </Frame>
+                </FlexLayout>
+                <!--<StackLayout Padding="15,10,15,0" Orientation="Horizontal" HorizontalOptions="FillAndExpand">
+                    <Button Text="Report News"  Command="{Binding ReportAlertCommand}" HorizontalOptions="FillAndExpand" BorderRadius="20" ></Button>
+                </StackLayout>-->
+            </StackLayout>
+
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>

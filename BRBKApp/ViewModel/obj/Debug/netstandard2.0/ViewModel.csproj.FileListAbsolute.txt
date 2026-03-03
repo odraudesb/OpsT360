@@ -1,0 +1,34 @@
+D:\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.deps.json
+D:\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.dll
+D:\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.pdb
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.AssemblyReference.cache
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.GeneratedMSBuildEditorConfig.editorconfig
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.CoreCompileInputs.cache
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.sourcelink.json
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.dll
+D:\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.deps.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\bin\Debug\netstandard2.0\ViewModel.pdb
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.AssemblyReference.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.CoreCompileInputs.cache
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.sourcelink.json
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.dll
+C:\Users\jrodriguez\Desktop\APP VHS\test2\ViewModel\obj\Debug\netstandard2.0\ViewModel.pdb
+C:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.deps.json
+C:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.dll
+C:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.pdb
+C:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.AssemblyReference.cache
+C:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.CoreCompileInputs.cache
+C:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.dll
+C:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.pdb
+D:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.deps.json
+D:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.dll
+D:\Proyect\BRBKApp\ViewModel\bin\Debug\netstandard2.0\ViewModel.pdb
+D:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.AssemblyReference.cache
+D:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.GeneratedMSBuildEditorConfig.editorconfig
+D:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.csproj.CoreCompileInputs.cache
+D:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.dll
+D:\Proyect\BRBKApp\ViewModel\obj\Debug\netstandard2.0\ViewModel.pdb

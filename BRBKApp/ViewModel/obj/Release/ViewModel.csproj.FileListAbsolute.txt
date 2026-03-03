@@ -1,0 +1,6 @@
+D:\Proyectos\BRBKApp\ViewModel\bin\Release\ViewModel.dll
+D:\Proyectos\BRBKApp\ViewModel\bin\Release\ViewModel.pdb
+D:\Proyectos\BRBKApp\ViewModel\obj\Release\ViewModel.csproj.AssemblyReference.cache
+D:\Proyectos\BRBKApp\ViewModel\obj\Release\ViewModel.csproj.CoreCompileInputs.cache
+D:\Proyectos\BRBKApp\ViewModel\obj\Release\ViewModel.dll
+D:\Proyectos\BRBKApp\ViewModel\obj\Release\ViewModel.pdb

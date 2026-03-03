@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             xmlns:pv="clr-namespace:Xamarin.Forms.PancakeView;assembly=Xamarin.Forms.PancakeView" 
+             xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             Title="{Binding Title}"
+             x:Class="BRBKApp.Views.VBSDispatchPage">
+    <!--<Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding CancelCommand}">
+            <BackButtonBehavior.TextOverride>
+                <OnPlatform x:TypeArguments="x:String">
+                    <OnPlatform.Platforms>
+                        <On Platform="iOS" Value="Go Back" />
+                    </OnPlatform.Platforms>
+                </OnPlatform>
+            </BackButtonBehavior.TextOverride>
+        </BackButtonBehavior>
+    </Shell.BackButtonBehavior>-->
+    <ContentPage.Content>
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <StackLayout>
+
+                    <FlexLayout Padding="15,15,15,0" Direction="Column" FlexLayout.Grow="1">
+                        <Frame BorderColor="{StaticResource Light}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                            <StackLayout>
+                                <FlexLayout Direction="Column" >
+                                    <StackLayout Spacing="3" Padding="1">
+                                        <!--<Label Style="{StaticResource LabelStyle}" Text="MRN"/>-->
+
+                                        <Grid 
+                                        ColumnDefinitions="*,30"
+                                        ColumnSpacing="10">
+                                            <Entry Placeholder="QR  PALLETS" PlaceholderColor="Gray" Grid.Column="0" TextChanged="Entry_TextChanged"  Keyboard="Text" MaxLength="13" Text="{Binding TxtNumPasePuerta,Mode=TwoWay}" BackgroundColor="{StaticResource Light}" FontSize="Large" TextColor="Black"></Entry>
+                                            <ImageButton IsEnabled="{Binding esActivo,Mode=OneWay}" Grid.Column="1" Source="{Binding BtnIcon}" BackgroundColor="Transparent" HorizontalOptions="Center" Command="{Binding ConsultCommand}"></ImageButton>
+                                        </Grid>
+                                    </StackLayout>
+                                </FlexLayout>
+
+                                <Frame BorderColor="{StaticResource Light}" BackgroundColor="{StaticResource Light}" CornerRadius="10" HasShadow="True">
+                                    <StackLayout>
+                                        <FlexLayout Direction="Column" >
+                                            <Label Style="{StaticResource LabelStyle}" FontAttributes="Bold" x:Name="Container" Text="{Binding Container,Mode=OneWay}" />
+                                            <Label Style="{StaticResource LabelStyleMed}" x:Name="TasksLabel" Text="{Binding TasksLabel,Mode=OneWay}" />
+                                            <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Temperature" Text="{Binding Temperature,Mode=OneWay}" />
+                                            <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Types" Text="{Binding Types,Mode=OneWay}" />
+                                            <Label Style="{StaticResource LabelStyleMed}" FontAttributes="Italic" x:Name="Comentary" Text="{Binding Comentary,Mode=OneWay}" />
+                                        </FlexLayout>
+
+                                    </StackLayout>
+                                </Frame>
+
+                            </StackLayout>
+                        </Frame>
+
+                    </FlexLayout>
+
+                    <FlexLayout Padding="15" Direction="Column" FlexLayout.Grow="1">
+                        <Frame BorderColor="{StaticResource Light}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                            <StackLayout Spacing="3" Padding="15">
+
+
+                                <!--<Label Style="{StaticResource LabelStyle}" Text="Qty" />
+                                <Grid IsEnabled="False">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Entry Grid.Column="0" Text="{Binding Value ,Mode=TwoWay}" BindingContext="{x:Reference stepperS}"  Keyboard="Numeric" BackgroundColor="{StaticResource Light}" TextColor="Black" FontSize="Medium"/>
+                                    <Stepper Grid.Column="1" Minimum="0" Maximum="9999" x:Name="stepperS" Increment="1.00" Value="{Binding QtyEntry ,Mode=TwoWay}" Background="{StaticResource Primary}" />
+                                </Grid>-->
+
+
+                                <!--<Label Style="{StaticResource LabelStyle}" Text="Note" />
+                                <Editor FontSize="Small" Text="{Binding NoteEntry,Mode=TwoWay}"  Keyboard="Text" AutoSize="TextChanges" MaxLength="500" TextColor="Black" BackgroundColor="{StaticResource Light}" />-->
+                                <Label Style="{StaticResource LabelStyle}" Text="Photos"  />
+                                <FlexLayout Direction="Row" VerticalOptions="Start" JustifyContent="SpaceAround">
+                                    <Frame BorderColor="{StaticResource Light}" Padding="0" Margin="5">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource,Mode=TwoWay}" x:Name="ImageTrabajo" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="0"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0" x:Name="FrameFoto1" >
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource1,Mode=TwoWay}" x:Name="ImageTrabajo1" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="1"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource2,Mode=TwoWay}" x:Name="ImageTrabajo2" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="2"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                    <Frame BorderColor="{StaticResource Light}" Margin="5" Padding="0">
+                                        <StackLayout Orientation="Vertical" Padding="0">
+                                            <Image Source="{Binding ImageSource3,Mode=TwoWay}" x:Name="ImageTrabajo3" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand"  HeightRequest="100" 
+                                        WidthRequest="100">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding TapCommand}"
+                                                        CommandParameter="3"
+                                                        NumberOfTapsRequired="1" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </StackLayout>
+                                    </Frame>
+                                </FlexLayout>
+
+                                <StackLayout Padding="0,20,0,0" Orientation="Horizontal">
+                                    <Button Text="Cancel" Command="{Binding CancelCommand}"  BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                    <Button Text="Save" Command="{Binding SaveChangesCommand}" BorderRadius="20" HorizontalOptions="FillAndExpand"></Button>
+                                </StackLayout>
+                            </StackLayout>
+                        </Frame>
+                    </FlexLayout>
+
+                    <FlexLayout Padding="15,10,15,10" Direction="Column" FlexLayout.Grow="1">
+                        <Frame BorderColor="{StaticResource Light}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                            <StackLayout Spacing="3" Padding="0">
+
+                                <FlexLayout Direction="Row" VerticalOptions="StartAndExpand" JustifyContent="SpaceAround">
+                                    <Grid BackgroundColor="{StaticResource Light}" RowSpacing="5" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="500"/>
+                                        </Grid.RowDefinitions>
+
+                                        <CollectionView Grid.Row="0" Margin="5" HorizontalOptions="FillAndExpand" VerticalOptions="Start" SelectionMode="None" ItemsSource="{Binding MyAgenda2,Mode=TwoWay}">
+                                            <CollectionView.ItemsLayout>
+                                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>
+                                            </CollectionView.ItemsLayout>
+                                            <CollectionView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <pv:PancakeView BackgroundColor="White" VerticalOptions="StartAndExpand" HorizontalOptions="FillAndExpand">
+
+                                                        <Grid VerticalOptions="StartAndExpand" HorizontalOptions="FillAndExpand">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <BoxView BackgroundColor="{Binding Color}" WidthRequest="3" HorizontalOptions="Start" VerticalOptions="FillAndExpand"/>
+                                                            <behaviors:Expander Grid.Column="1">
+                                                                <behaviors:Expander.Header>
+                                                                    <Grid HorizontalOptions="FillAndExpand">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="5.5*"/>
+                                                                            <!--<ColumnDefinition Width="*"/>-->
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackLayout HorizontalOptions="Center" VerticalOptions="Center">
+                                                                            <!--<Label Text="{Binding Date, StringFormat='{0:dd}'}" TextColor="Black" FontSize="27" HorizontalOptions="Center"/>
+                                                                                <Label Text="{Binding Date, StringFormat='{0:MMMM}'}" TextColor="Black" FontSize="10" HorizontalOptions="Center" Margin="0,-10,0,0"/>-->
+                                                                            <Label Text="{Binding QTY}" TextColor="Black" FontSize="22" HorizontalOptions="Center"/>
+                                                                            <Label Text="Pallets" TextColor="Black" FontSize="10" HorizontalOptions="Center" Margin="0,-10,0,0"/>
+                                                                        </StackLayout>
+                                                                        <BoxView Grid.Column="1" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" VerticalOptions="FillAndExpand"/>
+                                                                        <StackLayout Grid.Column="2" HorizontalOptions="Start" VerticalOptions="Center" Margin="20">
+                                                                            <Label Text="{Binding Topic}" TextColor="Black" FontSize="15"/>
+                                                                            <Label Text="{Binding Status}" TextColor="Red" FontAttributes="Bold" FontSize="20" Margin="0,-10,0,0"/>
+                                                                            <Label Text="{Binding Duration}" TextColor="#2F3246" FontAttributes="Bold,Italic" FontSize="12" Margin="0,-10,0,0"/>
+                                                                        </StackLayout>
+                                                                        <!--<BoxView Grid.Column="3" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" VerticalOptions="FillAndExpand"/>
+                                                                        <StackLayout Grid.Column="3" HorizontalOptions="Center" VerticalOptions="Center">
+                                                                            <ImageButton Source="icon_next.png"
+                                                                                     BackgroundColor="Transparent"
+                                                                                     WidthRequest="37"
+                                                                                 
+                                                                                     CommandParameter="{Binding Id}"
+                                                                                     HorizontalOptions="Center"
+                                                                                     VerticalOptions="CenterAndExpand"/>
+                                                                        </StackLayout>-->
+                                                                    </Grid>
+                                                                </behaviors:Expander.Header>
+                                                                <Grid HorizontalOptions="FillAndExpand">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="5.5*"/>
+                                                                        <!--<ColumnDefinition Width="*"/>-->
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <BoxView Grid.Column="1" BackgroundColor="#F2F4F8" WidthRequest="1" HorizontalOptions="Start" 
+                                                         VerticalOptions="FillAndExpand"/>
+                                                                    <StackLayout Grid.Column="2" Spacing="10">
+                                                                        <Label Text="Order Detail" TextColor="Black" Opacity="0.5" FontSize="10" Margin="20,0"/>
+                                                                        <StackLayout BindableLayout.ItemsSource="{Binding Details}" HorizontalOptions="Start" VerticalOptions="Center" Margin="20,0,0,20">
+                                                                            <BindableLayout.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <Label TextColor="#2F3246" FontSize="12">
+                                                                                        <Label.FormattedText>
+                                                                                            <FormattedString>
+                                                                                                <FormattedString.Spans>
+                                                                                                    <Span Text="{Binding Time}"/>
+                                                                                                    <Span Text=" : "/>
+                                                                                                    <Span Text="{Binding Name}" FontAttributes="Bold"/>
+                                                                                                </FormattedString.Spans>
+                                                                                            </FormattedString>
+                                                                                        </Label.FormattedText>
+                                                                                    </Label>
+                                                                                </DataTemplate>
+                                                                            </BindableLayout.ItemTemplate>
+                                                                        </StackLayout>
+                                                                    </StackLayout>
+                                                                </Grid>
+                                                            </behaviors:Expander>
+                                                        </Grid>
+                                                    </pv:PancakeView>
+                                                </DataTemplate>
+                                            </CollectionView.ItemTemplate>
+                                        </CollectionView>
+                                    </Grid>
+
+                                </FlexLayout>
+
+                            </StackLayout>
+                        </Frame>
+                    </FlexLayout>
+
+                </StackLayout>
+            </ScrollView>
+        </RefreshView>
+    </ContentPage.Content>
+</ContentPage>
