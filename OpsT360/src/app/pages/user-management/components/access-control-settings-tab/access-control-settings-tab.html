@@ -1,0 +1,98 @@
+<div class="space-y-6">
+  <div>
+    <p class="text-base font-semibold text-slate-900">
+      Define the specific permissions for the user profile you select
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <label class="space-y-2 text-sm font-medium text-slate-700">
+      <span>Select Profile</span>
+      <div class="relative">
+        <input
+          type="text"
+          [value]="profile"
+          readonly
+          class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:bg-white"
+        />
+        <span class="pointer-events-none absolute right-3 top-2.5 text-slate-500">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </span>
+      </div>
+    </label>
+
+    <label class="space-y-2 text-sm font-medium text-slate-700">
+      <span>Select Application</span>
+      <div class="relative">
+        <input
+          type="text"
+          [value]="application"
+          readonly
+          class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:bg-white"
+        />
+        <span class="pointer-events-none absolute right-3 top-2.5 text-slate-500">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </span>
+      </div>
+    </label>
+
+    <label class="space-y-2 text-sm font-medium text-slate-700">
+      <span>Select System</span>
+      <div class="relative">
+        <input
+          type="text"
+          [value]="system"
+          readonly
+          class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:bg-white"
+        />
+        <span class="pointer-events-none absolute right-3 top-2.5 text-slate-500">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </span>
+      </div>
+    </label>
+  </div>
+
+  <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+    Enable or disable access for all users in the selected profile and system:
+    <span class="font-semibold text-[#3758F9]">[{{ profile }}]</span>
+    →
+    <span class="font-semibold text-[#3758F9]">[{{ system }}]</span>
+  </div>
+
+  <div class="flex items-center gap-8">
+    <div class="space-y-1 text-sm">
+      <p class="font-medium text-slate-900">Enable</p>
+      <label class="relative inline-flex cursor-pointer items-center">
+        <input type="checkbox" checked class="peer sr-only" />
+        <div
+          class="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-blue-500 peer-focus:outline-none"
+        ></div>
+        <div
+          class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-5"
+        ></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <button type="button" class="text-sm font-semibold text-slate-700 hover:text-slate-900">
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+        <path d="M5 12h14" />
+        <path d="M12 5v14" />
+      </svg>
+      Save
+    </button>
+  </div>
+</div>

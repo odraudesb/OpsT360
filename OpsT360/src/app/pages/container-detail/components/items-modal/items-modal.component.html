@@ -1,0 +1,51 @@
+<div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/40" (click)="onClose()"></div>
+
+  <div class="relative z-10 max-h-[80vh] w-[min(900px,92vw)] overflow-auto rounded-lg bg-white p-5 shadow-lg">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="text-sm font-semibold text-slate-900">{{ title }}</h3>
+      <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs" (click)="onClose()">
+        Close
+      </button>
+    </div>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="min-w-full border-collapse text-xs">
+        <thead class="border-y border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-400">
+          <tr>
+            <th *ngFor="let c of columns" class="px-3 py-2 text-left font-medium">{{ c }}</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let row of paginatedRows" class="hover:bg-slate-50">
+            <td *ngFor="let c of columns" class="px-3 py-2 text-slate-700">
+              {{ formatCell(row?.[c]) }}
+            </td>
+          </tr>
+
+          <tr *ngIf="rows.length === 0">
+            <td class="px-3 py-3 text-slate-500" [attr.colspan]="columns.length || 1">
+              No items
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="rows.length > 0"
+        class="flex items-center justify-between px-3 py-2 text-xs text-slate-500">
+        <span>Rows per page: {{ pageSize }}</span>
+        <div class="flex items-center gap-3">
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="previousPage()" [disabled]="currentPage === 1">
+            ‹
+          </button>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="nextPage()" [disabled]="currentPage === totalPages">
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,267 @@
+<div class="min-h-screen bg-white text-slate-900">
+  <t360-header sectionLabel="Notifications" sectionLink="" [disableSectionLink]="true"
+    [showNotificationDot]="false"></t360-header>
+
+  <main class="px-10 pb-10 pt-6">
+    <div class="flex items-center justify-between">
+      <div class="space-y-1">
+        <h1 class="text-2xl font-semibold text-slate-800">Notifications</h1>
+        <p class="text-sm text-slate-500">
+          Warnings &amp; Announcements of the Cargo and Business
+        </p>
+        <p class="text-xs text-slate-400">
+          Stay informed about important events related to your cargo operations and logistics community
+        </p>
+      </div>
+
+      <button type="button"
+        class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black"
+        (click)="openCreate()">
+        <span class="text-lg leading-none">+</span>
+        Add
+      </button>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between">
+      <div class="flex border-b border-slate-200 text-sm font-semibold text-slate-500">
+        <button *ngFor="let tab of tabs" type="button"
+          class="relative px-3 pb-2 pt-1 transition-colors hover:text-slate-800"
+          [ngClass]="{ 'text-[#3758F9]': activeTab === tab.id }" (click)="setTab(tab.id)">
+          {{ tab.label }}
+          <span *ngIf="activeTab === tab.id" class="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-[#3758F9]"></span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div
+          class="flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">
+          <span class="mr-2 text-lg">☰</span>
+          <input type="search" [(ngModel)]="searchTerm" placeholder="Search in list"
+            class="w-56 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none" />
+        </div>
+
+        <button type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+          aria-label="Search">
+          <svg class="h-4 w-4 text-slate-900" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10.5 3a7.5 7.5 0 1 0 0 15a7.5 7.5 0 0 0 0-15Z" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="mt-6 text-base font-semibold text-slate-800">
+      Warnings &amp; Announcements of the Cargo and Business
+    </p>
+    <p class="text-sm text-slate-400">
+      Stay informed about important events related to your cargo operations and logistics community
+    </p>
+
+    <div class="mt-4 h-px w-full bg-slate-200"></div>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <article *ngFor="let n of filteredNotifications; trackBy: trackById"
+        class="flex h-full flex-col rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-sm font-semibold leading-5 text-slate-800">
+              {{ n.title }}
+            </h2>
+            <p class="mt-1 text-xs text-slate-400">
+              {{ n.date }} &nbsp; {{ n.time }}
+            </p>
+          </div>
+        </div>
+
+        <p class="mt-4 flex-1 text-sm leading-6 text-slate-600">
+          {{ n.description }}
+        </p>
+
+        <div class="mt-6 flex items-center justify-between text-sm">
+          <span [ngClass]="{
+              'bg-orange-50 text-orange-600': n.type === 'Alert',
+              'bg-[#3758F9]/10 text-[#3758F9]': n.type === 'Announcement',
+              'bg-slate-100 text-slate-600': n.type === 'Draft'
+            }" class="rounded-full px-3 py-1 font-semibold">
+            {{ n.type === 'Announcement' ? 'Announcement' : 'Alert' }}
+          </span>
+
+          <button type="button" class="text-sm font-semibold text-[#3758F9] hover:underline">
+            Ver más...
+          </button>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <div *ngIf="showCreateModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div
+      class="mt-8 w-full max-w-3xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12 md:p-10">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-800">Create new Notification</h2>
+        </div>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeCreate()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-5 text-sm text-slate-700">
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Notification Title *</label>
+          <input type="text" [(ngModel)]="createModel.title"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Notification Type *</label>
+            <div class="relative">
+              <select [(ngModel)]="createModel.type"
+                class="w-full appearance-none rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-slate-400 focus:outline-none">
+                <option>Alert / Notice</option>
+                <option>Announcement</option>
+                <option>Reminder</option>
+              </select>
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">⌄</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Message *</label>
+          <textarea rows="4" [(ngModel)]="createModel.message"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"></textarea>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div class="space-y-3">
+            <p class="font-semibold text-slate-800">Recipients</p>
+            <div class="grid grid-cols-1 gap-2 text-sm text-slate-700 md:grid-cols-2">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.all"
+                  class="h-4 w-4 rounded border-slate-300" />
+                All Customers
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.exporters"
+                  class="h-4 w-4 rounded border-slate-300" />
+                Exporters Only
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.importers"
+                  class="h-4 w-4 rounded border-slate-300" />
+                Importers Only
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <p class="font-semibold text-slate-800">Recipients</p>
+            <div class="grid grid-cols-1 gap-2 text-sm text-slate-700 md:grid-cols-2">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.shippingLines"
+                  class="h-4 w-4 rounded border-slate-300" />
+                Shipping Lines
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.brokers"
+                  class="h-4 w-4 rounded border-slate-300" />
+                Brokers
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.recipients.authorities"
+                  class="h-4 w-4 rounded border-slate-300" />
+                Authorities
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div class="space-y-2">
+            <p class="font-semibold text-slate-800">Schedule Delivery</p>
+            <div class="relative">
+              <input type="text" placeholder="10.apr.2025 23:30" [(ngModel)]="createModel.schedule"
+                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">⌄</span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <p class="font-semibold text-slate-800">Category</p>
+            <div class="relative">
+              <select [(ngModel)]="createModel.category"
+                class="w-full appearance-none rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-slate-400 focus:outline-none">
+                <option>Port Operations / Customs / Delays / Maintenance / Security</option>
+                <option>Operational</option>
+                <option>Commercial</option>
+              </select>
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">⌄</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+          <div class="space-y-3">
+            <p class="font-semibold text-slate-800">Delivery Channels</p>
+            <div class="grid grid-cols-1 gap-2 text-sm text-slate-700 md:grid-cols-2">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.channels.app"
+                  class="h-4 w-4 rounded border-slate-300" />
+                T360 Mobile App
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.channels.portal"
+                  class="h-4 w-4 rounded border-slate-300" />
+                T360° Web Portal
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.channels.email"
+                  class="h-4 w-4 rounded border-slate-300" />
+                E-Mail
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="createModel.channels.sms"
+                  class="h-4 w-4 rounded border-slate-300" />
+                SMS
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <p class="font-semibold text-slate-800">Optional</p>
+            <label class="text-sm font-medium">Related container owner</label>
+            <input type="text" [(ngModel)]="createModel.relatedOwner"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button"
+          class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800"
+          (click)="closeCreate()">
+          Cancel
+        </button>
+        <button type="button"
+          class="rounded-md border border-slate-900 px-4 py-2 text-slate-900 transition hover:bg-slate-50">
+          Preview
+        </button>
+        <button type="button"
+          class="rounded-md border border-slate-900 px-4 py-2 text-slate-900 transition hover:bg-slate-50">
+          Save Draft
+        </button>
+        <button type="button"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          <img src="assets/icons/send.png" alt="" class="h-4 w-4" />
+          Send Notification
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
