@@ -8,7 +8,13 @@ public class LoginService : ILoginService
 {
     private readonly HttpClient _httpClient;
     private readonly IAuthState _authState;
-    public const string LoginUrl = "http://38.242.225.119:3000/api/auth/login";
+
+    public const string PrimaryLoginUrl = "http://38.242.225.119:3000/api/auth/login";
+    public static readonly string[] LoginFallbackUrls =
+    {
+        PrimaryLoginUrl,
+        "http://38.242.225.119/api/auth/login"
+    };
 
     public LoginService(HttpClient httpClient, IAuthState authState)
     {
@@ -18,7 +24,34 @@ public class LoginService : ILoginService
 
     public async Task<string?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var endpoint = new Uri(LoginUrl, UriKind.Absolute);
+        Exception? lastError = null;
+
+        foreach (var url in LoginFallbackUrls)
+        {
+            try
+            {
+                var token = await TryLoginEndpointAsync(url, request, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    _authState.SetToken(token);
+                    return token;
+                }
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+            }
+        }
+
+        throw new HttpRequestException(
+            $"No se pudo conectar al login. Endpoints probados: {string.Join(" | ", LoginFallbackUrls)}",
+            lastError);
+    }
+
+    private async Task<string> TryLoginEndpointAsync(string loginUrl, LoginRequest request, CancellationToken cancellationToken)
+    {
+        var endpoint = new Uri(loginUrl, UriKind.Absolute);
+
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = JsonContent.Create(new
@@ -45,7 +78,6 @@ public class LoginService : ILoginService
             throw new JsonException($"Login sin token en respuesta de {endpoint}.");
         }
 
-        _authState.SetToken(token);
         return token;
     }
 }

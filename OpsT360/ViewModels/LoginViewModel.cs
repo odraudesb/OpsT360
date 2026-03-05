@@ -139,7 +139,7 @@ public class LoginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error de red al conectar a {LoginService.LoginUrl}. No es header JSON; es conexión TCP/puerto (3000) bloqueada o sin ruta. Detalle: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
+            StatusMessage = $"Error de red al conectar a {LoginService.PrimaryLoginUrl}. No es header JSON; es conectividad de red al puerto/API. Detalle: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
         }
         finally
         {
