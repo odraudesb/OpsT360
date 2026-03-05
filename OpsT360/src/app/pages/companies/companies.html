@@ -1,0 +1,240 @@
+<div class="min-h-screen bg-white text-slate-900 font-sans">
+  <t360-header sectionLabel="Companies Management" sectionLink="Companies" [disableSectionLink]="true"></t360-header>
+
+  <main class="px-10 pb-10 pt-6">
+    <section class="mb-4 flex flex-wrap items-end justify-between gap-4">
+      <div class="ml-auto flex items-center gap-2" (click)="$event.stopPropagation()">
+        <button type="button"
+          class="inline-flex items-center gap-2 rounded-md bg-[#0D1830] px-5 py-2 text-sm font-semibold text-white"
+          (click)="openNewCompanyModal()">
+          <img src="assets/icons/Companies.png" alt="New company" class="h-4 w-4 object-contain" />
+          <span>New</span>
+        </button>
+
+        <button type="button" class="flex h-10 w-12 items-center justify-center rounded-md border border-slate-200 bg-white"
+          (click)="toggleDataTransferCard($event)" aria-label="Company data transfer">
+          <img src="assets/icons/grid-2-plus.png" alt="Company data transfer" class="h-5 w-5 object-contain" />
+        </button>
+
+        <div class="relative flex w-[22rem] max-w-full items-center rounded-full border border-slate-200 bg-white px-3 py-2">
+          <span class="mr-2 text-slate-600">☰</span>
+          <input type="search" placeholder="Search in list"
+            class="flex-1 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
+            [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+          <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10.5 3a7.5 7.5 0 1 0 0 15a7.5 7.5 0 0 0 0-15Z" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="relative overflow-visible bg-white">
+        <div class="px-4 pb-4 pt-3">
+          <div class="-mx-4 overflow-visible">
+            <div class="overflow-x-auto">
+              <table class="min-w-full border-collapse border-t border-slate-200 text-xs">
+                <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+                  <tr>
+                    <th class="px-4 py-2 text-left font-medium">Company Name</th>
+                    <th class="px-4 py-2 text-left font-medium">Address</th>
+                    <th class="px-4 py-2 text-left font-medium">Company Type</th>
+                    <th class="px-4 py-2 text-left font-medium">e-Mail</th>
+                    <th class="px-4 py-2 text-left font-medium">WWW</th>
+                    <th class="px-4 py-2 text-left font-medium">Company ID</th>
+                    <th class="px-4 py-2 text-left font-medium">Phone Number</th>
+                    <th class="px-4 py-2 text-right font-medium"> </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let company of paginatedCompanies" class="border-b border-slate-100 hover:bg-slate-50/50">
+                    <td class="whitespace-nowrap px-4 py-2 font-semibold text-[#3758F9]">{{ company.companyName }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.address }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.companyType }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.email }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.web }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.companyId }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ company.phoneNumber }}</td>
+                    <td class="whitespace-nowrap px-2 py-2 text-right" (click)="$event.stopPropagation()">
+                      <button type="button" class="rounded-md px-2 py-1 text-xs text-slate-500 hover:text-slate-700"
+                        (click)="toggleRowActions($event, company)" aria-label="Company actions">
+                        ☰
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div *ngIf="showDataTransferCard"
+              class="fixed z-50 w-64 rounded-lg border border-slate-200 bg-white/95 p-4 text-sm shadow-lg backdrop-blur"
+              style="top: 240px; left: 55%;" (click)="$event.stopPropagation()">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xl font-semibold text-slate-800">Company - Data Transfer</span>
+                <button type="button" class="text-slate-400 hover:text-slate-700" (click)="closeDataTransferCard($event)"
+                  aria-label="Close">
+                  ✕
+                </button>
+              </div>
+
+              <button type="button" class="w-full text-left text-sm text-[#3758F9] hover:underline" (click)="openCompanyImportPage($event)">Import Companies</button>
+            </div>
+
+            <div *ngIf="selectedRowForActions"
+              class="fixed z-50 w-56 rounded-lg border border-slate-200 bg-white/95 p-4 text-sm shadow-lg backdrop-blur"
+              [ngStyle]="actionsCardPosition" (click)="$event.stopPropagation()">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xl font-semibold text-slate-800">Company - Actions</span>
+                <button type="button" class="text-slate-400 hover:text-slate-700" (click)="closeRowActions($event)"
+                  aria-label="Close actions">
+                  ✕
+                </button>
+              </div>
+
+              <ul class="space-y-1.5 text-sm">
+                <li><button type="button" class="w-full text-left text-slate-600 hover:text-[#3758F9]">Modify Company</button></li>
+                <li><button type="button" class="w-full text-left text-slate-600 hover:text-[#3758F9]">Activate / Deactivate Company</button></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Rows per page: {{ pageSize }}</span>
+            <div class="flex items-center gap-3">
+              <span>Page {{ currentPage }} of {{ totalPages }}</span>
+              <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+                (click)="previousPage()" [disabled]="currentPage === 1">
+                ‹
+              </button>
+              <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+                (click)="nextPage()" [disabled]="currentPage === totalPages">
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div *ngIf="showNewCompanyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    (click)="closeNewCompanyModal()">
+    <div class="w-full max-w-[860px] rounded-md bg-white p-5 shadow-2xl" (click)="$event.stopPropagation()">
+      <h2 class="text-[22px] font-semibold leading-none text-slate-900">New Company</h2>
+
+      <div class="mt-5 grid gap-x-6 gap-y-3 text-sm text-slate-700 md:grid-cols-2">
+        <label class="block">
+          <span class="mb-2 block font-semibold">Company Name *</span>
+          <input [(ngModel)]="newCompanyForm.companyName" type="text"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Company ID *</span>
+          <input [(ngModel)]="newCompanyForm.companyId" type="text"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Company Type *</span>
+          <select [(ngModel)]="newCompanyForm.companyType"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+            <option>Exporter</option>
+            <option>Importer</option>
+            <option>Shipping line</option>
+          </select>
+        </label>
+
+        <div class="grid grid-cols-[0.95fr_1.05fr] gap-2">
+          <label class="block">
+            <span class="mb-2 block font-semibold">Phone Numbers</span>
+            <select [(ngModel)]="newCompanyForm.phoneType"
+              class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+              <option>Type</option>
+              <option>Office</option>
+              <option>Mobile</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-transparent">Phone Number</span>
+            <input [(ngModel)]="newCompanyForm.phoneNumber" type="text"
+              class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+          </label>
+        </div>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Country</span>
+          <select [(ngModel)]="newCompanyForm.country"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+            <option>United States</option>
+            <option>Ecuador</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Region</span>
+          <select [(ngModel)]="newCompanyForm.region"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+            <option>South</option>
+            <option>North</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">City</span>
+          <select [(ngModel)]="newCompanyForm.city"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+            <option>Miami</option>
+            <option>Guayaquil</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Industry/Sector</span>
+          <select [(ngModel)]="newCompanyForm.industry"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-500 outline-none focus:border-[#3758F9]">
+            <option>Retail</option>
+            <option>Logistics</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">WWW</span>
+          <input [(ngModel)]="newCompanyForm.web" type="text"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">ZIP Code</span>
+          <input [(ngModel)]="newCompanyForm.zipCode" type="text"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="block">
+          <span class="mb-2 block font-semibold">Email Domain</span>
+          <input [(ngModel)]="newCompanyForm.emailDomain" type="text"
+            class="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="mt-7 inline-flex items-center gap-2 text-sm text-slate-700">
+          <input [(ngModel)]="newCompanyForm.isActive" type="checkbox"
+            class="h-5 w-5 rounded border-slate-300 text-[#3758F9]" />
+          <span>Company active / deactive</span>
+        </label>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-6">
+        <button type="button" (click)="closeNewCompanyModal()" class="text-xl font-medium text-slate-800">Cancel</button>
+        <button type="button" (click)="saveNewCompany()"
+          class="inline-flex items-center gap-2 rounded-lg bg-[#0D1830] px-4 py-2 text-xl font-semibold text-white">
+          <img src="assets/icons/save.png" alt="Save" class="h-4 w-4 object-contain" />
+          <span>Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
