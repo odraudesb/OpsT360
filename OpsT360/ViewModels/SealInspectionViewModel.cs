@@ -22,10 +22,11 @@ public partial class SealInspectionViewModel : ObservableObject
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
     public ObservableCollection<EvidenceImage> SealImages { get; } = new(Enumerable.Range(1, 4).Select(i => new EvidenceImage { Label = $"Seal Image #{i}" }));
+    public ObservableCollection<string> ActivationPoints { get; } = new() { "Pre-Gate / Insp", "Gate Out", "Yard" };
     public EvidenceImage ContainerImage { get; } = new() { Label = "Container Image" };
 
     [ObservableProperty] private string containerId = string.Empty;
-    [ObservableProperty] private string scanInput = string.Empty;
+    [ObservableProperty] private string selectedActivationPoint = "Pre-Gate / Insp";
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
@@ -59,24 +60,35 @@ public partial class SealInspectionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ScanSeal()
+    private void ReadSeal(int sealNumber)
     {
-        if (CurrentSealIndex >= Seals.Count || string.IsNullOrWhiteSpace(ScanInput) || SealEntryLocked)
+        var index = sealNumber - 1;
+        if (index < 0 || index >= Seals.Count)
             return;
 
-        Seals[CurrentSealIndex].Code = ScanInput.Trim().ToUpperInvariant();
-        Seals[CurrentSealIndex].IsLocked = true;
-        ScanInput = string.Empty;
-        CurrentSealIndex++;
+        if (SealEntryLocked && Seals[index].IsLocked)
+            return;
 
-        if (CurrentSealIndex >= Seals.Count)
+        var code = Seals[index].Code?.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            StatusText = $"Captura o pistolea primero el código del sello #{sealNumber}.";
+            return;
+        }
+
+        Seals[index].Code = code;
+        Seals[index].IsLocked = true;
+        CurrentSealIndex = Math.Max(CurrentSealIndex, index + 1);
+
+        if (CanUploadImages)
         {
             SealEntryLocked = true;
             StatusText = "4 sellos cargados. Ya puedes subir fotos.";
         }
         else
         {
-            StatusText = $"Sello #{CurrentSealIndex} leído. Continúa con #{CurrentSealIndex + 1}.";
+            var next = Seals.FirstOrDefault(s => !s.IsLocked)?.Number ?? 4;
+            StatusText = $"Sello #{sealNumber} leído. Continúa con #{next}.";
         }
 
         OnPropertyChanged(nameof(CanUploadImages));
@@ -86,14 +98,43 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private void ToggleEditMode()
     {
-        if (!CanUploadImages)
-            return;
-
         SealEntryLocked = !SealEntryLocked;
         foreach (var seal in Seals)
             seal.IsLocked = SealEntryLocked;
 
         StatusText = SealEntryLocked ? "Sellos bloqueados" : "Modo reemplazo activo";
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        ContainerId = string.Empty;
+        SelectedActivationPoint = ActivationPoints[0];
+        CurrentSealIndex = 0;
+        SealEntryLocked = false;
+
+        foreach (var seal in Seals)
+        {
+            seal.Code = string.Empty;
+            seal.IsLocked = false;
+        }
+
+        foreach (var image in SealImages)
+        {
+            image.FileName = null;
+            image.Bytes = null;
+            image.Base64 = null;
+            image.ValidationStatus = "idle";
+        }
+
+        ContainerImage.FileName = null;
+        ContainerImage.Bytes = null;
+        ContainerImage.Base64 = null;
+        ContainerImage.ValidationStatus = "idle";
+        StatusText = "Esperando lectura de sello #1";
+
+        OnPropertyChanged(nameof(CanUploadImages));
+        OnPropertyChanged(nameof(CanSend));
     }
 
     [RelayCommand]
@@ -177,7 +218,7 @@ public partial class SealInspectionViewModel : ObservableObject
                 ["entityId"] = profile.EntityId.ToString(),
                 ["status"] = "1",
                 ["isReefer"] = "false",
-                ["details"] = "RFID validated evidence",
+                ["details"] = $"RFID validated evidence - {SelectedActivationPoint}",
                 ["document"] = "APP-MOBILE",
                 ["xmlDetails"] = xml,
                 ["recordDate"] = DateTime.UtcNow.ToString("O"),
@@ -207,6 +248,7 @@ public partial class SealInspectionViewModel : ObservableObject
         var sb = new StringBuilder();
         sb.Append("<Contenedor>");
         sb.Append($"<entity_id>{profile.EntityId}</entity_id><contenedor>{container}</contenedor>");
+        sb.Append($"<activation_point>{SelectedActivationPoint}</activation_point>");
         sb.Append($"<tamaño>{profile.Size}</tamaño><naviera>{profile.ShippingLine}</naviera><mercancía>{profile.Goods}</mercancía>");
         sb.Append($"<booking>{profile.Booking}</booking><peso_origen>{profile.OriginWeight}</peso_origen>");
         sb.Append($"<sello-1>{seals[0]}</sello-1><sello-2>{seals[1]}</sello-2><sello-3>{seals[2]}</sello-3><sello-4>{seals[3]}</sello-4>");

@@ -13,8 +13,11 @@ public partial class SealInspectionPage : ContentPage
         BindingContext = vm;
     }
 
-    private void OnScanCompleted(object? sender, EventArgs e)
+    private void OnSealCompleted(object? sender, EventArgs e)
     {
-        _vm.ScanSealCommand.Execute(null);
+        if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
+            return;
+
+        _vm.ReadSealCommand.Execute(sealNumber);
     }
 }
