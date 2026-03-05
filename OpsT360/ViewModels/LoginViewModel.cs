@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,24 +24,67 @@ public partial class LoginViewModel : ObservableObject
     private string ip = "127.0.0.1";
 
     [ObservableProperty]
-    private string device = "android";
+    private string device = "web";
 
     [ObservableProperty]
     private bool isBusy;
 
     [ObservableProperty]
+    private bool isPasswordHidden = true;
+
+    [ObservableProperty]
     private string statusMessage = string.Empty;
+
+    public bool CanLogin => !IsBusy
+        && !string.IsNullOrWhiteSpace(Username)
+        && !string.IsNullOrWhiteSpace(Password);
+
+    public Color SignInButtonColor => CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
+
+    public string PasswordToggleGlyph => IsPasswordHidden ? "👁" : "🙈";
 
     public LoginViewModel(ILoginService loginService, IServiceProvider serviceProvider)
     {
         _loginService = loginService;
         _serviceProvider = serviceProvider;
+
+        Ip = ResolveLocalIpAddress();
+        Device = "web";
+    }
+
+    partial void OnUsernameChanged(string value)
+    {
+        OnPropertyChanged(nameof(CanLogin));
+        OnPropertyChanged(nameof(SignInButtonColor));
+    }
+
+    partial void OnPasswordChanged(string value)
+    {
+        OnPropertyChanged(nameof(CanLogin));
+        OnPropertyChanged(nameof(SignInButtonColor));
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanLogin));
+        OnPropertyChanged(nameof(SignInButtonColor));
+    }
+
+    partial void OnIsPasswordHiddenChanged(bool value)
+    {
+        OnPropertyChanged(nameof(PasswordToggleGlyph));
+    }
+
+    [RelayCommand]
+    private void TogglePasswordVisibility()
+    {
+        IsPasswordHidden = !IsPasswordHidden;
     }
 
     [RelayCommand]
     private async Task LoginAsync()
     {
-        if (IsBusy)
+        if (!CanLogin)
             return;
 
         IsBusy = true;
@@ -49,15 +94,15 @@ public partial class LoginViewModel : ObservableObject
         {
             var token = await _loginService.LoginAsync(new LoginRequest
             {
-                Username = Username,
+                Username = Username.Trim(),
                 Password = Password,
                 Ip = Ip,
-                Device = Device
+                Device = "web"
             });
 
             if (string.IsNullOrWhiteSpace(token))
             {
-                StatusMessage = "Login inválido (sin token).";
+                StatusMessage = "No se pudo iniciar sesión.";
                 return;
             }
 
@@ -66,11 +111,25 @@ public partial class LoginViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error: {ex.Message}";
+            StatusMessage = $"Error de login: {ex.Message}";
         }
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private static string ResolveLocalIpAddress()
+    {
+        try
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            var ip = host.AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a));
+            return ip?.ToString() ?? "127.0.0.1";
+        }
+        catch
+        {
+            return "127.0.0.1";
         }
     }
 }

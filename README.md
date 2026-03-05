@@ -4,7 +4,10 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
 
 ## Lo implementado
 
-- **Login real** a `POST /api/auth/login` con `username`, `password`, `ip`, `device`.
+- **Login real** a `POST /api/auth/login` con `username`, `password`, `ip`, `device` (`device = web`).
+- Botón `Sign in` se habilita en azul solo cuando Email y Password tienen datos.
+- Campo Password incluye ojito para mostrar/ocultar contraseña.
+- Login navega a pantalla de sellos únicamente cuando API devuelve token válido.
 - Se toma el **token** de `data.token` y se guarda en memoria.
 - El token se inyecta como `Authorization: Bearer <token>` en llamadas posteriores.
 - Pantalla de sellos con:
@@ -26,4 +29,4 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
 En este contenedor no está instalado el SDK de .NET (`dotnet`), por lo que no se pudo compilar aquí.
 
 
-- Login usa icono en `Resources/Images/logo-360.svg` (puedes reemplazarlo por tu `logo-360.png` de Figma manteniendo el mismo nombre lógico en XAML).
+- Login usa `Source="logo.png"` en XAML; coloca tu archivo `logo.png` (de `src/assets/images`) en `Resources/Images/` localmente antes de compilar.
