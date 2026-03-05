@@ -1,7 +1,0 @@
-C:\Proyect\BRBKApp\ApiModels\bin\Release\netstandard2.0\ApiModels.deps.json
-C:\Proyect\BRBKApp\ApiModels\bin\Release\netstandard2.0\ApiModels.dll
-C:\Proyect\BRBKApp\ApiModels\bin\Release\netstandard2.0\ApiModels.pdb
-C:\Proyect\BRBKApp\ApiModels\obj\Release\netstandard2.0\ApiModels.GeneratedMSBuildEditorConfig.editorconfig
-C:\Proyect\BRBKApp\ApiModels\obj\Release\netstandard2.0\ApiModels.csproj.CoreCompileInputs.cache
-C:\Proyect\BRBKApp\ApiModels\obj\Release\netstandard2.0\ApiModels.dll
-C:\Proyect\BRBKApp\ApiModels\obj\Release\netstandard2.0\ApiModels.pdb

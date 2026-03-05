@@ -1,7 +1,0 @@
-C:\Proyect\BRBKApp\ViewModel\bin\Release\netstandard2.0\ViewModel.deps.json
-C:\Proyect\BRBKApp\ViewModel\bin\Release\netstandard2.0\ViewModel.dll
-C:\Proyect\BRBKApp\ViewModel\bin\Release\netstandard2.0\ViewModel.pdb
-C:\Proyect\BRBKApp\ViewModel\obj\Release\netstandard2.0\ViewModel.GeneratedMSBuildEditorConfig.editorconfig
-C:\Proyect\BRBKApp\ViewModel\obj\Release\netstandard2.0\ViewModel.csproj.CoreCompileInputs.cache
-C:\Proyect\BRBKApp\ViewModel\obj\Release\netstandard2.0\ViewModel.dll
-C:\Proyect\BRBKApp\ViewModel\obj\Release\netstandard2.0\ViewModel.pdb
