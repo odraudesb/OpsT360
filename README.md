@@ -5,6 +5,7 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
 ## Lo implementado
 
 - **Login real** a `POST /api/auth/login` con `username`, `password`, `ip`, `device` (`device = web`).
+- Login request serializa claves en minúscula de forma explícita (`username`, `password`, `ip`, `device`).
 - Login intenta primero `http://38.242.225.119:3000/api/auth/login` y, si la red bloquea el puerto 3000, prueba fallback `http://38.242.225.119/api/auth/login`.
 - Botón `Sign in` se habilita en azul solo cuando Email y Password tienen datos.
 - Campo Password incluye ojito para mostrar/ocultar contraseña.

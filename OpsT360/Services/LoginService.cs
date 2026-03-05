@@ -54,13 +54,7 @@ public class LoginService : ILoginService
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            Content = JsonContent.Create(new
-            {
-                username = request.Username,
-                password = request.Password,
-                ip = request.Ip,
-                device = request.Device
-            })
+            Content = JsonContent.Create(request)
         };
 
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
