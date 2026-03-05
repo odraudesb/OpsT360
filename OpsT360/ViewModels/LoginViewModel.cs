@@ -1,7 +1,8 @@
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpsT360.Models;
 using OpsT360.Services;
@@ -9,38 +10,87 @@ using OpsT360.Views;
 
 namespace OpsT360.ViewModels;
 
-public partial class LoginViewModel : ObservableObject
+public class LoginViewModel : INotifyPropertyChanged
 {
     private readonly ILoginService _loginService;
     private readonly IServiceProvider _serviceProvider;
 
-    [ObservableProperty]
-    private string username = string.Empty;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _ip = "127.0.0.1";
+    private string _device = "web";
+    private bool _isBusy;
+    private bool _isPasswordHidden = true;
+    private string _statusMessage = string.Empty;
 
-    [ObservableProperty]
-    private string password = string.Empty;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    [ObservableProperty]
-    private string ip = "127.0.0.1";
+    public IAsyncRelayCommand LoginCommand { get; }
+    public IRelayCommand TogglePasswordVisibilityCommand { get; }
 
-    [ObservableProperty]
-    private string device = "web";
+    public string Username
+    {
+        get => _username;
+        set
+        {
+            if (SetProperty(ref _username, value))
+                RaiseLoginStateChanged();
+        }
+    }
 
-    [ObservableProperty]
-    private bool isBusy;
+    public string Password
+    {
+        get => _password;
+        set
+        {
+            if (SetProperty(ref _password, value))
+                RaiseLoginStateChanged();
+        }
+    }
 
-    [ObservableProperty]
-    private bool isPasswordHidden = true;
+    public string Ip
+    {
+        get => _ip;
+        set => SetProperty(ref _ip, value);
+    }
 
-    [ObservableProperty]
-    private string statusMessage = string.Empty;
+    public string Device
+    {
+        get => _device;
+        set => SetProperty(ref _device, value);
+    }
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set
+        {
+            if (SetProperty(ref _isBusy, value))
+                RaiseLoginStateChanged();
+        }
+    }
+
+    public bool IsPasswordHidden
+    {
+        get => _isPasswordHidden;
+        set
+        {
+            if (SetProperty(ref _isPasswordHidden, value))
+                OnPropertyChanged(nameof(PasswordToggleGlyph));
+        }
+    }
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
+    }
 
     public bool CanLogin => !IsBusy
         && !string.IsNullOrWhiteSpace(Username)
         && !string.IsNullOrWhiteSpace(Password);
 
     public Color SignInButtonColor => CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
-
     public string PasswordToggleGlyph => IsPasswordHidden ? "👁" : "🙈";
 
     public LoginViewModel(ILoginService loginService, IServiceProvider serviceProvider)
@@ -50,41 +100,16 @@ public partial class LoginViewModel : ObservableObject
 
         Ip = ResolveLocalIpAddress();
         Device = "web";
+
+        LoginCommand = new AsyncRelayCommand(LoginAsync, () => CanLogin);
+        TogglePasswordVisibilityCommand = new RelayCommand(TogglePasswordVisibility);
     }
 
-    partial void OnUsernameChanged(string value)
-    {
-        OnPropertyChanged(nameof(CanLogin));
-        OnPropertyChanged(nameof(SignInButtonColor));
-        LoginAsyncCommand.NotifyCanExecuteChanged();
-    }
-
-    partial void OnPasswordChanged(string value)
-    {
-        OnPropertyChanged(nameof(CanLogin));
-        OnPropertyChanged(nameof(SignInButtonColor));
-        LoginAsyncCommand.NotifyCanExecuteChanged();
-    }
-
-    partial void OnIsBusyChanged(bool value)
-    {
-        OnPropertyChanged(nameof(CanLogin));
-        OnPropertyChanged(nameof(SignInButtonColor));
-        LoginAsyncCommand.NotifyCanExecuteChanged();
-    }
-
-    partial void OnIsPasswordHiddenChanged(bool value)
-    {
-        OnPropertyChanged(nameof(PasswordToggleGlyph));
-    }
-
-    [RelayCommand]
     private void TogglePasswordVisibility()
     {
         IsPasswordHidden = !IsPasswordHidden;
     }
 
-    [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {
         if (!CanLogin)
@@ -134,5 +159,27 @@ public partial class LoginViewModel : ObservableObject
         {
             return "127.0.0.1";
         }
+    }
+
+    private bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(storage, value))
+            return false;
+
+        storage = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+
+    private void RaiseLoginStateChanged()
+    {
+        OnPropertyChanged(nameof(CanLogin));
+        OnPropertyChanged(nameof(SignInButtonColor));
+        LoginCommand.NotifyCanExecuteChanged();
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
