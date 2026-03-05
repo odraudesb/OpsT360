@@ -1,0 +1,124 @@
+<div id="container-detail-content" class="min-h-screen bg-white font-sans text-slate-900">
+  <header class="bg-white">
+    <div class="px-6 pt-5">
+      <div class="flex flex-col items-start gap-2">
+        <span class="text-lg font-bold tracking-[0.25em] text-[#3758F9]">T360°</span>
+
+        <div class="flex items-center gap-4">
+          <button type="button" class="flex h-10 w-10 items-center justify-center" (click)="toggleLauncher()"
+            aria-label="Open launcher">
+            <img src="assets/icons/fitbit.png" alt="T360" class="h-8 w-8 object-contain" />
+          </button>
+
+          <div class="flex items-center gap-2 text-sm text-slate-700">
+            <a [routerLink]="containersListRoute" class="text-slate-700 hover:text-slate-900" aria-label="Back">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12.5 4.25 7.75 9.5l4.75 5.25" />
+              </svg>
+            </a>
+
+            <span>Container Id:</span>
+            <span class="inline-flex items-center gap-2 text-lg font-bold text-slate-900">
+              {{ containerId }}
+              <button *ngIf="hasAlert" type="button" class="inline-flex items-center text-red-500"
+                aria-label="Open alert detail" (click)="openAlertDetail()">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 4 3 20h18L12 4Z" />
+                  <path d="M12 9v5" />
+                  <path d="M12 18h.01" />
+                </svg>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <t360-launcher *ngIf="isLauncherOpen" class="absolute left-6 top-[72px] z-40"
+      (close)="closeLauncher()"></t360-launcher>
+
+    <!-- Tabs -->
+    <div class="mt-3 border-b border-slate-200 px-6">
+      <nav class="flex flex-wrap items-center text-sm" data-search-ignore="true">
+        <button type="button" (click)="onTabClick('trackAndTrace', 'track-and-trace-title')"
+          class="border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'trackAndTrace',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'trackAndTrace'
+          }">
+          Track &amp; Trace
+        </button>
+
+        <button type="button" (click)="onTabClick('shipmentDocumentation', 'shipment-documentation-title')"
+          class="border-l border-slate-200 border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'shipmentDocumentation',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'shipmentDocumentation'
+          }">
+          Shipment Documentation
+        </button>
+
+        <button type="button" (click)="onTabClick('cargoSecurityControl', 'cargo-security-title')"
+          class="border-l border-slate-200 border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'cargoSecurityControl',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'cargoSecurityControl'
+          }">
+          Cargo Security Control
+        </button>
+
+        <button type="button" (click)="onTabClick('reeferTrace', 'reefer-trace-title')"
+          class="border-l border-slate-200 border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'reeferTrace',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'reeferTrace'
+          }">
+          Reefer trace
+        </button>
+
+        <button type="button" (click)="onTabClick('historyEvents', 'history-events-title')"
+          class="border-l border-slate-200 border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'historyEvents',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'historyEvents'
+          }">
+          History Events
+        </button>
+
+        <button type="button" (click)="onTabClick('alertDetail', 'alert-detail-title')"
+          class="border-l border-slate-200 border-b-2 px-4 py-3 font-medium -mb-px" [ngClass]="{
+            'border-b-[#3758F9] text-[#3758F9] border-l border-r border-slate-200 bg-white': activeTab === 'alertDetail',
+            'border-transparent text-slate-500 hover:text-slate-900': activeTab !== 'alertDetail'
+          }">
+          Alert Detail
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="w-full px-6 pb-10 pt-6">
+    <section class="space-y-10">
+      <t360-track-and-trace-section [containerId]="containerId" [initialTxId]="initialTxId" [initialEntityId]="entityId"
+        [searchTerm]="searchTerm" (searchInput)="onSearchInput($event)" (searchEnter)="focusNextMatch()"
+        (openItems)="openItemsModal($event)" (entityIdResolved)="onEntityIdResolved($event)"
+        (contentChanged)="onContentChanged()"></t360-track-and-trace-section>
+
+      <t360-shipment-documentation-section [entityId]="entityId"
+        (contentChanged)="onContentChanged()"></t360-shipment-documentation-section>
+
+      <t360-cargo-security-control [entityId]="entityId"
+        (contentChanged)="onContentChanged()"></t360-cargo-security-control>
+
+      <t360-reefer-trace [entityId]="entityId"></t360-reefer-trace>
+
+      <!-- ✅ pasa focusTxId para auto-abrir + scroll al evento -->
+      <t360-history-events [entityId]="entityId" [focusTxId]="focusTxId" [searchTerm]="searchTerm"
+        (openItems)="openItemsModal($event)" (contentChanged)="onContentChanged()"></t360-history-events>
+
+      <t360-alert-detail [entityId]="entityId" [searchTerm]="searchTerm"
+        (openItems)="openItemsModal($event)" (contentChanged)="onContentChanged()"></t360-alert-detail>
+    </section>
+
+    <t360-items-modal [isOpen]="isItemsModalOpen" [title]="itemsModalTitle" [columns]="itemsModalColumns"
+      [rows]="itemsModalRows" (close)="closeItemsModal()"></t360-items-modal>
+
+    <t360-scroll-top-button [show]="showScrollTop" (scrollTop)="scrollToTop()"></t360-scroll-top-button>
+  </main>
+</div>

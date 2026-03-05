@@ -1,0 +1,80 @@
+<div class="space-y-6">
+  <p class="text-sm font-semibold text-[#3758F9]">STEP 4: Import Results</p>
+  <div class="w-full rounded bg-slate-100">
+    <div class="rounded bg-emerald-500/80 px-4 py-1 text-center text-[13px] font-semibold text-white"
+      [style.width.%]="importProgress">
+      {{ importProgress }}%
+    </div>
+  </div>
+  <div class="grid gap-4 md:grid-cols-3">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-emerald-600">{{ importSummary.success }}</p>
+      <p class="text-sm text-slate-600">Rows Imported</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-red-600">{{ importSummary.errors }}</p>
+      <p class="text-sm text-slate-600">Rows With Errors</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-slate-700">{{ importSummary.total }}</p>
+      <p class="text-sm text-slate-600">Total Processed</p>
+    </div>
+  </div>
+
+  <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+    <p class="text-sm font-semibold text-slate-800">Error Details</p>
+    <table class="mt-3 w-full border-collapse border-t border-slate-200 text-sm">
+      <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+        <tr>
+          <th class="px-2 py-2 text-left font-medium">Line</th>
+          <th class="px-2 py-2 text-left font-medium">Column</th>
+          <th class="px-2 py-2 text-left font-medium">Error</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200/60">
+        <tr *ngFor="let error of paginatedErrors">
+          <td class="px-2 py-2">{{ error.line }}</td>
+          <td class="px-2 py-2">{{ error.column || 'Row' }}</td>
+          <td class="px-2 py-2">
+            {{ error.message }}
+            <span *ngIf="error.value" class="text-xs text-slate-400">({{ error.value }})</span>
+          </td>
+        </tr>
+        <tr *ngIf="importErrors.length === 0">
+          <td class="px-2 py-2 text-slate-500" colspan="3">No errors detected</td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="importErrors.length > 0"
+      class="flex items-center justify-between px-2 py-2 text-xs text-slate-500">
+      <span>Rows per page: {{ pageSize }}</span>
+      <div class="flex items-center gap-3">
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="previousPage()" [disabled]="currentPage === 1">
+          ‹
+        </button>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="nextPage()" [disabled]="currentPage === totalPages">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button type="button"
+      class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800">
+      New Import
+    </button>
+    <button type="button"
+      class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800"
+      (click)="downloadReport.emit()">
+      Download Report ({{ reportRowsCount }})
+    </button>
+    <button type="button"
+      class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800">
+      ViewSeals List
+    </button>
+  </div>
+</div>
