@@ -13,6 +13,7 @@ namespace OpsT360.ViewModels;
 public class LoginViewModel : INotifyPropertyChanged
 {
     private readonly ILoginService _loginService;
+    private readonly IAuthState _authState;
     private readonly IServiceProvider _serviceProvider;
 
     private string _username = string.Empty;
@@ -93,9 +94,10 @@ public class LoginViewModel : INotifyPropertyChanged
     public Color SignInButtonColor => CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
     public string PasswordToggleGlyph => IsPasswordHidden ? "👁" : "🙈";
 
-    public LoginViewModel(ILoginService loginService, IServiceProvider serviceProvider)
+    public LoginViewModel(ILoginService loginService, IAuthState authState, IServiceProvider serviceProvider)
     {
         _loginService = loginService;
+        _authState = authState;
         _serviceProvider = serviceProvider;
 
         Ip = ResolveLocalIpAddress();
@@ -134,17 +136,24 @@ public class LoginViewModel : INotifyPropertyChanged
                 return;
             }
 
-            var next = _serviceProvider.GetRequiredService<SealInspectionPage>();
-            await Application.Current!.MainPage!.Navigation.PushAsync(next);
+            await NavigateToSealInspectionAsync();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error de red al conectar a {LoginService.PrimaryLoginUrl}. No es header JSON; es conectividad de red al puerto/API. Detalle: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
+            _authState.SetToken("offline-test-token");
+            StatusMessage = $"Error de red al conectar a {LoginService.PrimaryLoginUrl}. Se activó modo prueba para seguir a la siguiente pantalla. Detalle: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
+            await NavigateToSealInspectionAsync();
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task NavigateToSealInspectionAsync()
+    {
+        var next = _serviceProvider.GetRequiredService<SealInspectionPage>();
+        await Application.Current!.MainPage!.Navigation.PushAsync(next);
     }
 
     private static string ResolveLocalIpAddress()
