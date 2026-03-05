@@ -9,4 +9,12 @@ public partial class LoginPage : ContentPage
         InitializeComponent();
         BindingContext = vm;
     }
+
+    private async void OnSignInClicked(object? sender, EventArgs e)
+    {
+        if (BindingContext is LoginViewModel vm && vm.LoginAsyncCommand.CanExecute(null))
+        {
+            await vm.LoginAsyncCommand.ExecuteAsync(null);
+        }
+    }
 }

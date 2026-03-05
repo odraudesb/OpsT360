@@ -56,18 +56,21 @@ public partial class LoginViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(CanLogin));
         OnPropertyChanged(nameof(SignInButtonColor));
+        LoginAsyncCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnPasswordChanged(string value)
     {
         OnPropertyChanged(nameof(CanLogin));
         OnPropertyChanged(nameof(SignInButtonColor));
+        LoginAsyncCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnIsBusyChanged(bool value)
     {
         OnPropertyChanged(nameof(CanLogin));
         OnPropertyChanged(nameof(SignInButtonColor));
+        LoginAsyncCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnIsPasswordHiddenChanged(bool value)
@@ -81,7 +84,7 @@ public partial class LoginViewModel : ObservableObject
         IsPasswordHidden = !IsPasswordHidden;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {
         if (!CanLogin)

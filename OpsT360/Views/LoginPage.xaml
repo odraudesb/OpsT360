@@ -36,12 +36,11 @@
             </Border>
 
             <Button Text="Sign in"
-                    Command="{Binding LoginAsyncCommand}"
-                    IsEnabled="{Binding CanLogin}"
                     BackgroundColor="{Binding SignInButtonColor}"
                     TextColor="White"
                     CornerRadius="24"
-                    HeightRequest="50" />
+                    HeightRequest="50"
+                    Clicked="OnSignInClicked" />
 
             <VerticalStackLayout Spacing="6" Margin="0,28,0,0">
                 <Label Text="Forgot your Password?"
