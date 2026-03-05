@@ -2,50 +2,54 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="OpsT360.Views.LoginPage"
-             Title="OpsT360 Login"
-             BackgroundColor="#ECECEC">
-    <Grid Padding="30">
-        <Frame WidthRequest="320"
-               HeightRequest="520"
-               Padding="25"
-               CornerRadius="0"
-               BackgroundColor="{StaticResource PrimaryBlue}"
-               VerticalOptions="Center"
-               HorizontalOptions="Center">
-            <VerticalStackLayout Spacing="12">
-                <Label Text="T"
-                       FontSize="54"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Sign in"
-                       FontSize="32"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{StaticResource PrimaryBlue}">
+    <Grid Padding="30" RowDefinitions="*,Auto,*">
+        <VerticalStackLayout Grid.Row="1" Spacing="18" VerticalOptions="Center">
+            <Image Source="logo-360.svg" HeightRequest="120" HorizontalOptions="Center" Margin="0,20,0,12" />
 
-                <Entry Placeholder="Usuario"
+            <Border BackgroundColor="#E8E8E8" StrokeThickness="0" StrokeShape="RoundRectangle 24" Padding="16,8">
+                <Entry Placeholder="Email"
                        Text="{Binding Username}"
-                       BackgroundColor="White" />
+                       BackgroundColor="Transparent"
+                       TextColor="#30343B"
+                       PlaceholderColor="#9AA4B1" />
+            </Border>
+
+            <Border BackgroundColor="#E8E8E8" StrokeThickness="0" StrokeShape="RoundRectangle 24" Padding="16,8">
                 <Entry Placeholder="Password"
                        IsPassword="True"
                        Text="{Binding Password}"
-                       BackgroundColor="White" />
-                <Entry Placeholder="IP"
-                       Text="{Binding Ip}"
-                       BackgroundColor="White" />
-                <Entry Placeholder="Dispositivo"
-                       Text="{Binding Device}"
-                       BackgroundColor="White" />
+                       BackgroundColor="Transparent"
+                       TextColor="#30343B"
+                       PlaceholderColor="#9AA4B1" />
+            </Border>
 
-                <Button Text="Entrar"
-                        BackgroundColor="White"
-                        TextColor="{StaticResource PrimaryBlue}"
-                        Command="{Binding LoginAsyncCommand}" />
+            <Button Text="Sign in"
+                    Command="{Binding LoginAsyncCommand}"
+                    BackgroundColor="#D8DDE5"
+                    TextColor="White"
+                    CornerRadius="24"
+                    HeightRequest="50" />
 
-                <Label Text="{Binding StatusMessage}"
-                       TextColor="#FFD6D6"
-                       FontAttributes="Bold" />
+            <VerticalStackLayout Spacing="6" Margin="0,28,0,0">
+                <Label Text="Forgot your Password?"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+                <Label Text="Sign Up"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
+                <Label Text="Cambiar Idioma"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center" />
             </VerticalStackLayout>
-        </Frame>
+
+            <Label Text="{Binding StatusMessage}"
+                   TextColor="#FFE1E1"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

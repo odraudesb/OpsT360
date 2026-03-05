@@ -24,3 +24,6 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
 ## Nota de entorno
 
 En este contenedor no está instalado el SDK de .NET (`dotnet`), por lo que no se pudo compilar aquí.
+
+
+- Login usa icono en `Resources/Images/logo-360.svg` (puedes reemplazarlo por tu `logo-360.png` de Figma manteniendo el mismo nombre lógico en XAML).
