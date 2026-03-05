@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OpsT360.Views.LoginPage"
+             Title="OpsT360 Login"
+             BackgroundColor="#ECECEC">
+    <Grid Padding="30">
+        <Frame WidthRequest="320"
+               HeightRequest="520"
+               Padding="25"
+               CornerRadius="0"
+               BackgroundColor="{StaticResource PrimaryBlue}"
+               VerticalOptions="Center"
+               HorizontalOptions="Center">
+            <VerticalStackLayout Spacing="12">
+                <Label Text="T"
+                       FontSize="54"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <Label Text="Sign in"
+                       FontSize="32"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+
+                <Entry Placeholder="Usuario"
+                       Text="{Binding Username}"
+                       BackgroundColor="White" />
+                <Entry Placeholder="Password"
+                       IsPassword="True"
+                       Text="{Binding Password}"
+                       BackgroundColor="White" />
+                <Entry Placeholder="IP"
+                       Text="{Binding Ip}"
+                       BackgroundColor="White" />
+                <Entry Placeholder="Dispositivo"
+                       Text="{Binding Device}"
+                       BackgroundColor="White" />
+
+                <Button Text="Entrar"
+                        BackgroundColor="White"
+                        TextColor="{StaticResource PrimaryBlue}"
+                        Command="{Binding LoginAsyncCommand}" />
+
+                <Label Text="{Binding StatusMessage}"
+                       TextColor="#FFD6D6"
+                       FontAttributes="Bold" />
+            </VerticalStackLayout>
+        </Frame>
+    </Grid>
+</ContentPage>
