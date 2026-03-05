@@ -9,6 +9,8 @@
     <Nullable>enable</Nullable>
     <ApplicationTitle>OpsT360</ApplicationTitle>
     <ApplicationId>com.opst360.prototype</ApplicationId>
+    <AndroidManifest>Platforms\Android\AndroidManifest.xml</AndroidManifest>
+    <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
   </ItemGroup>
 
 </Project>
