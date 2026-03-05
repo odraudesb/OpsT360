@@ -1,0 +1,623 @@
+<div class="min-h-screen bg-white text-slate-900">
+  <t360-header sectionLabel="Seal Purchase Management" sectionLink="" [disableSectionLink]="true"
+    [showNotificationDot]="false"></t360-header>
+
+  <main class="px-10 pb-12 pt-4">
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 text-sm font-semibold text-slate-500">
+      <div class="flex flex-wrap items-center gap-4">
+        <button *ngFor="let tab of tabs" type="button"
+          class="relative px-4 pb-3 pt-2 transition-colors hover:text-slate-800"
+          [ngClass]="{ 'text-[#3758F9]': activeTab === tab.id }" (click)="setTab(tab.id)">
+          {{ tab.label }}
+          <span *ngIf="activeTab === tab.id"
+            class="absolute left-0 right-0 bottom-0 h-[3px] bg-[#3758F9]"></span>
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-4">
+        <ng-container [ngSwitch]="activeTab">
+          <button *ngSwitchCase="'purchase-request'" type="button"
+            class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black"
+            (click)="openCreate()">
+            <span class="text-lg leading-none">+</span>
+            New Purchase Request
+          </button>
+          <button *ngSwitchCase="'operational'" type="button"
+            class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black"
+            (click)="openOperationalReturn()">
+            <span class="text-lg leading-none">+</span>
+            New Request
+          </button>
+          <button *ngSwitchCase="'inventory'" type="button"
+            class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black"
+            (click)="openUploadFromRow()">
+            <span class="text-lg leading-none">+</span>
+            Upload
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
+    <t360-purchase-request-tab *ngIf="activeTab === 'purchase-request'" [rows]="requestRows"
+      [searchTerm]="searchTerm" [filterKey]="purchaseRequestFilter" (searchTermChange)="searchTerm = $event"
+      (filterKeyChange)="purchaseRequestFilter = $event" (viewRequest)="openViewRequest($event)">
+    </t360-purchase-request-tab>
+
+    <t360-seal-purchase-tab *ngIf="activeTab === 'seal-purchase'" [rows]="purchaseMgmtRows"
+      [searchTerm]="searchTerm" [filterKey]="purchaseRequestFilter" (searchTermChange)="searchTerm = $event"
+      (filterKeyChange)="purchaseRequestFilter = $event" (approve)="openApproval($event)"
+      (reject)="openRejection($event)"></t360-seal-purchase-tab>
+
+    <t360-inventory-tab *ngIf="activeTab === 'inventory'" [rows]="inventoryRows"
+      (editRequest)="openInventoryEdit($event)" (uploadRequest)="openUploadFromRow($event)"></t360-inventory-tab>
+
+    <t360-operational-tab *ngIf="activeTab === 'operational'"></t360-operational-tab>
+
+    <t360-reconciliation-tab *ngIf="activeTab === 'reconciliation'"
+      (viewDetail)="openReconciliationDetail()"></t360-reconciliation-tab>
+
+    <t360-actions-tab *ngIf="activeTab === 'actions'" (deactivate)="openDeactivate()"></t360-actions-tab>
+  </main>
+
+  <!-- Purchase Request Modal -->
+  <div *ngIf="showCreateRequest" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="relative mt-8 w-full max-w-lg rounded-lg bg-white p-6 shadow-2xl ring-1 ring-slate-200 md:mt-12 md:p-8">
+      <div *ngIf="isSubmittingRequest" class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80">
+        <div class="flex items-center gap-3 text-sm font-semibold text-slate-700">
+          <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900"></span>
+          Sending request...
+        </div>
+      </div>
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">Create new Seal Purchase Request</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800 disabled:opacity-50" (click)="closeCreate()" [disabled]="isSubmittingRequest" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <form class="mt-6 space-y-4 text-sm text-slate-700" (ngSubmit)="openCreateConfirm()">
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Purchase Request Description</span>
+          <input type="text" name="requestDescription" [(ngModel)]="createRequestForm.requestDescription"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Date</span>
+          <div class="relative">
+            <input type="date" name="requestDate" [(ngModel)]="createRequestForm.requestDate"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Purchase Request Justification</span>
+          <textarea rows="3" name="justification" [(ngModel)]="createRequestForm.justification"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+
+        <div class="space-y-2">
+          <p class="text-sm font-semibold text-slate-800">Requested Seals Details</p>
+          <div class="grid gap-3 md:grid-cols-3">
+            <div class="relative">
+              <select name="sealTypeId" [(ngModel)]="createRequestForm.sealTypeId"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+                <option [ngValue]="null">Cable RFID / Etiq...</option>
+                <option [ngValue]="1">RFID</option>
+                <option [ngValue]="2">Cable</option>
+                <option [ngValue]="3">Bolt</option>
+              </select>
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">⌄</span>
+            </div>
+            <input type="number" name="quantity" [(ngModel)]="createRequestForm.quantity" placeholder="Quantity"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <div class="relative">
+              <select name="purchaseUrgencyLevelId" [(ngModel)]="createRequestForm.purchaseUrgencyLevelId"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+                <option [ngValue]="null">Normal / High / Urg...</option>
+                <option [ngValue]="1">Normal</option>
+                <option [ngValue]="2">High</option>
+                <option [ngValue]="3">Urgent</option>
+              </select>
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">⌄</span>
+            </div>
+          </div>
+        </div>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Notes</span>
+          <textarea rows="3" name="notes" [(ngModel)]="createRequestForm.notes"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+        <p *ngIf="createRequestError" class="text-sm font-semibold text-red-600">
+          {{ createRequestError }}
+        </p>
+      </form>
+
+      <div
+        class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800 disabled:opacity-50" (click)="closeCreate()" [disabled]="isSubmittingRequest">
+          Cancel
+        </button>
+          <button type="button" (click)="openCreateConfirm()" [disabled]="isSubmittingRequest"
+            class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-600">
+            <img src="assets/icons/send.png" alt="" class="h-4 w-4" />
+            Send request
+          </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Purchase Request Modal -->
+  <div *ngIf="showViewRequest" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-2xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12 md:p-10">
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">View Seal Purchase Request</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeViewRequest()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-4 text-sm text-slate-700">
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Purchase Request Description</span>
+          <input type="text" [value]="selectedRequest?.description ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Requester</span>
+          <input type="text" [value]="selectedRequest?.requester ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Date</span>
+          <input type="text" [value]="selectedRequest?.date ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Purchase Request Justification</span>
+          <textarea rows="3" readonly class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">—</textarea>
+        </label>
+
+        <div class="space-y-2">
+          <p class="text-sm font-semibold text-slate-800">Requested Seals Details</p>
+          <div class="grid gap-3 md:grid-cols-3">
+            <input type="text" [value]="selectedRequest?.sealType ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input type="text" [value]="selectedRequest?.quantity ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input type="text" [value]="selectedRequest?.status ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Notes</span>
+          <textarea rows="3" readonly class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">—</textarea>
+        </label>
+      </div>
+
+      <div class="mt-8 flex justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800"
+          (click)="closeViewRequest()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase approval modal -->
+  <div *ngIf="showApproval" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12">
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">Purchase Request approval</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeApproval()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-4 text-sm text-slate-700">
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Purchase Request Id</span>
+          <input type="text" [value]="selectedApprovalRequest?.id ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Requester</span>
+          <input type="text" [value]="selectedApprovalRequest?.requester ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Requested Date</span>
+          <input type="text" [value]="selectedApprovalRequest?.date ?? ''" readonly
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Request Description</span>
+          <textarea rows="2" readonly class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">{{
+            selectedApprovalRequest?.description ?? ''
+          }}</textarea>
+        </label>
+
+        <div class="space-y-2">
+          <p class="text-sm font-semibold text-slate-800">Requested Seals Details</p>
+          <div class="grid gap-3 md:grid-cols-3">
+            <input type="text" [value]="selectedApprovalRequest?.sealType ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input type="text" [value]="selectedApprovalRequest?.total ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input type="text" [value]="selectedApprovalRequest?.status ?? ''" readonly
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Notes</span>
+          <textarea rows="2" readonly class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">—</textarea>
+        </label>
+      </div>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800" (click)="closeApproval()">
+          Cancel
+        </button>
+        <button type="button" (click)="confirmApproval()"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          <img src="assets/icons/send.png" alt="" class="h-4 w-4" />
+          Approve request
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation modal -->
+  <div *ngIf="showConfirmModal" class="fixed inset-0 z-[60] flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-lg rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12">
+      <div class="flex items-start justify-between">
+        <h2 class="text-xl font-semibold text-slate-800">{{ confirmTitle }}</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeConfirmModal()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-2 text-sm text-slate-700">
+        <p *ngFor="let line of confirmLines">{{ line }}</p>
+      </div>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800"
+          (click)="closeConfirmModal()">
+          {{ confirmCancelLabel }}
+        </button>
+        <button type="button" (click)="confirmModalAction()"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          {{ confirmConfirmLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info modal -->
+  <div *ngIf="showInfoModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black/40 p-4">
+    <div class="w-full max-w-lg rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200">
+      <div class="flex items-start justify-between">
+        <h2 class="text-xl font-semibold text-slate-800">{{ infoTitle }}</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeInfoModal()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-4 text-sm text-slate-700">
+        <p>{{ infoMessage }}</p>
+      </div>
+
+      <div class="mt-8 flex justify-end text-sm font-semibold text-slate-800">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800"
+          (click)="closeInfoModal()">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <t360-upload-workflow-modal *ngIf="showUploadModal" [inventoryRows]="inventoryRows"
+    [initialRow]="uploadModalRow" [initialStep]="uploadModalStep" (close)="closeUploadModal()">
+  </t360-upload-workflow-modal>
+
+  <!-- Reconciliation detail modal -->
+  <div *ngIf="showReconciliationDetail" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-4xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12">
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">Reconciliation Details  CONC-2025-001</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeReconciliationDetail()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+          <div>
+            <p class="text-slate-500">Vessel/Voyage:</p>
+            <p class="font-semibold text-slate-800">MSC LORENZA - UX541A</p>
+          </div>
+          <div>
+            <p class="text-slate-500">Operation Type:</p>
+            <p class="font-semibold text-slate-800">Exportation</p>
+          </div>
+          <div>
+            <p class="text-slate-500">Reconciliation Date:</p>
+            <p class="font-semibold text-slate-800">1.JUN.2025</p>
+          </div>
+          <div>
+            <p class="text-slate-500">Status:</p>
+            <p class="font-semibold text-slate-800">Closed</p>
+          </div>
+          <div>
+            <p class="text-slate-500">User:</p>
+            <p class="font-semibold text-slate-800">JRamirez</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+          <p class="text-3xl font-bold text-[#3758F9]">900</p>
+          <p class="text-sm text-slate-600">Total seals in system</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+          <p class="text-3xl font-bold text-[#3758F9]">850</p>
+          <p class="text-sm text-slate-600">Counted physical seals</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm">
+          <p class="text-3xl font-bold text-orange-600">-50</p>
+          <p class="text-sm text-slate-600">Total Difference</p>
+        </div>
+      </div>
+
+      <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+          <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium">Seal Number</th>
+              <th class="px-4 py-3 text-left font-medium">Container Id</th>
+              <th class="px-4 py-3 text-left font-medium">Physical ?</th>
+              <th class="px-4 py-3 text-left font-medium">TOS System ?</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200/60">
+            <tr *ngFor="let row of paginatedReconciliationDetailRows">
+              <td class="px-4 py-3">{{ row.sealNumber }}</td>
+              <td class="px-4 py-3">{{ row.containerId }}</td>
+              <td class="px-4 py-3">{{ row.physical }}</td>
+              <td class="px-4 py-3">{{ row.tosSystem }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+          <span>Rows per page: {{ reconciliationDetailPageSize }}</span>
+          <div class="flex items-center gap-3">
+            <span>Page {{ reconciliationDetailCurrentPage }} of {{ reconciliationDetailTotalPages }}</span>
+            <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+              (click)="previousReconciliationDetailPage()" [disabled]="reconciliationDetailCurrentPage === 1">
+              ‹
+            </button>
+            <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+              (click)="nextReconciliationDetailPage()"
+              [disabled]="reconciliationDetailCurrentPage === reconciliationDetailTotalPages">
+              ›
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deactivate modal -->
+  <div *ngIf="showDeactivate" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-12 w-full max-w-sm rounded-lg bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+      <div class="flex items-start justify-between">
+        <h2 class="text-xl font-semibold text-slate-800">Deactivate Seal</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeDeactivate()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3 text-sm text-slate-700">
+        <label class="space-y-1">
+          <span class="text-sm font-medium">Seal Number</span>
+          <input type="text" value="S-9986621" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-1">
+          <span class="text-sm font-medium">Deactivation reason</span>
+          <div class="relative">
+            <select class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+              <option>Pérdida / Robo / Dañado / ...</option>
+            </select>
+            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">⌄</span>
+          </div>
+        </label>
+        <label class="space-y-1">
+          <span class="text-sm font-medium">Notes</span>
+          <textarea rows="2" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+        </label>
+      </div>
+
+      <div class="mt-6 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800" (click)="closeDeactivate()">
+          Cancel
+        </button>
+        <button type="button"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          Deactivate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operational Return Modal -->
+  <div *ngIf="showOperationalReturn" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-2xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12 md:p-10">
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">Seals Return (after operation)</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeOperationalReturn()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Id Operation Request</span>
+          <div class="relative">
+            <input type="text" value="OP-2025-001" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+          </div>
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Vessel-Voyage</span>
+          <input type="text" value="MSC LORENZA - UX541A" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Category</span>
+          <input type="text" value="Exportation" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium"># Containers</span>
+          <input type="text" value="861" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Return Date</span>
+          <input type="text" value="18.MAY.2025" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium"># Seals Requested</span>
+          <input type="text" value="878" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium"># Seals Delivered</span>
+          <input type="text" value="878" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+      </div>
+
+      <div class="mt-4 space-y-3 text-sm text-slate-700">
+        <p class="font-semibold text-slate-800">Receival Seals Details</p>
+        <div class="grid gap-3 md:grid-cols-2">
+          <input type="text" placeholder="Seal Type" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <input type="text" placeholder="Quatity" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <input type="text" placeholder="Seal Type" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <input type="text" placeholder="Quatity" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+      </div>
+
+      <label class="mt-4 block space-y-2">
+        <span class="text-sm font-medium text-slate-800">Notes</span>
+        <textarea rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+      </label>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800" (click)="closeOperationalReturn()">
+          Cancel
+        </button>
+        <button type="button"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          Receive
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Edit Modal -->
+  <div *ngIf="showInventoryEdit" class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+    <div class="mt-8 w-full max-w-2xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12 md:p-10">
+      <div class="flex items-start justify-between">
+        <h2 class="text-2xl font-semibold text-slate-800">Seals Data modification</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeInventoryEdit()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Request Order Id</span>
+          <div class="relative">
+            <input type="text" [ngModel]="selectedInventoryRow?.requestOrderId ?? ''"
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+          </div>
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Purchase Order Id</span>
+          <input type="text" [ngModel]="selectedPurchaseOrderId"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Requester</span>
+          <input type="text" [ngModel]="selectedInventoryRow?.requester ?? ''"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-medium">Requested Date</span>
+          <input type="text" [ngModel]="selectedInventoryRow?.uploadDate ?? ''"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        </label>
+      </div>
+
+      <label class="mt-4 block space-y-2">
+        <span class="text-sm font-medium">Request Description</span>
+        <textarea rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          [ngModel]="selectedInventoryRow?.description ?? ''"></textarea>
+      </label>
+
+      <div class="mt-4 space-y-3 text-sm text-slate-700">
+        <p class="font-semibold text-slate-800">Receival Seals Batch Details</p>
+        <div class="grid gap-3 md:grid-cols-3">
+          <input type="text" placeholder="Seal Type" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <input type="text" placeholder="Quatity" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2">
+              <input type="radio" name="status" checked class="h-4 w-4 border-slate-300" />
+              Active
+            </div>
+            <div class="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2">
+              <input type="radio" name="status" class="h-4 w-4 border-slate-300" />
+              Inactive
+            </div>
+          </div>
+          <input type="text" placeholder="Seal Type" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <input type="text" placeholder="Quatity" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2">
+              <input type="radio" name="status2" checked class="h-4 w-4 border-slate-300" />
+              Active
+            </div>
+            <div class="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2">
+              <input type="radio" name="status2" class="h-4 w-4 border-slate-300" />
+              Inactive
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label class="mt-4 block space-y-2">
+        <span class="text-sm font-medium text-slate-800">Notes</span>
+        <textarea rows="3" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+      </label>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800" (click)="closeInventoryEdit()">
+          Cancel
+        </button>
+        <button type="button"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black"
+          (click)="openInventorySaveConfirm()">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

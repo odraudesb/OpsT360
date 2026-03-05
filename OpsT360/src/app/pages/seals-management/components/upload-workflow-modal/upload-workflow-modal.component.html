@@ -1,0 +1,74 @@
+<div class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4">
+  <div class="mt-4 w-full max-w-6xl rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-8">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.15em] text-slate-400">Importar Sellos</p>
+        <h2 class="text-xl font-semibold text-slate-800">Seals Inventory Upload</h2>
+      </div>
+      <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeUpload()"
+        aria-label="Close">
+        ✕
+      </button>
+    </div>
+
+    <div class="mt-6 space-y-6">
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-2">
+            <div
+              [ngClass]="{ 'bg-slate-900 text-white': uploadStep === 1, 'bg-slate-200 text-slate-500': uploadStep !== 1 }"
+              class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">1</div>
+            <span class="text-sm text-slate-700">Select file</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div
+              [ngClass]="{ 'bg-slate-900 text-white': uploadStep === 2, 'bg-slate-200 text-slate-500': uploadStep !== 2 }"
+              class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">2</div>
+            <span class="text-sm text-slate-700">Fileds mapping</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div
+              [ngClass]="{ 'bg-slate-900 text-white': uploadStep === 3, 'bg-slate-200 text-slate-500': uploadStep !== 3 }"
+              class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">3</div>
+            <span class="text-sm text-slate-700">Review &amp; Import</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div
+              [ngClass]="{ 'bg-slate-900 text-white': uploadStep === 4, 'bg-slate-200 text-slate-500': uploadStep !== 4 }"
+              class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">4</div>
+            <span class="text-sm text-slate-700">Results</span>
+          </div>
+        </div>
+      </div>
+
+      <t360-upload-step-one *ngIf="uploadStep === 1" [uploadFileName]="uploadFileName"
+        [uploadHasHeaders]="uploadHasHeaders" [purchaseOrderId]="selectedPurchaseOrderId"
+        [requestOrderId]="selectedInventoryRow?.requestOrderId ?? ''" [purchaseOrderOptions]="inventoryRows"
+        [requester]="selectedInventoryRow?.requester ?? ''"
+        [requestDate]="selectedInventoryRow?.uploadDate ?? ''"
+        [requestDescription]="selectedInventoryRow?.description ?? ''"
+        (purchaseOrderIdChange)="setSelectedPurchaseOrderId($event)"
+        (uploadHasHeadersChange)="onUploadHeadersChange($event)" (fileSelected)="onUploadFileSelected($event)"
+        (cancel)="closeUpload()" (next)="goToUploadStep(2)">
+      </t360-upload-step-one>
+
+      <t360-upload-step-two *ngIf="uploadStep === 2" [uploadColumns]="uploadColumns" [uploadFields]="uploadFields"
+        [fieldMappings]="fieldMappings" [mappedFields]="mappedFields" [uploadFileName]="uploadFileName"
+        [rowsDetected]="uploadRows.length" [fieldsMappedCount]="fieldsMappedCount" (back)="goToUploadStep(1)"
+        (next)="goToUploadStep(3)">
+      </t360-upload-step-two>
+
+      <t360-upload-step-three *ngIf="uploadStep === 3" [mappedFields]="mappedFields" [previewRows]="previewRows"
+        [uploadFileName]="uploadFileName" [rowsDetected]="uploadRows.length"
+        [fieldsMappedCount]="fieldsMappedCount" [importPayload]="importPayload" [importOptions]="importOptions"
+        (importOptionsChange)="updateImportOptions($event)" (back)="goToUploadStep(2)"
+        (importData)="importData()">
+      </t360-upload-step-three>
+
+      <t360-upload-step-four *ngIf="uploadStep === 4" [importSummary]="importSummary"
+        [importErrors]="importErrors" [importProgress]="importProgress" [reportRowsCount]="reportRows.length"
+        (downloadReport)="downloadReport()">
+      </t360-upload-step-four>
+    </div>
+  </div>
+</div>

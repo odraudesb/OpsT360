@@ -1,0 +1,173 @@
+<div class="space-y-5">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <p class="text-base font-semibold text-slate-900">Create a new Profile of the system</p>
+    <button type="button" (click)="openAddProfile()"
+      class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
+      <span class="text-lg font-bold">+</span>
+      Add
+    </button>
+  </div>
+
+  <div class="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 shadow-sm">
+    <span class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200">
+      <svg class="h-4 w-4 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h16" />
+      </svg>
+    </span>
+    <input type="search" placeholder="Search in list" [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearchTermChange()"
+      class="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none" />
+    <span class="text-slate-500">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+    </span>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_260px]">
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <div class="relative overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Profile Name
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Profile
+                Description</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">System</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Users
+                assigned</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">User
+                Creation Date</th>
+              <th class="w-12 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            <tr *ngFor="let profile of paginatedProfiles" class="hover:bg-slate-50">
+              <td class="px-4 py-3">
+                <a href="#" class="font-medium text-[#3758F9] hover:underline">{{ profile.name }}</a>
+              </td>
+              <td class="px-4 py-3 text-slate-900">{{ profile.description }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold" [ngClass]="{
+                  'bg-green-50 text-green-700': profile.status === 'Active',
+                  'bg-slate-100 text-slate-700': profile.status === 'Inactive'
+                }">
+                  <span class="h-2.5 w-2.5 rounded-full" [ngClass]="{
+                    'bg-green-500': profile.status === 'Active',
+                    'bg-slate-400': profile.status === 'Inactive'
+                  }"></span>
+                  {{ profile.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-slate-900">{{ profile.system }}</td>
+              <td class="px-4 py-3 text-slate-900">{{ profile.usersAssigned }}</td>
+              <td class="px-4 py-3 text-slate-900">{{ profile.creationDate }}</td>
+              <td class="px-4 py-3 text-right">
+                <button type="button" class="text-slate-400 hover:text-slate-600" aria-label="Row actions">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5" />
+                    <circle cx="12" cy="12" r="1.5" />
+                    <circle cx="12" cy="19" r="1.5" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-4 py-3 text-xs text-slate-500" *ngIf="filteredProfiles.length === 0">
+        No profiles found for this search.
+      </div>
+
+      <div *ngIf="filteredProfiles.length > 0"
+        class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+        <span>Rows per page: {{ pageSize }}</span>
+        <div class="flex items-center gap-3">
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="previousPage()" [disabled]="currentPage === 1">
+            ‹
+          </button>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="nextPage()" [disabled]="currentPage === totalPages">
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="self-end rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+      <div class="flex items-center justify-between text-sm font-semibold text-slate-900">
+        <span>Profiles - Actions</span>
+        <button class="text-slate-400 hover:text-slate-600" aria-label="Close">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="M18 6L6 18" />
+            <path d="M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="mt-3 space-y-2 text-sm">
+        <button class="block text-left text-slate-600 hover:text-slate-900">Modify Profile</button>
+        <button class="block text-left font-medium text-[#3758F9] hover:text-[#3758F9]">
+          Inactivate / Activate Profile
+        </button>
+        <button class="block text-left text-slate-600 hover:text-slate-900">Delete Profile</button>
+        <button class="block text-left text-slate-600 hover:text-slate-900">Duplicate Profile</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Add profile modal -->
+  <div *ngIf="showAddProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl">
+      <h2 class="text-2xl font-semibold text-slate-900">New Profile</h2>
+
+      <div class="mt-6 space-y-4">
+        <label class="block text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Profile Name
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+
+        <label class="block text-sm font-medium text-slate-700">
+          Profile Description
+          <textarea rows="3"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]"></textarea>
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500" />
+          Profile active / deactivate
+        </label>
+
+        <label class="block text-sm font-medium text-slate-700">
+          Select the system
+          <input type="text" placeholder="Containerized Cargo Exportation / Containerized Cargo Importation"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400 outline-none focus:border-[#3758F9]" />
+        </label>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-4 text-sm">
+        <button type="button" class="font-semibold text-slate-700 hover:text-slate-900"
+          (click)="closeAddProfile()">Cancel</button>
+        <button type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800"
+          (click)="saveProfile()">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
