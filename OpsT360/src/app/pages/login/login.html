@@ -1,0 +1,103 @@
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden">
+
+  <div class="absolute inset-0 -z-20 bg-slate-900 bg-cover bg-center"
+    [ngStyle]="{ 'background-image': 'url(' + background + ')' }"></div>
+
+
+  <div class="absolute inset-0 -z-10 bg-white/80"></div>
+
+
+  <header class="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-4">
+    <div class="flex items-center gap-2">
+      <img [src]="icono" alt="T360 icon" class="h-8 w-auto" />
+      <span class="text-base font-semibold text-white">T360°</span>
+      <span class="ml-2 text-sm font-medium text-white/80">
+        {{ 'LOGIN.TITLE' | translate }}
+      </span>
+    </div>
+
+    <span class="text-sm font-medium text-white/80">Trace360° Web</span>
+  </header>
+
+  <main class="relative z-20 w-full max-w-md px-4">
+    <div class="w-full rounded-2xl bg-white/95 p-10 shadow-2xl ring-1 ring-white/60">
+      <h1 class="text-center text-2xl font-semibold text-[#3758F9]">
+        {{ 'LOGIN.TITLE' | translate }}
+      </h1>
+
+      <p class="mt-1 text-center text-sm text-slate-500">
+        {{ 'LOGIN.SUBTITLE' | translate }}
+      </p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="handleSubmit()" class="mt-8 space-y-5">
+
+        <div class="space-y-2">
+          <input id="email" type="text" formControlName="email"
+            class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+            [placeholder]="'LOGIN.EMAIL_PLACEHOLDER' | translate"
+            [attr.aria-label]="'LOGIN.EMAIL' | translate" autocomplete="username" />
+        </div>
+        <div class="space-y-2">
+          <div class="relative">
+            <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 pr-12 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              [placeholder]="'LOGIN.PASSWORD_PLACEHOLDER' | translate"
+              [attr.aria-label]="'LOGIN.PASSWORD' | translate" autocomplete="current-password" />
+
+            <button type="button" (click)="togglePassword()"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              [attr.aria-label]="'LOGIN.TOGGLE_PASSWORD' | translate">
+              <svg *ngIf="!showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <svg *ngIf="showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 3l18 18M10.477 10.48a3 3 0 004.243 4.243M6.228 6.228C4.645 7.511 3.449 9.22 2.458 12c1.274 4.057 5.065 7 9.542 7 1.57 0 3.06-.322 4.41-.897M9.88 4.24A9.96 9.96 0 0112 5c4.477 0 8.268 2.943 9.542 7a10.034 10.034 0 01-4.1 5.289" />
+              </svg>
+            </button>
+          </div>
+
+          <p *ngIf="
+              passwordControl.invalid &&
+              (passwordControl.dirty || passwordControl.touched)
+            " class="text-xs text-red-600">
+            {{ 'LOGIN.PASSWORD_ERROR' | translate }}
+          </p>
+        </div>
+
+        <p *ngIf="loginErrorMessage" class="text-xs text-red-600">
+          {{ loginErrorMessage }}
+        </p>
+
+        <button type="submit"
+          class="mt-2 w-full rounded-full bg-[#3758F9] py-3 text-sm font-semibold text-white transition hover:bg-[#2F4FE1] disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="loginForm.invalid || isSubmitting">
+          <span *ngIf="!isSubmitting">{{ 'LOGIN.BUTTON' | translate }}</span>
+          <span *ngIf="isSubmitting">{{ 'LOGIN.BUTTON_LOADING' | translate }}</span>
+        </button>
+
+        <a [routerLink]="['/', APP_ROUTES.FORGOT_PASSWORD]"
+          class="block text-center text-sm text-[#3758F9] hover:underline">
+          {{ 'LOGIN.FORGOT_PASSWORD' | translate }}
+        </a>
+
+        <p class="text-center text-sm text-slate-500">
+          {{ 'LOGIN.NO_ACCOUNT' | translate }}
+          <a [routerLink]="['/', APP_ROUTES.ADD_USER]" class="font-semibold text-[#3758F9] hover:underline">
+            {{ 'LOGIN.CREATE_ONE' | translate }}
+          </a>
+        </p>
+
+        <button type="button" (click)="toggleLanguage()"
+          class="w-full text-center text-sm text-[#3758F9] hover:underline">
+          {{ 'LOGIN.CHANGE_LANG' | translate }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>

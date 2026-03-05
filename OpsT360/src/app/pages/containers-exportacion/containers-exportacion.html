@@ -1,0 +1,470 @@
+<div class="min-h-screen bg-white text-slate-900 font-sans">
+  <t360-header sectionLabel="Containerized cargo:" sectionLink="EXPORTATION category"
+    [disableSectionLink]="true"></t360-header>
+
+  <main class="px-10 pb-10 pt-6">
+    <!-- Filters + search -->
+    <section class="mb-4 flex flex-wrap items-end justify-between gap-4">
+      <div class="flex flex-wrap items-end gap-4">
+        <!-- Category -->
+        <div class="flex flex-col">
+          <select id="category-filter"
+            class="w-60 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-[#757575] shadow-sm"
+            [ngClass]="selectedCategory ? 'text-slate-700' : 'text-[#757575]'"
+            [(ngModel)]="selectedCategory" (ngModelChange)="onSearchClick()">
+            <option [ngValue]="null" disabled>Category</option>
+            <option *ngFor="let cat of categoryOptions" [ngValue]="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Cargo type -->
+        <div class="flex flex-col">
+          <select id="cargo-filter"
+            class="w-60 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-[#757575] shadow-sm"
+            [ngClass]="selectedCargoType ? 'text-slate-700' : 'text-[#757575]'"
+            [(ngModel)]="selectedCargoType" (ngModelChange)="onSearchClick()">
+            <option [ngValue]="null" disabled>Cargo Type</option>
+            <option *ngFor="let cargo of cargoTypeOptions" [ngValue]="cargo">
+              {{ cargo }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col">
+          <select id="status-filter"
+            class="w-60 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-[#757575] shadow-sm"
+            [ngClass]="selectedStatus ? 'text-slate-700' : 'text-[#757575]'"
+            [(ngModel)]="selectedStatus" (ngModelChange)="onSearchClick()">
+            <option [ngValue]="null" disabled>Status</option>
+            <option *ngFor="let status of statusOptions" [ngValue]="status">
+              {{ formatStatus(status) }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- RIGHT: Search (sin Clear search) -->
+      <div class="flex items-center gap-2" (click)="$event.stopPropagation()">
+        <!-- pill -->
+        <div class="relative flex w-[28rem] max-w-full items-center rounded-full border border-slate-200 bg-white px-3 py-2">
+          <!-- ☰ Search by -->
+          <button type="button"
+            class="mr-2 flex items-center gap-2 rounded border border-transparent px-1 text-xs text-slate-500 hover:text-slate-700"
+            (click)="toggleSearchBy($event)" aria-label="Search by">
+            <span class="text-slate-600">☰</span>
+            <span class="text-[11px] font-medium text-slate-500">
+              {{ searchByLabel }}
+            </span>
+          </button>
+
+          <input type="search" placeholder="Search in list"
+            class="flex-1 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
+            [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange()" />
+
+          <!-- dropdown -->
+          <div *ngIf="isSearchByOpen"
+            class="absolute left-0 top-full z-40 mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg">
+            <div class="flex items-center justify-between px-3 py-2">
+              <span class="text-xs font-semibold text-slate-700">Search by</span>
+              <button type="button" class="text-slate-400 hover:text-slate-700" (click)="closeSearchBy($event)"
+                aria-label="Close">
+                ✕
+              </button>
+            </div>
+
+            <div class="px-2 pb-2">
+              <button *ngFor="let opt of searchByOptions" type="button"
+                class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                (click)="selectSearchBy($event, opt.key)">
+                <span>{{ opt.label }}</span>
+                <span *ngIf="searchBy === opt.key" class="font-semibold text-[#3758F9]">✓</span>
+              </button>
+
+              <button type="button"
+                class="mt-2 flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                (click)="clearSearchBy($event)">
+                <span>Clear selection</span>
+                <span *ngIf="!searchBy" class="font-semibold text-slate-400">—</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- reload -->
+        <button type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white"
+          (click)="resetSearchOnly($event)" aria-label="Reset search">
+          <img src="assets/icons/reload.png" alt="" class="h-6 w-6 object-contain" />
+        </button>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section>
+      <div class="relative overflow-visible bg-white">
+        <div *ngIf="isLoading" class="px-4 py-6 text-sm text-slate-500">
+          Loading container movements...
+        </div>
+
+        <div *ngIf="!isLoading && containers.length > 0" class="px-4 pb-4 pt-3">
+          <div class="-mx-4 overflow-visible">
+            <div class="overflow-x-auto">
+              <table class="min-w-full border-collapse border-t border-slate-200 text-xs">
+                <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+                  <tr>
+                    <th class="px-4 py-2 text-left font-medium">Container Id</th>
+                    <th class="px-4 py-2 text-left font-medium">Cargo Type</th>
+                    <th class="px-4 py-2 text-left font-medium">Category</th>
+                    <th class="px-4 py-2 text-left font-medium">Vessel</th>
+                    <th class="px-4 py-2 text-left font-medium">Voyage</th>
+                    <th class="px-4 py-2 text-left font-medium">Status</th>
+                    <th class="px-4 py-2 text-left font-medium">Last Event</th>
+                    <th class="px-4 py-2 text-left font-medium">Date Last Event</th>
+                    <th class="px-4 py-2 text-left font-medium">Time since alert</th>
+                    <th class="px-2 py-2 text-right font-medium"></th>
+                  </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-200/60">
+                  <tr *ngFor="let c of paginatedContainers; trackBy: trackById"
+                    class="hover:bg-slate-50/40 text-[#757575]" [ngClass]="{ 'text-[#D60808]': c.isAlert }">
+                    <td class="whitespace-nowrap px-4 py-2">
+                      <a [routerLink]="['/', appRoutes.CONTAINER_DETAIL, c.code]"
+                        [queryParams]="buildDetailQueryParams(c)"
+                        class="font-medium hover:underline"
+                        [ngClass]="c.isAlert ? 'text-[#D60808]' : 'text-[#3758F9]'">
+                        {{ c.code }}
+                      </a>
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-2">{{ c.cargoType }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ c.category }}</td>
+
+                    <td class="whitespace-nowrap px-4 py-2">{{ c.ship || '—' }}</td>
+                    <td class="whitespace-nowrap px-4 py-2">{{ c.voyage || '—' }}</td>
+
+                    <td class="whitespace-nowrap px-4 py-2">
+                      <span class="text-[11px] font-semibold"
+                        [ngClass]="c.isAlert ? 'text-[#D60808]' : 'text-[#757575]'">
+                        {{ formatStatus(c.status) }}
+                      </span>
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-2">
+                      <button type="button" class="text-left font-medium hover:underline"
+                        [ngClass]="c.isAlert ? 'text-[#D60808]' : 'text-[#3758F9]'"
+                        (click)="goToLastEvent($event, c)">
+                        {{ c.lastEvent || '—' }}
+                      </button>
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-2">
+                      {{ c.lastEventDate | date: 'dd.MMM.yyyy HH:mm' }}
+                    </td>
+
+                    <td class="whitespace-nowrap px-4 py-2">—</td>
+
+                    <!-- Acciones por fila -->
+                    <td class="whitespace-nowrap px-2 py-2 text-right" (click)="$event.stopPropagation()">
+                      <div class="relative inline-flex items-center">
+                        <button type="button" class="rounded-md px-2 py-1 text-xs text-slate-500 hover:text-slate-700"
+                          (click)="toggleRowActions($event, c)" aria-label="Row actions" title="Actions">
+                          ☰
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div *ngIf="selectedRowForActions"
+              class="fixed z-50 w-64 rounded-lg border border-slate-200 bg-white/95 p-4 text-sm shadow-lg backdrop-blur"
+              [ngStyle]="actionsCardPosition" (click)="$event.stopPropagation()">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-700">Container – Actions</span>
+                <button type="button" class="text-slate-400 hover:text-slate-700"
+                  (click)="closeRowActions($event)" aria-label="Close actions">
+                  ✕
+                </button>
+              </div>
+
+              <ul class="space-y-1.5 text-xs">
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="goToDetail($event, selectedRowForActions!, 'cargoSecurityControl', 'cargo-security-title', { search: 'Cargo Security Control' })">
+                    Cargo Security Control
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="goToDetail($event, selectedRowForActions!, 'shipmentDocumentation', 'shipment-documentation-title', { search: 'Shipment Documentation' })">
+                    Shipment Documentation
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="openCargoSecurityReport($event, selectedRowForActions!)">
+                    Cargo Security Report
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="goToDetail($event, selectedRowForActions!, 'historyEvents', 'history-events-title', { search: 'History events' })">
+                    History Events
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="goToDetail($event, selectedRowForActions!, 'reeferTrace', 'reefer-trace-title', { search: 'Reefer Trace' })">
+                    Reefer trace
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="w-full text-left text-[#3758F9] hover:underline"
+                    (click)="openReportIssueModal($event, selectedRowForActions!)">
+                    Report an issue
+                  </button>
+                </li>
+              </ul>
+
+              <div class="mt-3 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+                Selected: <span class="font-medium text-slate-700">{{ selectedRowForActions.code }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Rows per page: {{ pageSize }}</span>
+
+            <div class="flex items-center gap-3">
+              <span>Page {{ currentPage }} of {{ totalPages }}</span>
+              <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+                (click)="previousPage()" [disabled]="currentPage === 1">
+                ‹
+              </button>
+              <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+                (click)="nextPage()" [disabled]="currentPage === totalPages">
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!isLoading && containers.length === 0" class="px-4 py-6 text-sm text-slate-500">
+          No container movements yet.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Report an issue modal -->
+  <div *ngIf="showReportIssueModal"
+    class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4"
+    (click)="closeReportIssueModal()">
+    <div class="mt-8 w-full max-w-lg rounded-lg bg-white p-8 shadow-2xl ring-1 ring-slate-200 md:mt-12"
+      (click)="$event.stopPropagation()">
+      <div class="flex items-start justify-between">
+        <h2 class="text-xl font-semibold text-slate-800">Report an Issue</h2>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800" (click)="closeReportIssueModal()"
+          aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">Selected: <span class="font-medium text-slate-700">{{
+          selectedRowForIssue?.code
+        }}</span></p>
+
+      <div class="mt-6 space-y-4 text-sm text-slate-700">
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Issue Type</span>
+          <select [(ngModel)]="reportIssueForm.issueType"
+            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+            <option [ngValue]="null" disabled>Incoming Exit point / Container damage / Sensors failure / Leaks / —</option>
+            <option *ngFor="let option of reportIssueTypes" [ngValue]="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Criticality level</span>
+          <select [(ngModel)]="reportIssueForm.criticality"
+            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+            <option [ngValue]="null" disabled>Urgent / High / Medium / Low</option>
+            <option *ngFor="let option of reportIssueCriticalityOptions" [ngValue]="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-medium">Issue description</span>
+          <textarea rows="4" [(ngModel)]="reportIssueForm.description"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            placeholder="Describe the issue..."></textarea>
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900"
+            [(ngModel)]="reportIssueForm.notifyTerminal" />
+          Notify Terminal via Email
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900"
+            [(ngModel)]="reportIssueForm.notifyReefer" />
+          Notify Reefer Technical Support Company via Email
+        </label>
+      </div>
+
+      <div class="mt-8 flex flex-col-reverse gap-3 text-sm font-semibold text-slate-800 md:flex-row md:items-center md:justify-end">
+        <button type="button" class="rounded-md px-4 py-2 text-slate-600 transition hover:text-slate-800"
+          (click)="closeReportIssueModal()">
+          Cancel
+        </button>
+        <button type="button" (click)="submitReportIssue()"
+          class="flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-white transition hover:bg-black">
+          <img src="assets/icons/send.png" alt="" class="h-4 w-4" />
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cargo security report modal -->
+  <div *ngIf="showSecurityReportModal"
+    class="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4"
+    (click)="closeSecurityReportModal()">
+    <div class="mt-8 w-full max-w-5xl rounded-lg bg-white p-6 shadow-2xl ring-1 ring-slate-200 md:mt-12"
+      (click)="$event.stopPropagation()">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <h2 class="text-xl font-semibold text-slate-800">Cargo Security Report</h2>
+          <button type="button" class="text-slate-500 hover:text-slate-700" (click)="downloadSecurityReportPdf()"
+            aria-label="Download report">
+            <img src="assets/icons/download.svg" alt="" class="h-4 w-4" />
+          </button>
+        </div>
+        <button type="button" class="text-lg text-slate-500 hover:text-slate-800"
+          (click)="closeSecurityReportModal()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        Container: <span class="font-medium text-slate-700">{{ selectedRowForReport?.code }}</span>
+        <span *ngIf="securityReportGeneratedAt">• {{ securityReportGeneratedAt | date: 'dd.MMM.yyyy' }}</span>
+      </p>
+
+      <div class="mt-6" id="cargo-security-report-content">
+        <div class="rounded-lg border border-slate-200 p-6">
+          <h3 class="text-lg font-semibold text-[#3758F9]">TRACE360 - SECURITY CONTROL REPORT</h3>
+          <div class="mt-2 text-sm text-slate-700">
+            <div>Container No.: {{ selectedRowForReport?.code || '—' }}</div>
+            <div>Date: {{ securityReportGeneratedAt ? (securityReportGeneratedAt | date: 'dd-MMM-yyyy') : '—' }}</div>
+            <div>Prepared by: Trace360 Security Monitoring System</div>
+          </div>
+        </div>
+
+        <h3 class="mt-6 text-lg font-semibold text-slate-800 report-section-title">1. General Information</h3>
+        <div class="mt-3 rounded-lg border border-slate-200 report-card">
+          <div *ngIf="isSecurityReportLoading" class="p-4 text-sm text-slate-500">Loading report...</div>
+          <div *ngIf="!isSecurityReportLoading">
+            <div *ngIf="securityReportGeneralFields[0].length + securityReportGeneralFields[1].length === 0"
+              class="p-4 text-sm text-slate-500">
+              No general information available.
+            </div>
+            <div *ngIf="securityReportGeneralFields[0].length + securityReportGeneralFields[1].length > 0"
+              class="p-4 text-sm">
+              <table class="report-table w-full border-collapse text-sm">
+                <tbody>
+                  <tr *ngFor="let row of getReportTableRows(securityReportGeneralFields)">
+                    <td class="report-table__label font-semibold text-slate-700">
+                      {{ row.left?.label || '' }}
+                    </td>
+                    <td class="report-table__value text-slate-500">
+                      {{ row.left ? (row.left.value || '—') : '' }}
+                    </td>
+                    <td class="report-table__label font-semibold text-slate-700">
+                      {{ row.right?.label || '' }}
+                    </td>
+                    <td class="report-table__value text-slate-500">
+                      {{ row.right ? (row.right.value || '—') : '' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="mt-6 text-lg font-semibold text-slate-800 report-section-title">2. Security Devices</h3>
+        <div class="mt-3 rounded-lg border border-slate-200 p-4 report-card">
+          <div *ngIf="isSecurityReportLoading" class="text-sm text-slate-500">Loading security devices...</div>
+          <div *ngIf="!isSecurityReportLoading && securityReportDevices.length === 0"
+            class="text-sm text-slate-500">
+            No security devices available.
+          </div>
+          <div *ngIf="!isSecurityReportLoading && securityReportDevices.length > 0" class="space-y-6">
+            <div *ngFor="let device of securityReportDevices">
+              <div class="flex flex-wrap items-center gap-3 text-sm report-device-meta">
+                <span class="font-medium text-slate-800">{{ device.title }}</span>
+                <span class="text-xs text-slate-500">
+                  {{ device.recordDate ? (device.recordDate | date: 'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+              </div>
+              <table class="report-table w-full border-collapse text-sm">
+                <tbody>
+                  <tr *ngFor="let row of getReportTableRows(device.fieldsCols)">
+                    <td class="report-table__label font-semibold text-slate-700">
+                      {{ row.left?.label || '' }}
+                    </td>
+                    <td class="report-table__value text-slate-500">
+                      {{ row.left ? (row.left.value || '—') : '' }}
+                    </td>
+                    <td class="report-table__label font-semibold text-slate-700">
+                      {{ row.right?.label || '' }}
+                    </td>
+                    <td class="report-table__value text-slate-500">
+                      {{ row.right ? (row.right.value || '—') : '' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="mt-6 text-lg font-semibold text-slate-800 report-section-title">3. Traceability Timeline</h3>
+        <div class="mt-3 rounded-lg border border-slate-200 report-card">
+          <div *ngIf="isSecurityReportLoading" class="p-4 text-sm text-slate-500">Loading timeline...</div>
+          <div *ngIf="!isSecurityReportLoading && securityReportTimeline.length === 0"
+            class="p-4 text-sm text-slate-500">
+            No history events available.
+          </div>
+          <table *ngIf="!isSecurityReportLoading && securityReportTimeline.length > 0"
+            class="report-table w-full border-collapse text-sm">
+            <thead class="bg-slate-50 text-left text-xs text-slate-500">
+              <tr>
+                <th class="border-b border-slate-200 px-3 py-2">Date/Time</th>
+                <th class="border-b border-slate-200 px-3 py-2">Event</th>
+                <th class="border-b border-slate-200 px-3 py-2">Transaction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of securityReportTimeline" class="border-b border-slate-200">
+                <td class="px-3 py-2 text-slate-600 report-table__value">
+                  {{ item.eventDate ? (item.eventDate | date: 'dd/MM/yyyy HH:mm') : '—' }}
+                </td>
+                <td class="px-3 py-2 text-slate-700 report-table__value">{{ item.eventName }}</td>
+                <td class="px-3 py-2 text-slate-500 report-table__value">TX {{ item.transactionId || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
