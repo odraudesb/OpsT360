@@ -1,0 +1,229 @@
+<div class="space-y-5">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <p class="text-base font-semibold text-slate-900">Add System Users</p>
+    <button type="button" (click)="openAddUser()"
+      class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
+      <span class="text-lg font-bold">+</span>
+      Add
+    </button>
+  </div>
+
+  <div class="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 shadow-sm">
+    <span class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200">
+      <svg class="h-4 w-4 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round">
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h16" />
+      </svg>
+    </span>
+    <input type="search" placeholder="Search in list" [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearchTermChange()"
+      class="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none" />
+    <span class="text-slate-500">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+    </span>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_260px]">
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <div class="relative overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="w-12 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500" />
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Last Name
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">e-Mail(User)
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phone Number
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Department
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Job Title
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Profile</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+              <th class="w-12 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            <tr *ngFor="let user of paginatedUsers" class="hover:bg-slate-50">
+              <td class="px-4 py-3">
+                <input type="checkbox" [checked]="user.selected"
+                  class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500" />
+              </td>
+              <td class="px-4 py-3 text-slate-900">
+                <a href="#" class="font-medium text-[#3758F9] hover:underline">{{ user.name }}</a>
+              </td>
+              <td class="px-4 py-3 text-slate-900">
+                <a href="#" class="font-medium text-[#3758F9] hover:underline">{{ user.lastName }}</a>
+              </td>
+              <td class="px-4 py-3">
+                <a href="#" class="text-[#3758F9] hover:underline">{{ user.email }}</a>
+              </td>
+              <td class="px-4 py-3 text-slate-900">{{ user.phoneNumber }}</td>
+              <td class="px-4 py-3 text-slate-900">{{ user.department }}</td>
+              <td class="px-4 py-3 text-slate-900">{{ user.jobTitle }}</td>
+              <td class="px-4 py-3 text-slate-900">{{ user.profile }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full px-2.5 py-1 text-xs font-semibold" [ngClass]="{
+                  'bg-green-50 text-green-700': user.status === 'Active',
+                  'bg-amber-50 text-amber-700': user.status === 'Pending'
+                }">
+                  {{ user.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button type="button" class="text-slate-400 hover:text-slate-600" aria-label="Row actions">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5" />
+                    <circle cx="12" cy="12" r="1.5" />
+                    <circle cx="12" cy="19" r="1.5" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-4 py-3 text-xs text-slate-500" *ngIf="filteredUsers.length === 0">
+        No users found for this search.
+      </div>
+
+      <div *ngIf="filteredUsers.length > 0" class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+        <span>Rows per page: {{ pageSize }}</span>
+        <div class="flex items-center gap-3">
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="previousPage()" [disabled]="currentPage === 1">
+            ‹
+          </button>
+          <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+            (click)="nextPage()" [disabled]="currentPage === totalPages">
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="self-end rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+      <div class="flex items-center justify-between text-sm font-semibold text-slate-900">
+        <span>Users - Actions</span>
+        <button class="text-slate-400 hover:text-slate-600" aria-label="Close">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="M18 6L6 18" />
+            <path d="M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="mt-3 space-y-2 text-sm">
+        <button class="block text-left text-slate-600 hover:text-slate-900">Modify User</button>
+        <button class="block text-left font-medium text-[#3758F9] hover:text-[#3758F9]">
+          Inactivate / Activate user
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Add/Edit user modal -->
+  <div *ngIf="showAddUserModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div class="w-full max-w-3xl rounded-2xl bg-white p-8 shadow-2xl">
+      <h2 class="text-2xl font-semibold text-slate-900">Create new User</h2>
+      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Name
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Last Name
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> e-Mail
+          <input type="email"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Company
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          Department
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          Job Title
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          Profile
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          Phone number
+          <input type="text"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Password
+          <input type="password"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="text-sm font-medium text-slate-700">
+          <span class="text-red-500">*</span> Confirm Password
+          <input type="password"
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]" />
+        </label>
+        <label class="col-span-full flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500" />
+          Is Company User Administrator?
+          <span class="ml-4 flex items-center gap-2">
+            User Active / Inactive
+            <label class="relative inline-flex cursor-pointer items-center">
+              <input type="checkbox" checked class="peer sr-only">
+              <div class="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-blue-500"></div>
+              <div
+                class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-5">
+              </div>
+            </label>
+          </span>
+        </label>
+        <label class="col-span-full text-sm font-medium text-slate-700">
+          Notes
+          <textarea
+            class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#3758F9]"
+            rows="2"></textarea>
+        </label>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-4 text-sm">
+        <button type="button" class="font-semibold text-slate-700 hover:text-slate-900"
+          (click)="closeAddUser()">Cancel</button>
+        <button type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-800"
+          (click)="saveUser()">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
