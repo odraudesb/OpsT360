@@ -1,0 +1,32 @@
+<div class="min-h-screen bg-slate-50 px-4 py-6">
+    <div class="max-w-6xl mx-auto space-y-6">
+      <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold text-slate-900">
+            {{ 'TRANSACTIONS.TITLE' | translate }}
+          </h1>
+          <p class="text-sm text-slate-600">
+            {{ 'TRANSACTIONS.SUBTITLE' | translate }}
+          </p>
+        </div>
+  
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-xs sm:text-sm hover:bg-indigo-700 transition"
+        >
+          {{ 'TRANSACTIONS.ACTIONS.NEW' | translate }}
+        </button>
+      </header>
+  
+      <section class="bg-white rounded-xl shadow p-4">
+        <h2 class="text-base font-semibold text-slate-900 mb-3">
+          {{ 'TRANSACTIONS.TABLE.TITLE' | translate }}
+        </h2>
+  
+        <p class="text-sm text-slate-500">
+          {{ 'TRANSACTIONS.TABLE.EMPTY' | translate }}
+        </p>
+      </section>
+    </div>
+  </div>
+  
