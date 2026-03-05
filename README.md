@@ -21,6 +21,8 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
 
 - Android habilita `cleartextTraffic` para permitir login por `http://38.242.225.119:3000` (sin TLS) durante el prototipo.
 
+- Si sale `Failed to connect to /38.242.225.119:3000`, el problema es de conectividad/red/puerto y **no** del header `application/json`.
+
 ## Pendiente de configurar
 
 - `RoboflowApiKey` en `Services/TransactionsService.cs`.
