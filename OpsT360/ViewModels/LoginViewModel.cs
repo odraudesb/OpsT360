@@ -139,7 +139,7 @@ public class LoginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error de login ({ex.Message}). Verifica URL/API y permiso cleartext HTTP en Android.";
+            StatusMessage = $"Error de login: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
         }
         finally
         {

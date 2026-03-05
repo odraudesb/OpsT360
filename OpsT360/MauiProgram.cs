@@ -21,8 +21,12 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<IAuthState, AuthState>();
         builder.Services.AddTransient<AuthHeaderHandler>();
-        builder.Services.AddHttpClient<ILoginService, LoginService>();
+
+        builder.Services.AddHttpClient<ILoginService, LoginService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler());
+
         builder.Services.AddHttpClient<ITransactionsService, TransactionsService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler())
             .AddHttpMessageHandler<AuthHeaderHandler>();
 
         builder.Services.AddSingleton<LoginViewModel>();
