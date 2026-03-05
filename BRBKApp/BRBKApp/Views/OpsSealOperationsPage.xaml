@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BRBKApp.Views.OpsSealOperationsPage"
+             Title="OpsT360 - Sellos"
+             BackgroundColor="#f4f5f8">
+    <ScrollView>
+        <StackLayout Padding="16" Spacing="16">
+            <Label Text="Operaciones de Sellos" FontSize="24" FontAttributes="Bold" TextColor="#111827"/>
+
+            <Frame Padding="12" CornerRadius="10" BackgroundColor="White" HasShadow="False">
+                <StackLayout>
+                    <Label Text="RFID Seals Manual Verification" FontAttributes="Bold" FontSize="18"/>
+                    <Entry Placeholder="Container Id" />
+                    <Entry Placeholder="Seal #1" />
+                    <Button Text="Read Seal #1" />
+                    <Entry Placeholder="Seal #2" />
+                    <Button Text="Read Seal #2" BackgroundColor="#3E55E8" TextColor="White"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Padding="12" CornerRadius="10" BackgroundColor="White" HasShadow="False">
+                <StackLayout>
+                    <Label Text="RFID Seals Replace" FontAttributes="Bold" FontSize="18"/>
+                    <Entry Placeholder="Container Id" />
+                    <Entry Placeholder="Seal #1" />
+                    <Button Text="Read Seal #1" />
+                    <Entry Placeholder="Seal #2" />
+                    <Button Text="Read Seal #2" BackgroundColor="#3E55E8" TextColor="White"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Padding="12" CornerRadius="10" BackgroundColor="White" HasShadow="False">
+                <StackLayout>
+                    <Label Text="RFID Seals: Police/Customs Inspections" FontAttributes="Bold" FontSize="18"/>
+                    <Entry Placeholder="Container Id" />
+                    <Entry Placeholder="Seal #1" />
+                    <Button Text="Read Seal #1" />
+                    <Entry Placeholder="Seal #2" />
+                    <Button Text="Read Seal #2" BackgroundColor="#3E55E8" TextColor="White"/>
+                    <Entry Placeholder="Seal #3" />
+                    <Button Text="Read Seal #3" BackgroundColor="#3E55E8" TextColor="White"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Padding="12" CornerRadius="10" BackgroundColor="White" HasShadow="False">
+                <StackLayout Spacing="8">
+                    <Label Text="RFID Seals Activation" FontAttributes="Bold" FontSize="18"/>
+                    <Entry Placeholder="Container Id" />
+                    <Label Text="Pistolear código con hand-held (lector como teclado):" FontAttributes="Bold"/>
+                    <Entry x:Name="ScannerEntry" Placeholder="Escanea aquí con el gatillo del hand-held" TextChanged="ScannerEntry_TextChanged"/>
+                    <Label x:Name="LastScanLabel" Text="Último código leído: -" TextColor="#374151" />
+
+                    <Label Text="Seal #1" />
+                    <Entry x:Name="Seal1Entry" Placeholder="Barcode / RFID" />
+                    <Button Text="Read Seal #1" Clicked="ReadSeal1_Clicked" BackgroundColor="#3E55E8" TextColor="White"/>
+
+                    <Label Text="Seal Image #1" FontAttributes="Bold"/>
+                    <Button Text="Tomar foto" Clicked="TakePhoto_Clicked" BackgroundColor="#1F2937" TextColor="White"/>
+                    <Frame BorderColor="#D1D5DB" HeightRequest="180" Padding="4">
+                        <Image x:Name="SealImagePreview" Aspect="AspectFill" />
+                    </Frame>
+
+                    <Label x:Name="PhotoStatusLabel" Text="image" TextColor="#6B7280"/>
+                </StackLayout>
+            </Frame>
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
