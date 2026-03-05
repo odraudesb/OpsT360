@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:OpsT360.Models"
+             x:Class="OpsT360.Views.SealInspectionPage"
+             Title="RFID Seals Activation"
+             BackgroundColor="#EFEFEF">
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="10">
+            <Label Text="RFID Seals Activation" FontSize="28" FontAttributes="Bold" />
+
+            <Entry Placeholder="Container Id" Text="{Binding ContainerId}" BackgroundColor="White" />
+            <CollectionView ItemsSource="{Binding ContainerSuggestions}" HeightRequest="100">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Label Text="{Binding .}" Padding="6" BackgroundColor="WhiteSmoke">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectContainerCommand}" CommandParameter="{Binding .}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="{Binding StatusText}" FontAttributes="Bold" />
+
+            <Entry Placeholder="Lectura por pistola (barcode/RFID)"
+                   Text="{Binding ScanInput}"
+                   IsEnabled="{Binding SealEntryLocked, Converter={StaticResource InverseBoolConverter}, FallbackValue=True}"
+                   Completed="OnScanCompleted"
+                   BackgroundColor="White" />
+
+            <Button Text="Pistolear sello" BackgroundColor="{StaticResource PrimaryBlue}" Command="{Binding ScanSealCommand}" />
+            <Button Text="Editar/Reemplazar" BackgroundColor="#78859B" Command="{Binding ToggleEditModeCommand}" />
+
+            <CollectionView ItemsSource="{Binding Seals}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:SealItem">
+                        <Grid ColumnDefinitions="*,Auto" Padding="8">
+                            <Entry Text="{Binding Code}" IsReadOnly="{Binding IsLocked}" BackgroundColor="White" />
+                            <Button Grid.Column="1"
+                                    Text="Seal Img"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.LoadSealImageAsyncCommand}"
+                                    CommandParameter="{Binding Number}"
+                                    BackgroundColor="{StaticResource PrimaryBlue}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Container Image" BackgroundColor="{StaticResource PrimaryBlue}" Command="{Binding LoadContainerImageAsyncCommand}" />
+            <Button Text="Send" BackgroundColor="{StaticResource DarkButton}" Command="{Binding SendAsyncCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
