@@ -1,0 +1,37 @@
+<div class="min-h-screen bg-slate-50 flex flex-col">
+  <t360-header [sectionLabel]="sectionLabel" [sectionLink]="sectionLink" [showNotificationDot]="false" />
+
+  <!-- MAIN ocupa todo el ancho y crece en altura -->
+  <main class="flex-1 w-full px-6 py-6">
+    <!-- Card full width + ocupa altura disponible -->
+    <div class="w-full min-h-[calc(100vh-140px)] rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <!-- Tabs header (full width) -->
+      <div class="flex flex-col gap-4 border-b border-slate-200 px-6 py-4">
+        <nav class="flex flex-wrap gap-6 text-sm font-medium text-slate-600">
+          <button *ngFor="let tab of tabs; trackBy: trackByTabId" type="button" (click)="setTab(tab.id)"
+            class="relative pb-2 transition"
+            [ngClass]="selectedTab === tab.id ? 'text-[#3758F9]' : 'hover:text-slate-900'">
+            <span>{{ tab.label }}</span>
+
+            <span *ngIf="selectedTab === tab.id" class="absolute inset-x-0 -bottom-[1px] h-0.5 rounded-full bg-[#3758F9]/100"
+              aria-hidden="true"></span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Content -->
+      <section class="px-6 py-6">
+        <ng-container [ngSwitch]="selectedTab">
+          <t360-users-tab *ngSwitchCase="'users'"></t360-users-tab>
+          <t360-profiles-tab *ngSwitchCase="'profiles'"></t360-profiles-tab>
+
+          <t360-profile-user-assignment-tab
+            *ngSwitchCase="'profile-user-assignment'"></t360-profile-user-assignment-tab>
+
+          <t360-access-control-settings-tab
+            *ngSwitchCase="'access-control-settings'"></t360-access-control-settings-tab>
+        </ng-container>
+      </section>
+    </div>
+  </main>
+</div>

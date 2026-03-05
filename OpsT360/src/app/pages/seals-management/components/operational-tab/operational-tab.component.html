@@ -1,0 +1,120 @@
+<section class="mt-6">
+  <div class="flex flex-wrap items-end gap-4 text-sm text-slate-700">
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Requester (Operations)</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>All</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Deliverer (Security)</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>All</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Vessel</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Cable Seal / RFID Label Seal...</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Category</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Exportation / Polices Inspec..</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Date</span>
+      <select class="w-44 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Month / Year</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Status</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Delivered / Pending / Comp..</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Id Operation Request</span>
+      <input type="text" class="w-52 rounded-md border border-slate-300 px-3 py-2 text-sm" />
+    </label>
+    <div class="ml-auto flex items-center gap-2">
+      <button type="button"
+        class="flex h-10 items-center gap-2 rounded-md border border-slate-300 px-4 text-xs font-semibold text-slate-700 shadow-sm">
+        Search
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+    <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+      <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium">Id oper. req.</th>
+          <th class="px-4 py-3 text-left font-medium">Vessel - voyage</th>
+          <th class="px-4 py-3 text-left font-medium">Category</th>
+          <th class="px-4 py-3 text-left font-medium"># containers</th>
+          <th class="px-4 py-3 text-left font-medium"># seals requested (op)</th>
+          <th class="px-4 py-3 text-left font-medium"># seals delivered (sec)</th>
+          <th class="px-4 py-3 text-left font-medium"># seals returned (op)</th>
+          <th class="px-4 py-3 text-left font-medium">Status</th>
+          <th class="px-4 py-3 text-left font-medium">Requester (op)</th>
+          <th class="px-4 py-3 text-left font-medium">Delivery (sec)</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200/60">
+        <tr *ngFor="let row of paginatedRows; trackBy: trackById" class="text-[#757575] hover:bg-slate-50/40">
+          <td class="px-4 py-3 text-[#3758F9] underline">{{ row.id }}</td>
+          <td class="px-4 py-3">{{ row.vessel }}</td>
+          <td class="px-4 py-3">{{ row.category }}</td>
+          <td class="px-4 py-3">{{ row.containers }}</td>
+          <td class="px-4 py-3">{{ row.sealsRequested }}</td>
+          <td class="px-4 py-3">{{ row.sealsDelivered }}</td>
+          <td class="px-4 py-3">{{ row.sealsReturned }}</td>
+          <td class="px-4 py-3">
+            <span [ngClass]="{
+                'text-emerald-600': row.status === 'Delivered' || row.status === 'Completed',
+                'text-amber-500': row.status === 'Pending',
+                'text-orange-500': row.status === 'Partial Del.'
+              }" class="font-semibold">
+              {{ row.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3">{{ row.requester }}</td>
+          <td class="px-4 py-3">{{ row.delivery }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+      <span>Rows per page: {{ pageSize }}</span>
+      <div class="flex items-center gap-3">
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="previousPage()" [disabled]="currentPage === 1">
+          ‹
+        </button>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="nextPage()" [disabled]="currentPage === totalPages">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 flex flex-col gap-4 text-sm text-slate-700 lg:flex-row">
+    <div class="w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:w-1/2">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-700">Operational Request - Actions</span>
+        <button type="button" class="text-slate-400 hover:text-slate-700" aria-label="Close">✕</button>
+      </div>
+      <ul class="space-y-1 text-sm">
+        <li>Review Operational Request</li>
+        <li>Seals Return after Operation</li>
+        <li>Edit Operational Request</li>
+        <li>Delete Operational Request</li>
+      </ul>
+    </div>
+  </div>
+</section>

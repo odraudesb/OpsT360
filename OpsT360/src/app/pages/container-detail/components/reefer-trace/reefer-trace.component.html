@@ -1,0 +1,60 @@
+<div id="reefer-trace-title" class="mb-4 mt-4 flex items-center gap-2" data-search-ignore="true">
+  <img src="assets/icons/plug.png" alt="" class="h-5 w-5 object-contain" />
+  <h2 class="text-base font-semibold text-slate-900">Reefer Trace</h2>
+</div>
+
+<section id="reefer-trace-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+  <div *ngIf="isReeferLoading" class="text-sm text-slate-500">Loading reefer history...</div>
+
+  <div *ngIf="!isReeferLoading && reeferDetails.length === 0" class="text-sm text-slate-500">
+    No reefer history available.
+  </div>
+
+  <div *ngIf="!isReeferLoading && reeferDetails.length > 0" class="divide-y divide-slate-200 text-sm">
+    <article *ngFor="let event of reeferDetails; trackBy: trackByReeferDetailId" class="py-3">
+      <button type="button" class="flex w-full items-center justify-between gap-3 text-left" (click)="onToggle(event)">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-slate-500">
+            {{
+            event.eventDate
+            ? (event.eventDate | date: 'dd/MM/yyyy HH:mm')
+            : (event.recordDate ? (event.recordDate | date: 'dd/MM/yyyy HH:mm') : '—')
+            }}
+          </span>
+
+          <span class="font-medium text-slate-800">{{ event.eventName }}</span>
+
+          <span class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+            TX {{ event.transactionId }}
+          </span>
+        </div>
+
+        <span class="text-slate-500" [ngClass]="{ 'text-[#3758F9]': event.isOpen }">▾</span>
+      </button>
+
+      <div *ngIf="event.isOpen" class="mt-4">
+        <ng-container *ngIf="event.fieldsCols[0].length + event.fieldsCols[1].length > 0; else emptyReefer">
+          <div class="grid gap-10 text-sm sm:grid-cols-2">
+            <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+              <ng-container *ngFor="let f of event.fieldsCols[0]">
+                <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+                <dd class="text-slate-500">{{ f.value || '—' }}</dd>
+              </ng-container>
+            </dl>
+
+            <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+              <ng-container *ngFor="let f of event.fieldsCols[1]">
+                <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+                <dd class="text-slate-500">{{ f.value || '—' }}</dd>
+              </ng-container>
+            </dl>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyReefer>
+          <div class="text-sm text-slate-500">—</div>
+        </ng-template>
+      </div>
+    </article>
+  </div>
+</section>

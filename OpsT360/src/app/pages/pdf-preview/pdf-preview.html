@@ -1,0 +1,32 @@
+<div class="flex h-screen w-screen flex-col bg-white">
+  <header class="flex h-14 min-h-14 items-center justify-between border-b border-slate-200 bg-white px-4">
+    <span class="text-sm font-semibold text-slate-900">{{ fileName }}</span>
+
+    <button type="button"
+      class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+      (click)="download()" [disabled]="loading || !!errorMsg" title="Download" aria-label="Download">
+      <!-- icono diskette -->
+      <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor"
+          d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4ZM7 5h8v4H7V5Zm5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM7 19v-6h10v6H7Z" />
+      </svg>
+    </button>
+  </header>
+
+  <div class="flex-1 overflow-hidden">
+    <div class="m-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700" *ngIf="loading">
+      Loading preview…
+    </div>
+    <div class="m-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+      *ngIf="!loading && errorMsg">
+      {{ errorMsg }}
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg">
+      <img *ngIf="isImage && imageSrc" class="block max-h-full w-full object-contain" [src]="imageSrc"
+        [alt]="fileName" />
+      <iframe *ngIf="!isImage && iframeSrc" class="block h-full w-full border-0 bg-white" [src]="iframeSrc"
+        title="PDF preview"></iframe>
+    </ng-container>
+  </div>
+</div>
