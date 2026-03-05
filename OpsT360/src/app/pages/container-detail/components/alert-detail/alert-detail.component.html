@@ -1,0 +1,72 @@
+<div id="alert-detail-title" class="mb-4 mt-4 flex items-center gap-2" data-search-ignore="true">
+  <img src="assets/icons/alarm-alt.png" alt="" class="h-5 w-5 object-contain" />
+  <h2 class="text-base font-semibold text-slate-900">Alert detail</h2>
+</div>
+
+<section id="alert-detail-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+  <div *ngIf="isAlertLoading" class="text-sm text-slate-500">Loading alert detail...</div>
+
+  <div *ngIf="!isAlertLoading && alertDetails.length === 0" class="text-sm text-slate-500">
+    No alert details available.
+  </div>
+
+  <div *ngIf="!isAlertLoading && alertDetails.length > 0" class="divide-y divide-slate-200 text-sm">
+    <article *ngFor="let detail of alertDetails; trackBy: trackByAlertDetailId" class="py-3">
+      <button type="button" class="flex w-full items-center justify-between gap-3 text-left"
+        (click)="onToggle(detail)">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-slate-500">
+            {{ detail.recordDate ? (detail.recordDate | date: 'dd/MM/yyyy HH:mm') : '—' }}
+          </span>
+
+          <span class="font-medium text-slate-800">{{ detail.title }}</span>
+        </div>
+
+        <span class="text-slate-500" [ngClass]="{ 'text-[#3758F9]': detail.isOpen }">▾</span>
+      </button>
+
+      <div *ngIf="detail.isOpen" class="mt-4">
+        <ng-container
+          *ngIf="detail.fieldsCols[0].length + detail.fieldsCols[1].length > 0; else emptyAlertDetail">
+          <div class="grid gap-10 text-sm sm:grid-cols-2">
+            <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+              <ng-container *ngFor="let f of detail.fieldsCols[0]">
+                <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+                <dd class="text-slate-500">
+                  <ng-container *ngIf="isItemsModalField(f); else aLeft">
+                    <button type="button" class="text-[#3758F9] hover:underline" (click)="onOpenItems(f.payload)">
+                      {{ f.value }}
+                    </button>
+                  </ng-container>
+                  <ng-template #aLeft>
+                    {{ f.value || '—' }}
+                  </ng-template>
+                </dd>
+              </ng-container>
+            </dl>
+
+            <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+              <ng-container *ngFor="let f of detail.fieldsCols[1]">
+                <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+                <dd class="text-slate-500">
+                  <ng-container *ngIf="isItemsModalField(f); else aRight">
+                    <button type="button" class="text-[#3758F9] hover:underline" (click)="onOpenItems(f.payload)">
+                      {{ f.value }}
+                    </button>
+                  </ng-container>
+                  <ng-template #aRight>
+                    {{ f.value || '—' }}
+                  </ng-template>
+                </dd>
+              </ng-container>
+            </dl>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyAlertDetail>
+          <div class="text-sm text-slate-500">—</div>
+        </ng-template>
+      </div>
+    </article>
+  </div>
+</section>
