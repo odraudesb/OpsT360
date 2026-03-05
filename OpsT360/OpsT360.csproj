@@ -13,6 +13,17 @@
     <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
   </PropertyGroup>
 
+
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);src\**;**\*.ts;**\*.html;**\*.css;**\*.json</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="src\**\*.cs" />
+    <Compile Remove="**\*.json" />
+    <None Remove="src\**\*" />
+  </ItemGroup>
+
   <ItemGroup>
     <MauiXaml Update="Views/*.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -19,14 +19,18 @@ Prototipo móvil con login + lectura RFID/barcode de 4 sellos con hand-held scan
   - envío final a `transactions/register-with-files` con multipart/form-data.
 - Se arma `xmlDetails` (tipo simulador web) con datos de contenedor/sellos para registrar la transacción.
 
+- Android habilita `cleartextTraffic` para permitir login por `http://38.242.225.119:3000` (sin TLS) durante el prototipo.
+
 ## Pendiente de configurar
 
 - `RoboflowApiKey` en `Services/TransactionsService.cs`.
 - Si cambian endpoints/base URL, ajustar constantes en servicios.
+
+- Si copiaste carpetas web (`src/`, `.ts`, `.html`, `en.json`) dentro del proyecto MAUI, quedan excluidas del build para evitar errores de compilación.
 
 ## Nota de entorno
 
 En este contenedor no está instalado el SDK de .NET (`dotnet`), por lo que no se pudo compilar aquí.
 
 
-- Login usa `Source="logo.png"` en XAML; coloca tu archivo `logo.png` (de `src/assets/images`) en `Resources/Images/` localmente antes de compilar.
+- Login usa `Source="logo-360.svg"` en XAML; coloca tu archivo `logo-360.svg` en `Resources/Images/` localmente antes de compilar.

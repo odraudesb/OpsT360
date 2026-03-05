@@ -6,7 +6,7 @@
              BackgroundColor="{StaticResource PrimaryBlue}">
     <Grid Padding="30" RowDefinitions="*,Auto,*">
         <VerticalStackLayout Grid.Row="1" Spacing="18" VerticalOptions="Center">
-            <Image Source="logo.png" HeightRequest="128" WidthRequest="128" Aspect="AspectFit" HorizontalOptions="Center" Margin="0,20,0,12" />
+            <Image Source="logo-360.svg" HeightRequest="128" WidthRequest="128" Aspect="AspectFit" HorizontalOptions="Center" Margin="0,20,0,12" />
 
             <Border BackgroundColor="#E8E8E8" StrokeThickness="0" StrokeShape="RoundRectangle 24" Padding="16,8">
                 <Entry Placeholder="Email"
