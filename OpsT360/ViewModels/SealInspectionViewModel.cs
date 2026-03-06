@@ -60,11 +60,13 @@ public partial class SealInspectionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ReadSeal(int sealNumber)
+    private void ReadSeal(object? sealParameter)
     {
-        var index = sealNumber - 1;
+        var index = ResolveSealIndex(sealParameter);
         if (index < 0 || index >= Seals.Count)
             return;
+
+        var sealNumber = index + 1;
 
         if (SealEntryLocked && Seals[index].IsLocked)
             return;
@@ -138,9 +140,13 @@ public partial class SealInspectionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task LoadSealImageAsync(int index)
+    private async Task LoadSealImageAsync(object? sealParameter)
     {
         if (!CanUploadImages)
+            return;
+
+        var index = ResolveSealIndex(sealParameter);
+        if (index < 0 || index >= SealImages.Count)
             return;
 
         var result = await FilePicker.PickAsync(new PickOptions
@@ -157,7 +163,7 @@ public partial class SealInspectionViewModel : ObservableObject
         await stream.CopyToAsync(ms);
 
         var bytes = ms.ToArray();
-        var image = SealImages[index - 1];
+        var image = SealImages[index];
         image.FileName = result.FileName;
         image.Bytes = bytes;
         image.Base64 = Convert.ToBase64String(bytes);
@@ -238,6 +244,17 @@ public partial class SealInspectionViewModel : ObservableObject
     }
 
     private ContainerProfile ResolveProfile() => _profiles.TryGetValue(ContainerId.Trim(), out var profile) ? profile : new ContainerProfile { EntityId = 100004 };
+
+    private static int ResolveSealIndex(object? parameter)
+    {
+        if (parameter is int i)
+            return i - 1;
+
+        if (parameter is string s && int.TryParse(s, out var parsed))
+            return parsed - 1;
+
+        return -1;
+    }
 
     private string BuildXml(ContainerProfile profile)
     {

@@ -18,6 +18,6 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
             return;
 
-        _vm.ReadSealCommand.Execute(sealNumber);
+        _vm.ReadSealCommand.Execute(sealNumber.ToString());
     }
 }
