@@ -1,0 +1,58 @@
+<header class="relative border-b border-slate-200 bg-white px-10 py-4">
+  <div class="flex items-center gap-6">
+    <!-- LADO IZQUIERDO: LOGO + T360° + texto -->
+    <div class="flex flex-shrink-0 flex-col items-start gap-1">
+      <span class="text-lg font-bold tracking-[0.25em] text-[#3758F9]">
+        T360°
+      </span>
+
+      <div class="flex items-center gap-4">
+        <!-- LOGO CLICKABLE -->
+        <button type="button" (click)="toggleLauncher()" class="flex items-center justify-center"
+          aria-label="Open launcher">
+          <img src="assets/icons/fitbit.png" alt="T360" class="h-10 w-10 object-contain" />
+        </button>
+
+        <div class="flex flex-col justify-center">
+          <!-- ✅ AZUL -->
+          <p class="text-sm text-[#3758F9]">
+            <span>{{ sectionLabel }}</span>
+
+            <ng-container *ngIf="sectionLink">
+              <span *ngIf="disableSectionLink" class="ml-1 font-semibold text-[#3758F9]">
+                {{ sectionLink }}
+              </span>
+
+              <a *ngIf="!disableSectionLink" href="#" class="ml-1 font-semibold text-[#3758F9] hover:underline">
+                {{ sectionLink }}
+              </a>
+            </ng-container>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LADO DERECHO: NOTIFICACIONES -->
+    <div class="ml-auto flex items-center gap-3" *ngIf="showNotifications">
+      <button type="button"
+        class="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+        aria-label="Notifications">
+        <img src="assets/icons/alarm-alt.png" alt="Notifications" class="h-5 w-5 object-contain" />
+
+        <span *ngIf="showNotificationDot"
+          class="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
+          1
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LAUNCHER -->
+  <div *ngIf="isLauncherOpen" class="absolute left-10 top-full z-40 mt-3">
+    <div
+      aria-hidden="true"
+      class="absolute -top-2 left-4 h-4 w-4 rotate-45 border-l border-t border-slate-200 bg-white"
+    ></div>
+    <t360-launcher (close)="closeLauncher()"></t360-launcher>
+  </div>
+</header>

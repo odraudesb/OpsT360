@@ -1,0 +1,204 @@
+<div class="min-h-screen bg-white text-slate-900">
+  <t360-header sectionLabel="Company Data Import" sectionLink="" [disableSectionLink]="true"></t360-header>
+
+  <main class="px-8 pb-8 pt-5">
+    <section class="border-t border-slate-200 pt-5">
+      <div class="flex items-center gap-3">
+        <img src="assets/icons/Companies.png" alt="Company import" class="h-7 w-7 object-contain" />
+        <h1 class="text-[28px] font-semibold leading-tight">Import company data from CSV or Excel files into the T360° database</h1>
+      </div>
+
+      <div class="relative mt-6 border-b border-slate-200 pb-5">
+        <div class="absolute left-0 right-0 top-5 h-px bg-slate-200"></div>
+        <div class="relative grid grid-cols-4">
+          <div *ngFor="let s of steps" class="flex flex-col items-center gap-3 text-center">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold"
+              [ngClass]="step === s.id ? 'bg-[#0D1830] text-white' : 'bg-slate-100 text-slate-400'">
+              {{ s.id }}
+            </div>
+            <span class="text-[18px] leading-none" [ngClass]="step === s.id ? 'text-slate-900' : 'text-slate-400'">{{ s.label }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-5">
+      <p class="text-[42px] font-semibold text-[#3758F9]">STEP {{ step }}: {{ steps[step - 1].label }}</p>
+
+      <div *ngIf="step === 1" class="mt-4 space-y-5">
+        <div class="rounded-md border border-slate-200 px-6 py-8 text-center">
+          <img src="assets/icons/cloud-upload.png" alt="Upload file" class="mx-auto h-10 w-10 object-contain" />
+          <p class="mt-2 text-[28px] font-semibold">Drag and drop your file here</p>
+          <p class="text-[26px]">ó</p>
+          <button type="button"
+            class="mt-3 inline-flex items-center gap-2 rounded-md bg-[#0D1830] px-5 py-2 text-xl font-semibold text-white">
+            <img src="assets/icons/cloud-upload.png" alt="Select file" class="h-4 w-4 object-contain" />
+            <span>Select file</span>
+          </button>
+          <p class="mt-3 text-lg text-slate-400">Supported formats: CSV, XLSX, XLS (Maximum 10 MB)</p>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-[18px] font-medium">Company Type *</label>
+          <select [(ngModel)]="selectedCompanyType"
+            class="h-11 w-full max-w-sm rounded-md border border-slate-200 px-3 text-base text-slate-500">
+            <option value="">Importer / Exporter / Shipping Line / Broker / ...</option>
+            <option>Importer</option>
+            <option>Exporter</option>
+          </select>
+        </div>
+
+        <div class="space-y-3">
+          <label class="inline-flex items-center gap-2 text-[16px]">
+            <input type="checkbox" [(ngModel)]="hasHeaders" class="h-4 w-4" />
+            <span>The file includes headers in the first row</span>
+          </label>
+
+          <div>
+            <button type="button" (click)="nextStep()"
+              class="inline-flex items-center gap-2 rounded-md bg-[#0D1830] px-5 py-2 text-[32px] font-semibold text-white">
+              <span>→</span>
+              <span>Next: Map Fields</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="step === 2" class="mt-4">
+        <p class="mb-3 text-[16px] font-medium">Match the columns in your file with the fields in the Kusumbo system</p>
+        <div class="grid gap-5 xl:grid-cols-2">
+          <div>
+            <h3 class="mb-2 text-lg font-semibold">File Columns</h3>
+            <div class="space-y-2">
+              <div *ngFor="let field of mappingFields" class="rounded-md border border-slate-200 px-3 py-1.5">
+                <select class="h-8 w-full bg-transparent text-sm text-slate-500">
+                  <option>{{ field.source }}</option>
+                  <option>No mapping</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="mb-2 text-lg font-semibold">T360° Fields</h3>
+            <div class="space-y-2">
+              <div *ngFor="let field of mappingFields" class="flex items-center gap-2 text-[15px]">
+                <span>{{ field.target }}</span>
+                <span *ngIf="field.required" class="rounded bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">Required</span>
+                <span *ngIf="field.mapped" class="rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white">Mapped</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-3">
+          <button type="button" (click)="prevStep()" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">← Back</button>
+          <button type="button" (click)="nextStep()" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">→ Back: Review & Import</button>
+        </div>
+      </div>
+
+      <div *ngIf="step === 3" class="mt-4 space-y-4">
+        <div>
+          <h3 class="text-lg font-semibold">Data import options</h3>
+          <div class="mt-2 space-y-1 text-[15px]">
+            <label class="flex items-center gap-2"><input type="checkbox" [(ngModel)]="skipDuplicates" class="h-4 w-4" /> Skip duplicate records</label>
+            <label class="flex items-center gap-2"><input type="checkbox" [(ngModel)]="overwriteAll" class="h-4 w-4" /> Overwrite all</label>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="mb-2 text-lg font-semibold">Data preview</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+              <thead class="border-b border-slate-200 text-slate-500">
+                <tr>
+                  <th class="px-2 py-1.5 text-left font-medium">Company Name</th>
+                  <th class="px-2 py-1.5 text-left font-medium">Address</th>
+                  <th class="px-2 py-1.5 text-left font-medium"># Employees</th>
+                  <th class="px-2 py-1.5 text-left font-medium">e-Mail</th>
+                  <th class="px-2 py-1.5 text-left font-medium">WWW</th>
+                  <th class="px-2 py-1.5 text-left font-medium">ID Company</th>
+                  <th class="px-2 py-1.5 text-left font-medium">Phone Number</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of previewRows" class="border-b border-slate-100">
+                  <td class="px-2 py-1.5">{{ row.companyName }}</td>
+                  <td class="px-2 py-1.5">{{ row.address }}</td>
+                  <td class="px-2 py-1.5">{{ row.employees }}</td>
+                  <td class="px-2 py-1.5">{{ row.email }}</td>
+                  <td class="px-2 py-1.5">{{ row.web }}</td>
+                  <td class="px-2 py-1.5">{{ row.companyId }}</td>
+                  <td class="px-2 py-1.5">{{ row.phone }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" (click)="prevStep()" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">← Back</button>
+          <button type="button" (click)="nextStep()" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">⛃ Start Import process</button>
+        </div>
+      </div>
+
+      <div *ngIf="step === 4" class="mt-4 space-y-4">
+        <div class="space-y-2">
+          <p class="text-center text-sm">100%</p>
+          <div class="h-2 rounded bg-emerald-400"></div>
+        </div>
+
+        <div>
+          <h3 class="mb-2 text-lg font-semibold">Import Process Summary</h3>
+          <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded bg-slate-50 p-3 text-center">
+              <p class="text-2xl font-bold text-emerald-500">{{ importSummary.success }}</p>
+              <p class="text-sm">Successfully Imported</p>
+            </div>
+            <div class="rounded bg-slate-50 p-3 text-center">
+              <p class="text-2xl font-bold text-red-500">{{ importSummary.updated }}</p>
+              <p class="text-sm">Updated</p>
+            </div>
+            <div class="rounded bg-slate-50 p-3 text-center">
+              <p class="text-2xl font-bold text-red-500">{{ importSummary.errors }}</p>
+              <p class="text-sm">With Errors</p>
+            </div>
+            <div class="rounded bg-slate-50 p-3 text-center">
+              <p class="text-2xl font-bold text-slate-700">{{ importSummary.total }}</p>
+              <p class="text-sm">Total Processed</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="mb-2 text-lg font-semibold">Error Details</h3>
+          <table class="w-full border-collapse border-t border-slate-200 text-sm">
+            <thead class="border-b border-slate-200 text-slate-500">
+              <tr>
+                <th class="px-2 py-1.5 text-left font-medium">Line</th>
+                <th class="px-2 py-1.5 text-left font-medium">Company</th>
+                <th class="px-2 py-1.5 text-left font-medium">Error</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of importErrors" class="border-b border-slate-100">
+                <td class="px-2 py-1.5">{{ row.line }}</td>
+                <td class="px-2 py-1.5">{{ row.company }}</td>
+                <td class="px-2 py-1.5">{{ row.error }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="button" (click)="goToStep(1)" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">⟳ New Import</button>
+          <button type="button" class="inline-flex items-center gap-2 rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">
+            <img src="assets/icons/cloud-upload.png" alt="Download report" class="h-4 w-4 object-contain" />
+            <span>Report</span>
+          </button>
+          <button type="button" (click)="viewCompanies()" class="rounded-md bg-[#0D1830] px-4 py-2 text-sm text-white">⌂ View Companies</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

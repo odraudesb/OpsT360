@@ -1,0 +1,62 @@
+<div id="track-and-trace-title" class="mb-4 mt-4 flex items-center justify-between gap-4" data-search-ignore="true">
+  <div class="flex items-center gap-2">
+    <img src="assets/icons/send.png" alt="" class="h-5 w-5 object-contain" />
+    <h2 class="text-base font-semibold text-slate-900">Last Event Details</h2>
+  </div>
+
+  <div
+    class="flex w-full max-w-md items-center rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm focus-within:border-[#3758F9]">
+    <input type="search" class="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+      placeholder="Search in all sections" [value]="searchTerm" (input)="onSearchInput($event)"
+      (keydown.enter)="onSearchEnter()" />
+    <span class="ml-3 text-slate-500" aria-hidden="true">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+    </span>
+  </div>
+</div>
+
+<section id="shipment-details-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+  <ng-container *ngIf="hasFields; else emptyShipment">
+    <div class="grid gap-10 text-sm sm:grid-cols-2">
+      <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+        <ng-container *ngFor="let f of shipmentFieldsCols[0]">
+          <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+          <dd class="text-slate-500">
+            <ng-container *ngIf="isItemsModalField(f); else normalValueLeft">
+              <button type="button" class="text-[#3758F9] hover:underline" (click)="onOpenItems(f.payload)">
+                {{ f.value }}
+              </button>
+            </ng-container>
+            <ng-template #normalValueLeft>
+              {{ f.value || '—' }}
+            </ng-template>
+          </dd>
+        </ng-container>
+      </dl>
+
+      <dl class="grid grid-cols-[170px_1fr] gap-y-2">
+        <ng-container *ngFor="let f of shipmentFieldsCols[1]">
+          <dt class="font-semibold text-slate-700">{{ f.label }}:</dt>
+          <dd class="text-slate-500">
+            <ng-container *ngIf="isItemsModalField(f); else normalValueRight">
+              <button type="button" class="text-[#3758F9] hover:underline" (click)="onOpenItems(f.payload)">
+                {{ f.value }}
+              </button>
+            </ng-container>
+            <ng-template #normalValueRight>
+              {{ f.value || '—' }}
+            </ng-template>
+          </dd>
+        </ng-container>
+      </dl>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyShipment>
+    <div class="text-sm text-slate-500">—</div>
+  </ng-template>
+</section>
