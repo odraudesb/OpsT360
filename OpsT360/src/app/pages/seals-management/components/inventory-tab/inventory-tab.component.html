@@ -1,0 +1,257 @@
+<section class="mt-6 space-y-6">
+  <div class="grid gap-4 md:grid-cols-4">
+    <div class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm card-shadow">
+      <p class="text-2xl font-bold text-[#3758F9]">125,402</p>
+      <p class="text-sm text-slate-500">Total Seals</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm card-shadow">
+      <p class="text-2xl font-bold text-[#3758F9]">88,305</p>
+      <p class="text-sm text-slate-500">Available</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm card-shadow">
+      <p class="text-2xl font-bold text-[#3758F9]">37,079</p>
+      <p class="text-sm text-slate-500">Assigned</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm card-shadow">
+      <p class="text-2xl font-bold text-[#3758F9]">18</p>
+      <p class="text-sm text-slate-500">Lost /Damage</p>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-end gap-2 text-sm text-slate-700" (click)="$event.stopPropagation()">
+    <div class="relative flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <button type="button"
+        class="mr-2 flex items-center gap-2 rounded border border-transparent px-1 text-xs text-slate-500 hover:text-slate-700"
+        aria-label="Open search filters" (click)="toggleFilterMenu($event)">
+        <span class="text-slate-600">☰</span>
+        <span class="text-[11px] font-medium text-slate-500">{{ filterLabel }}</span>
+      </button>
+      <input type="search" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange()" placeholder="Search in list"
+        class="w-60 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none" />
+
+      <div *ngIf="showFilterMenu"
+        class="absolute right-full top-full z-40 mr-2 mt-2 w-60 rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div class="flex items-center justify-between px-3 py-2">
+          <span class="text-xs font-semibold text-slate-700">Search by</span>
+          <button type="button" class="text-slate-400 hover:text-slate-700" aria-label="Close"
+            (click)="closeFilterMenu($event)">
+            ✕
+          </button>
+        </div>
+        <div class="px-2 pb-2">
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'id' }" (click)="setFilterKey('id')">
+            <span>By Purchase Order</span>
+            <span *ngIf="filterKey === 'id'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'requestOrderId' }"
+            (click)="setFilterKey('requestOrderId')">
+            <span>By Request Order</span>
+            <span *ngIf="filterKey === 'requestOrderId'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'description' }"
+            (click)="setFilterKey('description')">
+            <span>By Description</span>
+            <span *ngIf="filterKey === 'description'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'requester' }" (click)="setFilterKey('requester')">
+            <span>By Requester</span>
+            <span *ngIf="filterKey === 'requester'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'uploadDate' }"
+            (click)="setFilterKey('uploadDate')">
+            <span>By Upload Date</span>
+            <span *ngIf="filterKey === 'uploadDate'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'sealType' }" (click)="setFilterKey('sealType')">
+            <span>By Seal Type</span>
+            <span *ngIf="filterKey === 'sealType'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'totalSeals' }"
+            (click)="setFilterKey('totalSeals')">
+            <span>By Total Seals</span>
+            <span *ngIf="filterKey === 'totalSeals'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            [ngClass]="{ 'bg-slate-100 font-semibold': filterKey === 'receivedBy' }"
+            (click)="setFilterKey('receivedBy')">
+            <span>By Received By</span>
+            <span *ngIf="filterKey === 'receivedBy'" class="font-semibold text-[#3758F9]">✓</span>
+          </button>
+          <button type="button"
+            class="mt-2 flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+            (click)="clearFilterKey($event)">
+            <span>Clear selection</span>
+            <span *ngIf="filterKey === 'all'" class="font-semibold text-slate-400">—</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700"
+      (click)="resetSearch($event)" aria-label="Reset search">
+      <img src="assets/icons/reload.png" alt="" class="h-6 w-6 object-contain" />
+    </button>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 shadow-sm">
+    <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+      <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Purchase order</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by purchase order" (click)="setFilterFromHeader('id', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Request order</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by request order" (click)="setFilterFromHeader('requestOrderId', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Description</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by description" (click)="setFilterFromHeader('description', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Requester</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600" aria-label="Filter by requester"
+                (click)="setFilterFromHeader('requester', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Inventory upload date</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by upload date" (click)="setFilterFromHeader('uploadDate', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Seal type</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by seal type" (click)="setFilterFromHeader('sealType', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Total seals</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by total seals" (click)="setFilterFromHeader('totalSeals', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">
+            <div class="inline-flex items-center gap-2">
+              <span>Received by</span>
+              <button type="button" class="text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Filter by received by" (click)="setFilterFromHeader('receivedBy', $event)">
+                ☰
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200/60">
+        <tr *ngFor="let row of paginatedRows; trackBy: trackById" class="text-[#757575] hover:bg-slate-50/40">
+          <td class="px-4 py-3 text-[#3758F9] underline">{{ row.id }}</td>
+          <td class="px-4 py-3 text-[#3758F9] underline">{{ row.requestOrderId }}</td>
+          <td class="px-4 py-3">{{ row.description }}</td>
+          <td class="px-4 py-3">{{ row.requester }}</td>
+          <td class="px-4 py-3">{{ row.uploadDate }}</td>
+          <td class="px-4 py-3">{{ row.sealType }}</td>
+          <td class="px-4 py-3">{{ row.totalSeals }}</td>
+          <td class="px-4 py-3">{{ row.receivedBy }}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <button type="button"
+                class="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-[#637381]"
+                (click)="editRequest.emit(row)">
+                <img src="assets/icons/write.png" alt="" class="h-4 w-4" />
+                Edit
+              </button>
+
+              <button type="button"
+                class="flex items-center gap-2 rounded-md bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600"
+                (click)="uploadRequest.emit(row)">
+                <img src="assets/icons/cloud-upload.png" alt="" class="h-4 w-4" />
+                Upload
+              </button>
+              <div class="relative">
+                <button type="button" class="text-lg text-slate-500 hover:text-slate-800"
+                  aria-label="Open inventory row actions" (click)="toggleRowMenu($event, row)">
+                  ☰
+                </button>
+                <div *ngIf="showRowMenu && selectedRowId === row.id"
+                  class="absolute right-full top-0 z-40 mr-2 w-64 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-lg">
+                  <div class="mb-2 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-700">Receival Order - Actions</span>
+                    <button type="button" class="text-slate-400 hover:text-slate-700" aria-label="Close"
+                      (click)="closeRowMenu($event)">
+                      ✕
+                    </button>
+                  </div>
+                  <ul class="space-y-1 text-sm">
+                    <li>View Order Receival</li>
+                    <li>Edit Order Receival</li>
+                    <li>Upload Order Receival</li>
+                    <li>Delete Order Receival</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="filteredRows.length > 0" class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+      <span>Rows per page: {{ pageSize }}</span>
+      <div class="flex items-center gap-3">
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="previousPage()" [disabled]="currentPage === 1">
+          ‹
+        </button>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="nextPage()" [disabled]="currentPage === totalPages">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+</section>

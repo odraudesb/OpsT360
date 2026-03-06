@@ -1,0 +1,197 @@
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+  <div
+    class="absolute inset-0 -z-20 bg-slate-900 bg-cover bg-center"
+    [ngStyle]="{ 'background-image': 'url(' + background + ')' }"
+  ></div>
+
+  <div class="absolute inset-0 -z-10 bg-white/80"></div>
+
+  <!-- Header simple (sin search / campana) -->
+  <header class="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4">
+    <div class="flex items-center gap-2">
+      <img [src]="icono" alt="T360 icon" class="h-8 w-auto" />
+      <span class="text-base font-semibold text-white">T360°</span>
+      <span class="ml-2 text-sm font-medium text-white/80">Sign Up</span>
+    </div>
+  </header>
+
+  <!-- CARD -->
+  <main class="w-full max-w-md">
+    <div class="w-full rounded-2xl bg-white p-10 shadow-2xl ring-1 ring-slate-100">
+
+      <!-- STEP: SIGNUP -->
+      <ng-container *ngIf="step === 'signup'">
+        <h1 class="text-center text-2xl font-semibold text-[#3758F9]">Sign up</h1>
+        <p class="mt-1 text-center text-sm text-slate-500">Enter your new account data</p>
+
+        <form [formGroup]="addUserForm" (ngSubmit)="handleSignup()" class="mt-8 space-y-4">
+          <div class="space-y-1">
+            <input type="email" formControlName="email"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              placeholder="Email"
+              aria-label="Email" />
+            <p
+              *ngIf="addUserForm.errors?.['companyDomainMismatch'] && (emailControl.dirty || emailControl.touched)"
+              class="text-xs text-red-600"
+            >
+              Email domain must match the company domain.
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <input type="text" formControlName="name"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              placeholder="First name"
+              aria-label="First name" />
+          </div>
+
+          <div class="space-y-1">
+            <input type="text" formControlName="lastName"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              placeholder="Last name"
+              aria-label="Last name" />
+          </div>
+
+          <!-- Company autocomplete -->
+          <div class="space-y-1" data-company-autocomplete>
+            <div class="relative">
+              <input type="text" [value]="companySearch" (input)="onCompanySearchChange(($any($event.target).value))"
+                (focus)="onCompanyFocus()"
+                class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 pr-12 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+                placeholder="Company"
+                aria-label="Company" />
+
+              <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M11 3a8 8 0 015.292 13.94l3.384 3.384a1 1 0 01-1.414 1.414l-3.384-3.384A8 8 0 1111 3z" />
+                </svg>
+              </span>
+
+              <div *ngIf="companyDropdownOpen"
+                class="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+                <div *ngIf="isLoadingCompanies" class="px-4 py-3 text-sm text-slate-500">
+                  Loading companies...
+                </div>
+
+                <button *ngFor="let c of filteredCompanies; trackBy: trackByCompanyId" type="button"
+                  (click)="selectCompany(c)" class="block w-full px-4 py-3 text-left text-sm hover:bg-slate-50">
+                  {{ c.name }}
+                </button>
+
+                <div *ngIf="!isLoadingCompanies && filteredCompanies.length === 0"
+                  class="px-4 py-3 text-sm text-slate-500">
+                  No matches
+                </div>
+              </div>
+            </div>
+
+            <p *ngIf="companyIdControl.invalid && (companyIdControl.dirty || companyIdControl.touched)"
+              class="text-xs text-red-600">
+              Company is required.
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <input type="password" formControlName="password"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              placeholder="Password"
+              aria-label="Password" />
+            <p class="text-xs text-slate-500">
+              Use a strong password: 8+ characters, one uppercase letter, one number, and one special character
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <input type="password" formControlName="confirmPassword"
+              class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+              placeholder="Confirm password"
+              aria-label="Confirm password" />
+          </div>
+
+          <p *ngIf="errorMessage" class="text-xs text-red-600">{{ errorMessage }}</p>
+
+          <button type="submit"
+            class="mt-2 w-full rounded-full bg-[#3758F9] py-3 text-sm font-semibold text-white transition hover:bg-[#2F4FE1] disabled:opacity-60"
+            [disabled]="addUserForm.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Sign up</span>
+            <span *ngIf="isSubmitting">Saving...</span>
+          </button>
+
+          <button type="button" (click)="backToLogin()" class="w-full text-sm text-[#3758F9] hover:underline">
+            ‹ Back
+          </button>
+        </form>
+      </ng-container>
+
+      <!-- STEP: SEND CODE -->
+      <ng-container *ngIf="step === 'sendCode'">
+        <h1 class="text-center text-2xl font-semibold text-[#3758F9]">Sign up</h1>
+        <p class="mt-4 text-center text-sm text-slate-500">
+          We will send a verification code to your email.
+        </p>
+
+        <div class="mt-8 space-y-4">
+          <button type="button" (click)="handleSendCode()"
+            class="w-full rounded-full bg-[#3758F9] py-3 text-sm font-semibold text-white hover:bg-[#2F4FE1] disabled:opacity-60"
+            [disabled]="isSubmitting">
+            <span *ngIf="!isSubmitting">Send code</span>
+            <span *ngIf="isSubmitting">Sending...</span>
+          </button>
+
+          <button type="button" (click)="step='signup'"
+            class="w-full rounded-full border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            ‹ Back
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- STEP: VERIFY -->
+      <ng-container *ngIf="step === 'verify'">
+        <h1 class="text-center text-2xl font-semibold text-[#3758F9]">Sign up</h1>
+        <p class="mt-1 text-center text-sm text-slate-500">Verification Code</p>
+
+        <form [formGroup]="verifyForm" (ngSubmit)="handleVerify()" class="mt-8 space-y-4">
+          <input type="text" formControlName="code"
+            class="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-[#3758F9] focus:ring-2 focus:ring-[#3758F9]/20"
+            placeholder="Enter the code"
+            aria-label="Verification code" />
+
+          <button type="submit"
+            class="w-full rounded-full bg-[#3758F9] py-3 text-sm font-semibold text-white hover:bg-[#2F4FE1] disabled:opacity-60"
+            [disabled]="verifyForm.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Send</span>
+            <span *ngIf="isSubmitting">Verifying...</span>
+          </button>
+
+          <button type="button" (click)="step='sendCode'"
+            class="w-full rounded-full border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            ‹ Back
+          </button>
+        </form>
+      </ng-container>
+
+      <!-- STEP: DONE -->
+      <ng-container *ngIf="step === 'done'">
+        <h1 class="text-center text-2xl font-semibold text-[#3758F9]">Sign up</h1>
+
+        <p class="mt-6 text-center text-sm text-slate-500">
+          You will soon receive an email in your inbox confirming the activation of your T360° account
+        </p>
+
+        <div class="mt-8 space-y-4">
+          <button type="button" (click)="backToLogin()"
+            class="w-full rounded-full bg-[#3758F9] py-3 text-sm font-semibold text-white hover:bg-[#2F4FE1]">
+            OK
+          </button>
+
+          <button type="button" (click)="step='verify'"
+            class="w-full rounded-full border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            ‹ Back
+          </button>
+        </div>
+      </ng-container>
+
+    </div>
+  </main>
+</div>
