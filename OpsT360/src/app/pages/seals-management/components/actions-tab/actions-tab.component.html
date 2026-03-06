@@ -1,0 +1,84 @@
+<section class="mt-6 space-y-4">
+  <div class="flex flex-wrap items-end gap-4 text-sm text-slate-700">
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">User</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>jperez</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Seal Type</span>
+      <select class="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Cable Seal / RFID Label Seal...</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Status</span>
+      <select class="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Ready / Active / Inactive</option>
+      </select>
+    </label>
+    <div class="ml-auto flex items-center">
+      <div class="flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <input type="search" placeholder="Search Seal / Container" [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchTermChange()"
+          class="w-60 bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none" />
+      </div>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+    <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+      <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium">Container id</th>
+          <th class="px-4 py-3 text-left font-medium">Seal number</th>
+          <th class="px-4 py-3 text-left font-medium">Status</th>
+          <th class="px-4 py-3 text-left font-medium">User</th>
+          <th class="px-4 py-3 text-left font-medium">Seal type</th>
+          <th class="px-4 py-3 text-left font-medium">Deactivate reason</th>
+          <th class="px-4 py-3 text-left font-medium">Deactivation date</th>
+          <th class="px-4 py-3 text-left font-medium">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200/60">
+        <tr *ngFor="let row of paginatedRows" class="text-[#757575] hover:bg-slate-50/40">
+          <td class="px-4 py-3">{{ row.containerId }}</td>
+          <td class="px-4 py-3">{{ row.sealNumber }}</td>
+          <td class="px-4 py-3" [ngClass]="{
+              'text-emerald-600': row.status === 'Active',
+              'text-red-600': row.status === 'inactive',
+              'text-indigo-600': row.status === 'Ready'
+            }">
+            {{ row.status }}
+          </td>
+          <td class="px-4 py-3">{{ row.user }}</td>
+          <td class="px-4 py-3">{{ row.sealType }}</td>
+          <td class="px-4 py-3">{{ row.deactivateReason }}</td>
+          <td class="px-4 py-3">{{ row.deactivateDate }}</td>
+          <td class="px-4 py-3">
+            <button type="button"
+              class="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700"
+              (click)="deactivate.emit()">
+              🖐 Deactivate
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+      <span>Rows per page: {{ pageSize }}</span>
+      <div class="flex items-center gap-3">
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="previousPage()" [disabled]="currentPage === 1">
+          ‹
+        </button>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="nextPage()" [disabled]="currentPage === totalPages">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
