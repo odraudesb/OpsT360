@@ -47,4 +47,5 @@ En este contenedor no está instalado el SDK de .NET (`dotnet`), por lo que no s
 
 - El hand-held funciona como **teclado externo**: escribe el código en el campo del sello que esté enfocado.
 - No tiene que “salir un infrarrojo” en pantalla; eso depende del hardware del scanner, no de la app.
-- En cada sello: enfoca el `Entry` del sello, dispara con el gatillo y confirma con Enter (o toca `Read Seal #n`).
+- En cada sello: toca `Read Seal #n` para enfocar ese sello, luego dispara con el gatillo; al recibir Enter se confirma automático.
+- Si el EPC ya está escrito en el campo, `Read Seal #n` también confirma la lectura de inmediato.

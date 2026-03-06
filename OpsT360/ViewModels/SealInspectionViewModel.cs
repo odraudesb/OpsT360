@@ -30,7 +30,7 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Esperando lectura de sello #1";
+    [ObservableProperty] private string statusText = "Pulsa Read Seal #1 y dispara el hand-held para capturar EPC.";
 
     public bool CanUploadImages => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanSend => CanUploadImages && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
