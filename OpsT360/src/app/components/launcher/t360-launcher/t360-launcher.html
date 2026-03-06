@@ -1,0 +1,56 @@
+<div class="w-[720px] rounded-2xl border border-slate-200 bg-white shadow-xl">
+  <!-- BARRA SUPERIOR CON BUSCADOR Y X -->
+  <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div class="relative flex-1">
+      <input type="search" placeholder="Search menu options"
+        class="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#3758F9] focus:outline-none focus:ring-1 focus:ring-[#3758F9]"
+        [(ngModel)]="searchTerm" />
+
+      <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">
+        🔍
+      </span>
+    </div>
+
+    <button type="button"
+      class="ml-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+      (click)="onCloseClick()" aria-label="Close">
+      ✕
+    </button>
+  </div>
+
+  <!-- GRID DE APLICACIONES -->
+  <div class="px-6 py-5">
+    <div class="grid grid-cols-3 gap-x-10 gap-y-6">
+      <button *ngFor="let app of filteredApps; trackBy: trackByAppId" type="button"
+        class="group flex cursor-pointer flex-col items-center text-center" (click)="onAppClick(app)">
+        <!-- ICONO -->
+        <div class="mb-2 flex h-12 w-12 items-center justify-center">
+          <img [src]="app.iconSrc" [alt]="app.label" class="h-12 w-12 object-contain" />
+        </div>
+
+        <!-- LABEL -->
+        <span class="text-xs font-medium leading-tight transition-colors"
+          [ngClass]="{ 'text-[#3758F9]': app.primary, 'text-slate-500': !app.primary, 'group-hover:text-[#3758F9]': !app.primary }">
+          {{ app.label }}
+        </span>
+
+        <!-- SUBTITLE -->
+        <span *ngIf="app.subtitle" class="mt-0.5 text-[11px] uppercase tracking-wide transition-colors"
+          [ngClass]="{ 'text-[#3758F9]': app.primary, 'text-slate-400': !app.primary, 'group-hover:text-[#3758F9]': !app.primary }">
+          {{ app.subtitle }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="border-t border-slate-100 px-6 py-4">
+    <div class="flex items-center justify-around">
+      <button *ngFor="let link of footerLinks; trackBy: trackByFooterId" type="button"
+        class="group flex flex-col items-center gap-1 text-xs text-[#3758F9]" (click)="onFooterClick(link)">
+        <img [src]="link.iconSrc" [alt]="link.label" class="h-7 w-7 object-contain" />
+        <span class="group-hover:underline">{{ link.label }}</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,155 @@
+<section class="mt-6 space-y-6">
+  <div class="grid gap-4 md:grid-cols-5">
+    <div class="rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <p class="text-3xl font-bold text-[#3758F9]">12,500</p>
+      <p class="text-sm text-slate-500">Total seals in system</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <p class="text-3xl font-bold text-[#3758F9]">11,800</p>
+      <p class="text-sm text-slate-500">Counted physical seals</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <p class="text-3xl font-bold text-amber-600">-700</p>
+      <p class="text-sm text-slate-500">Total Difference</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <p class="text-3xl font-bold text-[#3758F9]">3</p>
+      <p class="text-sm text-slate-500">Pending reconciliations</p>
+    </div>
+    <div class="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <button type="button"
+        class="flex items-center gap-2 rounded-md bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">
+        <span class="text-lg leading-none">▶</span>
+        Start
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-4 text-sm text-slate-700">
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">When?</span>
+      <select class="w-56 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>This week / Last we...</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Vessel</span>
+      <select class="w-44 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>All</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Operation Type</span>
+      <select class="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Exportation / Police Inspec..</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Reconciliation State</span>
+      <select class="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Close / Not Initiated / In prog..</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Discrepancies?</span>
+      <select class="w-44 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>Yes / No</option>
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-[11px] uppercase tracking-[0.2em] text-slate-500">User</span>
+      <select class="w-52 rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <option>JRamirez / PPorras / ASarmi...</option>
+      </select>
+    </label>
+    <div class="ml-auto flex items-center gap-2">
+      <button type="button"
+        class="flex h-10 items-center gap-2 rounded-md border border-slate-300 px-4 text-xs font-semibold text-slate-700 shadow-sm">
+        Search
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+    <table class="min-w-full border-collapse border-t border-slate-200 text-sm">
+      <thead class="border-b border-slate-200 text-[11px] tracking-wide text-[#757575]">
+        <tr>
+          <th class="px-4 py-3 text-left font-medium">
+            <input type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+          </th>
+          <th class="px-4 py-3 text-left font-medium">Date</th>
+          <th class="px-4 py-3 text-left font-medium">Vessel - voyage</th>
+          <th class="px-4 py-3 text-left font-medium">Operation type</th>
+          <th class="px-4 py-3 text-left font-medium">Seals in system</th>
+          <th class="px-4 py-3 text-left font-medium">Physical seals</th>
+          <th class="px-4 py-3 text-left font-medium">Difference</th>
+          <th class="px-4 py-3 text-left font-medium">Reconciliation status</th>
+          <th class="px-4 py-3 text-left font-medium">User</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200/60">
+        <tr *ngFor="let row of paginatedRows; trackBy: trackById" class="text-[#757575] hover:bg-slate-50/40">
+          <td class="px-4 py-3">
+            <input type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+          </td>
+          <td class="px-4 py-3">{{ row.id }}</td>
+          <td class="px-4 py-3 text-[#3758F9] underline">{{ row.vessel }}</td>
+          <td class="px-4 py-3">{{ row.operationType }}</td>
+          <td class="px-4 py-3">{{ row.systemSeals }}</td>
+          <td class="px-4 py-3">{{ row.physicalSeals }}</td>
+          <td class="px-4 py-3">
+            <span [ngClass]="{
+                'text-red-600': row.difference === -50 || row.difference === -150,
+                'text-slate-700': row.difference === 0 || row.difference === '-'
+              }" class="font-semibold">
+              {{ row.difference }}
+            </span>
+          </td>
+          <td class="px-4 py-3">
+            <span [ngClass]="{
+                'text-slate-700': row.status === 'Closed' || row.status === 'Close',
+                'text-[#3758F9]': row.status === 'In progress',
+                'text-slate-500': row.status === 'Not initiated'
+              }" class="font-semibold">
+              {{ row.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3">{{ row.user }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="flex items-center justify-between px-4 py-3 text-xs text-slate-500">
+      <span>Rows per page: {{ pageSize }}</span>
+      <div class="flex items-center gap-3">
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="previousPage()" [disabled]="currentPage === 1">
+          ‹
+        </button>
+        <button type="button" class="rounded border border-slate-200 px-2 py-1 text-xs disabled:opacity-40"
+          (click)="nextPage()" [disabled]="currentPage === totalPages">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid gap-4 text-sm text-slate-700 md:grid-cols-2">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-700">Reconciliation - Actions</span>
+        <button type="button" class="text-slate-400 hover:text-slate-700" aria-label="Close">✕</button>
+      </div>
+      <ul class="space-y-1 text-sm">
+        <li>Start Reconciliation</li>
+        <li>Continue Reconciliation Process</li>
+        <li>
+          <button type="button" class="text-[#3758F9] underline" (click)="viewDetail.emit()">
+            View Reconciliation
+          </button>
+        </li>
+        <li>Close Reconciliation</li>
+      </ul>
+    </div>
+  </div>
+</section>
