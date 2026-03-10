@@ -1,3 +1,5 @@
 .vs/
 bin/
 obj/
+# Vendor RFID SDK binaries must stay local (not committed)
+OpsT360/Platforms/Android/Libraries/**
