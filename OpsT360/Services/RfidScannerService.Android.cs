@@ -43,7 +43,7 @@ public partial class RfidScannerService
             TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
             TryStartInventory(setup.ManagerClass, setup.Manager);
 
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 30; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -55,7 +55,7 @@ public partial class RfidScannerService
                         return RfidReadResult.Ok(epc);
                 }
 
-                await Task.Delay(120, cancellationToken);
+                await Task.Delay(200, cancellationToken);
             }
 
             return RfidReadResult.Fail("No se detectó EPC por antena RFID. Acerca el sello azul al hand-held y gatilla de nuevo.");
@@ -110,6 +110,13 @@ public partial class RfidScannerService
         if (method != IntPtr.Zero)
         {
             var timerArgs = new JValue[] { new((short)180) };
+            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
+        }
+
+        method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(I)Ljava/util/List;");
+        if (method != IntPtr.Zero)
+        {
+            var timerArgs = new JValue[] { new(180) };
             return JNIEnv.CallObjectMethod(manager, method, timerArgs);
         }
 

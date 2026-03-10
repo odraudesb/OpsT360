@@ -33,8 +33,9 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string statusText = "Pulsa Read Seal #1 y dispara el hand-held para capturar EPC.";
 
-    public bool CanUploadImages => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
-    public bool CanSend => CanUploadImages && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
+    public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
+    public bool CanUploadImages => true;
+    public bool CanSend => AreAllSealsCaptured && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
 
     public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService)
     {
@@ -112,7 +113,7 @@ public partial class SealInspectionViewModel : ObservableObject
         Seals[index].IsLocked = true;
         CurrentSealIndex = Math.Max(CurrentSealIndex, index + 1);
 
-        if (CanUploadImages)
+        if (AreAllSealsCaptured)
         {
             SealEntryLocked = true;
             StatusText = "4 sellos cargados. Ya puedes subir fotos.";
@@ -172,9 +173,6 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadSealImageAsync(object? sealParameter)
     {
-        if (!CanUploadImages)
-            return;
-
         var index = ResolveSealIndex(sealParameter);
         if (index < 0 || index >= SealImages.Count)
             return;
@@ -209,9 +207,6 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadContainerImageAsync()
     {
-        if (!CanUploadImages)
-            return;
-
         var result = await FilePicker.PickAsync(new PickOptions
         {
             PickerTitle = "Selecciona imagen del contenedor",
