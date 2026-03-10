@@ -5,6 +5,10 @@ namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
+    private readonly object _sync = new();
+    private string? _lastEpc;
+    private DateTimeOffset _lastEpcAt = DateTimeOffset.MinValue;
+
     private partial Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
     {
         try
@@ -16,11 +20,15 @@ public partial class RfidScannerService
             TrySetPower(setup.ManagerClass, setup.Manager);
             TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
             TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
+            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStopReading");
 
-            var started = TryStartInventory(setup.ManagerClass, setup.Manager);
+            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
+                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+
+
             var message = started
-                ? "Antena RFID activada. Ahora pulsa Read seal y gatilla para capturar EPC."
-                : "Antena preparada. Si tu SDK no expone start, pulsa Read seal para iniciar lectura por timer.";
+                ? "Antena RFID activada en modo remoto. Pulsa Read seal para capturar EPC (sin gatillo)."
+                : "Antena preparada. Pulsa Read seal para capturar EPC por inventario temporizado.";
 
             return Task.FromResult(RfidReadResult.Ok(message));
         }
@@ -41,7 +49,11 @@ public partial class RfidScannerService
             TrySetPower(setup.ManagerClass, setup.Manager);
             TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
             TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
-            TryStartInventory(setup.ManagerClass, setup.Manager);
+            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
+                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+
+            if (!started)
+                return RfidReadResult.Fail("No fue posible iniciar inventario RFID en el SDK UHF6.");
 
             for (var i = 0; i < 30; i++)
             {
@@ -52,13 +64,20 @@ public partial class RfidScannerService
                 {
                     var epc = TryExtractFirstEpc(tagsList);
                     if (!string.IsNullOrWhiteSpace(epc))
+                    {
+                        SaveLastEpc(epc);
                         return RfidReadResult.Ok(epc);
+                    }
                 }
+
+                var cached = GetRecentEpc();
+                if (!string.IsNullOrWhiteSpace(cached))
+                    return RfidReadResult.Ok(cached);
 
                 await Task.Delay(200, cancellationToken);
             }
 
-            return RfidReadResult.Fail("No se detectó EPC por antena RFID. Acerca el sello azul al hand-held y gatilla de nuevo.");
+            return RfidReadResult.Fail("No se detectó EPC por antena RFID remota. Verifica distancia y potencia de lectura.");
         }
         catch (OperationCanceledException)
         {
@@ -110,6 +129,13 @@ public partial class RfidScannerService
         if (method != IntPtr.Zero)
         {
             var timerArgs = new JValue[] { new((short)180) };
+            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
+        }
+
+        method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
+        if (method != IntPtr.Zero)
+        {
+            var timerArgs = new JValue[] { new((short)100) };
             return JNIEnv.CallObjectMethod(manager, method, timerArgs);
         }
 
@@ -180,6 +206,29 @@ public partial class RfidScannerService
             return null;
 
         return Convert.ToHexString(bytes).Trim();
+    }
+
+    private void SaveLastEpc(string epc)
+    {
+        lock (_sync)
+        {
+            _lastEpc = epc.Trim().ToUpperInvariant();
+            _lastEpcAt = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private string? GetRecentEpc()
+    {
+        lock (_sync)
+        {
+            if (_lastEpcAt == DateTimeOffset.MinValue)
+                return null;
+
+            if (DateTimeOffset.UtcNow - _lastEpcAt > TimeSpan.FromSeconds(4))
+                return null;
+
+            return _lastEpc;
+        }
     }
 }
 #endif
