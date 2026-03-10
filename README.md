@@ -46,6 +46,9 @@ En este contenedor no está instalado el SDK de .NET (`dotnet`), por lo que no s
 ## Uso de hand-held (pistolear)
 
 - El hand-held funciona como **teclado externo**: escribe el código en el campo del sello que esté enfocado.
+- Integración Android con SDK ST-E7100 (`UHF6_v1.9.7.jar`, `ModuleAPI_J.jar` + `.so`) para intentar lectura EPC directa desde el botón `Read`.
+- **Control de repositorio**: los binarios del SDK (`.jar`/`.so`) se usan desde `ST-E7100 SDK USER MANUAL/UHF6_SDK_v2.13/jar_so` y **no** se deben versionar dentro de `OpsT360/Platforms/Android/Libraries`.
+- Si la lectura SDK no devuelve EPC, la app mantiene fallback por modo teclado (gatillo del hand-held emulando Enter).
 - No tiene que “salir un infrarrojo” en pantalla; eso depende del hardware del scanner, no de la app.
 - En cada sello: toca `Read Seal #n` para enfocar ese sello, luego dispara con el gatillo; al recibir Enter se confirma automático.
 - Si el EPC ya está escrito en el campo, `Read Seal #n` también confirma la lectura de inmediato.
