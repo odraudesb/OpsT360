@@ -10,6 +10,7 @@ namespace OpsT360.ViewModels;
 public partial class SealInspectionViewModel : ObservableObject
 {
     private readonly ITransactionsService _transactionsService;
+    private readonly IRfidScannerService _rfidScannerService;
 
     private readonly Dictionary<string, ContainerProfile> _profiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -35,9 +36,38 @@ public partial class SealInspectionViewModel : ObservableObject
     public bool CanUploadImages => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanSend => CanUploadImages && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
 
-    public SealInspectionViewModel(ITransactionsService transactionsService)
+    public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService)
     {
         _transactionsService = transactionsService;
+        _rfidScannerService = rfidScannerService;
+    }
+
+
+    [RelayCommand]
+    private async Task StartAntennaAsync()
+    {
+        var result = await _rfidScannerService.StartAntennaAsync();
+        StatusText = result.Message;
+    }
+
+    public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
+    {
+        var index = sealNumber - 1;
+        if (index < 0 || index >= Seals.Count)
+            return false;
+
+        var read = await _rfidScannerService.TryReadSingleEpcAsync();
+        if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+        {
+            StatusText = read.Message;
+            return false;
+        }
+
+        Seals[index].Code = read.Epc.Trim().ToUpperInvariant();
+        StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
+        OnPropertyChanged(nameof(CanUploadImages));
+        OnPropertyChanged(nameof(CanSend));
+        return true;
     }
 
     partial void OnContainerIdChanged(string value)
