@@ -1,12 +1,11 @@
 #if ANDROID
 using Android.Runtime;
-using Java.Interop;
 
 namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
-    partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
+    private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -22,9 +21,7 @@ public partial class RfidScannerService
             var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
             if (setPower != IntPtr.Zero)
             {
-                var powerArgs = stackalloc JniArgumentValue[2];
-                powerArgs[0] = new JniArgumentValue(30);
-                powerArgs[1] = new JniArgumentValue(30);
+                var powerArgs = new JValue[] { new(30), new(30) };
                 JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
             }
 
@@ -36,8 +33,7 @@ public partial class RfidScannerService
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var timerArgs = stackalloc JniArgumentValue[1];
-                timerArgs[0] = new JniArgumentValue((short)120);
+                var timerArgs = new JValue[] { new((short)120) };
                 var tagsList = JNIEnv.CallObjectMethod(manager, inventoryMethod, timerArgs);
                 if (tagsList == IntPtr.Zero)
                 {
@@ -73,8 +69,7 @@ public partial class RfidScannerService
         if (size <= 0)
             return null;
 
-        var getArgs = stackalloc JniArgumentValue[1];
-        getArgs[0] = new JniArgumentValue(0);
+        var getArgs = new JValue[] { new(0) };
         var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
         if (tagInfo == IntPtr.Zero)
             return null;
@@ -88,7 +83,7 @@ public partial class RfidScannerService
         if (epcBytesArray == IntPtr.Zero)
             return null;
 
-        var bytes = JNIEnv.GetArray<byte>(epcBytesArray, JniHandleOwnership.DoNotTransfer);
+        var bytes = JNIEnv.GetArray<byte>(epcBytesArray);
         if (bytes is null || bytes.Length == 0)
             return null;
 

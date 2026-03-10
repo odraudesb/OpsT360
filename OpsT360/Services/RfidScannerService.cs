@@ -5,5 +5,5 @@ public partial class RfidScannerService : IRfidScannerService
     public Task<RfidReadResult> TryReadSingleEpcAsync(CancellationToken cancellationToken = default)
         => TryReadSingleEpcPlatformAsync(cancellationToken);
 
-    partial Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken);
+    private partial Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken);
 }
