@@ -41,4 +41,19 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
   </ItemGroup>
 
+
+  <PropertyGroup>
+    <RfidSdkRoot Condition="'$(RfidSdkRoot)' == ''">..\ST-E7100 SDK USER MANUAL\UHF6_SDK_v2.13\jar_so</RfidSdkRoot>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(RfidSdkRoot)\UHF6_v1.9.7.jar') and Exists('$(RfidSdkRoot)\ModuleAPI_J.jar')">
+    <AndroidJavaLibrary Include="$(RfidSdkRoot)\UHF6_v1.9.7.jar" />
+    <AndroidJavaLibrary Include="$(RfidSdkRoot)\ModuleAPI_J.jar" />
+    <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libSerialPort.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libSerialPort.so')" />
+    <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libdevapi.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libdevapi.so')" />
+    <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libModuleAPIJni.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libModuleAPIJni.so')" />
+    <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libirdaSerialPort.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libirdaSerialPort.so')" />
+    <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\arm64-v8a\libModuleAPIJni.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\arm64-v8a\libModuleAPIJni.so')" />
+  </ItemGroup>
+
 </Project>

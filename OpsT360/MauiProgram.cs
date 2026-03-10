@@ -27,6 +27,8 @@ public static class MauiProgram
         builder.Services.AddHttpClient<ITransactionsService, TransactionsService>()
             .AddHttpMessageHandler<AuthHeaderHandler>();
 
+        builder.Services.AddSingleton<IRfidScannerService, RfidScannerService>();
+
         builder.Services.AddSingleton<LoginViewModel>();
         builder.Services.AddSingleton<SealInspectionViewModel>();
         builder.Services.AddSingleton<LoginPage>();
