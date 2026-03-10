@@ -10,6 +10,7 @@ namespace OpsT360.ViewModels;
 public partial class SealInspectionViewModel : ObservableObject
 {
     private readonly ITransactionsService _transactionsService;
+    private readonly IRfidScannerService _rfidScannerService;
 
     private readonly Dictionary<string, ContainerProfile> _profiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -32,12 +33,42 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string statusText = "Pulsa Read Seal #1 y dispara el hand-held para capturar EPC.";
 
-    public bool CanUploadImages => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
-    public bool CanSend => CanUploadImages && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
+    public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
+    public bool CanUploadImages => true;
+    public bool CanSend => AreAllSealsCaptured && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
 
-    public SealInspectionViewModel(ITransactionsService transactionsService)
+    public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService)
     {
         _transactionsService = transactionsService;
+        _rfidScannerService = rfidScannerService;
+    }
+
+
+    [RelayCommand]
+    private async Task StartAntennaAsync()
+    {
+        var result = await _rfidScannerService.StartAntennaAsync();
+        StatusText = result.Message;
+    }
+
+    public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
+    {
+        var index = sealNumber - 1;
+        if (index < 0 || index >= Seals.Count)
+            return false;
+
+        var read = await _rfidScannerService.TryReadSingleEpcAsync();
+        if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+        {
+            StatusText = read.Message;
+            return false;
+        }
+
+        Seals[index].Code = read.Epc.Trim().ToUpperInvariant();
+        StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
+        OnPropertyChanged(nameof(CanUploadImages));
+        OnPropertyChanged(nameof(CanSend));
+        return true;
     }
 
     partial void OnContainerIdChanged(string value)
@@ -82,7 +113,7 @@ public partial class SealInspectionViewModel : ObservableObject
         Seals[index].IsLocked = true;
         CurrentSealIndex = Math.Max(CurrentSealIndex, index + 1);
 
-        if (CanUploadImages)
+        if (AreAllSealsCaptured)
         {
             SealEntryLocked = true;
             StatusText = "4 sellos cargados. Ya puedes subir fotos.";
@@ -139,21 +170,40 @@ public partial class SealInspectionViewModel : ObservableObject
         OnPropertyChanged(nameof(CanSend));
     }
 
+    private static async Task<FileResult?> CapturePhotoAsync(string title)
+    {
+        if (MediaPicker.Default.IsCaptureSupported)
+        {
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = title
+            });
+        }
+
+        return await FilePicker.PickAsync(new PickOptions
+        {
+            PickerTitle = title,
+            FileTypes = FilePickerFileType.Images
+        });
+    }
+
     [RelayCommand]
     private async Task LoadSealImageAsync(object? sealParameter)
     {
-        if (!CanUploadImages)
-            return;
-
         var index = ResolveSealIndex(sealParameter);
         if (index < 0 || index >= SealImages.Count)
             return;
 
-        var result = await FilePicker.PickAsync(new PickOptions
+        FileResult? result;
+        try
         {
-            PickerTitle = "Selecciona imagen del sello",
-            FileTypes = FilePickerFileType.Images
-        });
+            result = await CapturePhotoAsync("Toma foto del sello");
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            return;
+        }
 
         if (result is null)
             return;
@@ -179,14 +229,16 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadContainerImageAsync()
     {
-        if (!CanUploadImages)
-            return;
-
-        var result = await FilePicker.PickAsync(new PickOptions
+        FileResult? result;
+        try
         {
-            PickerTitle = "Selecciona imagen del contenedor",
-            FileTypes = FilePickerFileType.Images
-        });
+            result = await CapturePhotoAsync("Toma foto del contenedor");
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            return;
+        }
 
         if (result is null)
             return;

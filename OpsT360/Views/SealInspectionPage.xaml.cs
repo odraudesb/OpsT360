@@ -21,7 +21,7 @@ public partial class SealInspectionPage : ContentPage
         _vm.ReadSealCommand.Execute(sealNumber.ToString());
     }
 
-    private void OnReadSealClicked(object? sender, EventArgs e)
+    private async void OnReadSealClicked(object? sender, EventArgs e)
     {
         if (sender is not Button button || !int.TryParse(button.ClassId, out var sealNumber))
             return;
@@ -40,7 +40,14 @@ public partial class SealInspectionPage : ContentPage
 
         entry.Focus();
 
-        // Si ya llegó EPC por el hand-held (modo teclado), confirmar lectura inmediatamente
+        var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
+        if (sdkCaptured)
+        {
+            _vm.ReadSealCommand.Execute(sealNumber.ToString());
+            return;
+        }
+
+        // Fallback: si ya llegó EPC por el hand-held como teclado, confirmar lectura inmediatamente
         if (!string.IsNullOrWhiteSpace(entry.Text))
             _vm.ReadSealCommand.Execute(sealNumber.ToString());
     }
