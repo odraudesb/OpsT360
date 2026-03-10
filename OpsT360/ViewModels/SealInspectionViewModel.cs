@@ -31,7 +31,7 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Pulsa Read Seal #1 y dispara el hand-held para capturar EPC.";
+    [ObservableProperty] private string statusText = "Pulsa Start antenna y luego Read Seal #1 para capturar EPC remoto (ST-E100).";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -105,7 +105,7 @@ public partial class SealInspectionViewModel : ObservableObject
         var code = Seals[index].Code?.Trim().ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(code))
         {
-            StatusText = $"Captura o pistolea primero el código del sello #{sealNumber}.";
+            StatusText = $"Primero captura el código del sello #{sealNumber} con Read seal.";
             return;
         }
 
