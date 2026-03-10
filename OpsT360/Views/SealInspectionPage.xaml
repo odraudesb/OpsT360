@@ -19,25 +19,14 @@
             <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="Container information" FontAttributes="Bold" TextColor="#8A93A6" />
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Container Id" TextColor="#6E7891" FontSize="12" />
-                            <Entry Placeholder="Ej: HSU3523430"
-                                   Text="{Binding ContainerId}"
-                                   BackgroundColor="#F1F4FA"
-                                   TextColor="#243048"
-                                   HeightRequest="46" />
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Activation Point" TextColor="#6E7891" FontSize="12" />
-                            <Picker ItemsSource="{Binding ActivationPoints}"
-                                    SelectedItem="{Binding SelectedActivationPoint}"
-                                    BackgroundColor="#F1F4FA"
-                                    TextColor="#243048"
-                                    HeightRequest="46" />
-                        </VerticalStackLayout>
-                    </Grid>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Container Id" TextColor="#8A93A6" FontSize="12" />
+                        <Entry Placeholder="Ej: HSU3523430"
+                               Text="{Binding ContainerId}"
+                               BackgroundColor="#F1F4FA"
+                               TextColor="#243048"
+                               HeightRequest="46" />
+                    </VerticalStackLayout>
 
                     <CollectionView ItemsSource="{Binding ContainerSuggestions}"
                                     HeightRequest="120"
@@ -61,7 +50,7 @@
             <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="RFID seal registry" FontAttributes="Bold" TextColor="#8A93A6" />
-                    <Label Text="Pulsa Read Seal y luego gatillo del hand-held."
+                    <Label Text="Pulsa Read seal y gatilla el hand-held para leer el sticker azul RFID."
                            FontSize="12"
                            TextColor="#6E7891" />
 
