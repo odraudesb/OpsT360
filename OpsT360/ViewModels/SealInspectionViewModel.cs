@@ -31,7 +31,7 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Pulsa Start antenna y luego Read Seal #1 para capturar EPC remoto (ST-E100).";
+    [ObservableProperty] private string statusText = "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -43,19 +43,18 @@ public partial class SealInspectionViewModel : ObservableObject
         _rfidScannerService = rfidScannerService;
     }
 
-
-    [RelayCommand]
-    private async Task StartAntennaAsync()
-    {
-        var result = await _rfidScannerService.StartAntennaAsync();
-        StatusText = result.Message;
-    }
-
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
     {
         var index = sealNumber - 1;
         if (index < 0 || index >= Seals.Count)
             return false;
+
+        var antennaStart = await _rfidScannerService.StartAntennaAsync();
+        if (!antennaStart.Success)
+        {
+            StatusText = antennaStart.Message;
+            return false;
+        }
 
         var read = await _rfidScannerService.TryReadSingleEpcAsync();
         if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
