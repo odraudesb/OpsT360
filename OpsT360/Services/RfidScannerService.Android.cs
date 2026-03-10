@@ -18,19 +18,13 @@ public partial class RfidScannerService
                 return Task.FromResult(RfidReadResult.Fail(setup.Message));
 
             TrySetPower(setup.ManagerClass, setup.Manager);
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStopReading");
+            StopAnyInventory(setup.ManagerClass, setup.Manager);
 
-            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
-                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+            var started = TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail);
+            if (!started)
+                return Task.FromResult(RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}"));
 
-
-            var message = started
-                ? "Antena RFID activada en modo remoto. Pulsa Read seal para capturar EPC (sin gatillo)."
-                : "Antena preparada. Pulsa Read seal para capturar EPC por inventario temporizado.";
-
-            return Task.FromResult(RfidReadResult.Ok(message));
+            return Task.FromResult(RfidReadResult.Ok("Antena RFID activada. Pulsa Read seal para capturar EPC."));
         }
         catch (Exception ex)
         {
@@ -47,37 +41,39 @@ public partial class RfidScannerService
                 return RfidReadResult.Fail(setup.Message);
 
             TrySetPower(setup.ManagerClass, setup.Manager);
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
-            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
-                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+            StopAnyInventory(setup.ManagerClass, setup.Manager);
 
-            if (!started)
-                return RfidReadResult.Fail("No fue posible iniciar inventario RFID en el SDK UHF6.");
+            if (!TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail))
+                return RfidReadResult.Fail($"No fue posible iniciar inventario RFID en UHF6: {startDetail}");
 
-            for (var i = 0; i < 30; i++)
+            for (var i = 0; i < 35; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var tagsList = TryInventory(setup.ManagerClass, setup.Manager);
                 if (tagsList != IntPtr.Zero)
                 {
-                    var epc = TryExtractFirstEpc(tagsList);
+                    var epc = TryExtractBestEpc(tagsList);
                     if (!string.IsNullOrWhiteSpace(epc))
                     {
                         SaveLastEpc(epc);
+                        StopAnyInventory(setup.ManagerClass, setup.Manager);
                         return RfidReadResult.Ok(epc);
                     }
                 }
 
                 var cached = GetRecentEpc();
                 if (!string.IsNullOrWhiteSpace(cached))
+                {
+                    StopAnyInventory(setup.ManagerClass, setup.Manager);
                     return RfidReadResult.Ok(cached);
+                }
 
-                await Task.Delay(200, cancellationToken);
+                await Task.Delay(120, cancellationToken);
             }
 
-            return RfidReadResult.Fail("No se detectó EPC por antena RFID remota. Verifica distancia y potencia de lectura.");
+            StopAnyInventory(setup.ManagerClass, setup.Manager);
+            return RfidReadResult.Fail("No se detectó EPC por antena RFID. Verifica distancia, orientación y potencia.");
         }
         catch (OperationCanceledException)
         {
@@ -116,11 +112,50 @@ public partial class RfidScannerService
         JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
     }
 
-    private static bool TryStartInventory(IntPtr managerClass, IntPtr manager)
+    private static void StopAnyInventory(IntPtr managerClass, IntPtr manager)
     {
-        return TryInvokeNoArg(managerClass, manager, "startTagInventory")
-               || TryInvokeNoArg(managerClass, manager, "startInventory")
-               || TryInvokeNoArg(managerClass, manager, "startInventoryTag");
+        TryInvokeBoolNoArg(managerClass, manager, "stopTagInventory");
+        TryInvokeBoolNoArg(managerClass, manager, "stopInventory");
+        TryInvokeReaderErrNoArg(managerClass, manager, "asyncStopReading");
+    }
+
+    private static bool TryStartInventory(IntPtr managerClass, IntPtr manager, out string detail)
+    {
+        if (TryInvokeBoolNoArg(managerClass, manager, "startTagInventory", out var byTagInv))
+        {
+            if (byTagInv)
+            {
+                detail = "startTagInventory";
+                return true;
+            }
+        }
+
+        if (TryInvokeBoolNoArg(managerClass, manager, "startInventory", out var byInv))
+        {
+            if (byInv)
+            {
+                detail = "startInventory";
+                return true;
+            }
+        }
+
+        if (TryInvokeBoolNoArg(managerClass, manager, "startInventoryTag", out var byInvTag))
+        {
+            if (byInvTag)
+            {
+                detail = "startInventoryTag";
+                return true;
+            }
+        }
+
+        if (TryInvokeReaderErrNoArg(managerClass, manager, "asyncStartReading", out var asyncOk, out var asyncErr))
+        {
+            detail = asyncOk ? "asyncStartReading" : $"asyncStartReading={asyncErr}";
+            return asyncOk;
+        }
+
+        detail = "Ningún método de arranque disponible en UHFRManager";
+        return false;
     }
 
     private static IntPtr TryInventory(IntPtr managerClass, IntPtr manager)
@@ -135,14 +170,7 @@ public partial class RfidScannerService
         method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
         if (method != IntPtr.Zero)
         {
-            var timerArgs = new JValue[] { new((short)100) };
-            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
-        }
-
-        method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(I)Ljava/util/List;");
-        if (method != IntPtr.Zero)
-        {
-            var timerArgs = new JValue[] { new(180) };
+            var timerArgs = new JValue[] { new((short)120) };
             return JNIEnv.CallObjectMethod(manager, method, timerArgs);
         }
 
@@ -150,33 +178,67 @@ public partial class RfidScannerService
         if (method != IntPtr.Zero)
             return JNIEnv.CallObjectMethod(manager, method);
 
-        method = JNIEnv.GetMethodID(managerClass, "inventoryRealTime", "()Ljava/util/List;");
-        if (method != IntPtr.Zero)
-            return JNIEnv.CallObjectMethod(manager, method);
-
         return IntPtr.Zero;
     }
 
-    private static bool TryInvokeNoArg(IntPtr managerClass, IntPtr manager, string methodName)
+    private static bool TryInvokeBoolNoArg(IntPtr managerClass, IntPtr manager, string methodName)
     {
-        var method = JNIEnv.GetMethodID(managerClass, methodName, "()V");
-        if (method != IntPtr.Zero)
-        {
-            JNIEnv.CallVoidMethod(manager, method);
-            return true;
-        }
-
-        method = JNIEnv.GetMethodID(managerClass, methodName, "()Z");
-        if (method != IntPtr.Zero)
-        {
-            JNIEnv.CallBooleanMethod(manager, method);
-            return true;
-        }
-
-        return false;
+        return TryInvokeBoolNoArg(managerClass, manager, methodName, out _);
     }
 
-    private static string? TryExtractFirstEpc(IntPtr listHandle)
+    private static bool TryInvokeBoolNoArg(IntPtr managerClass, IntPtr manager, string methodName, out bool result)
+    {
+        var method = JNIEnv.GetMethodID(managerClass, methodName, "()Z");
+        if (method == IntPtr.Zero)
+        {
+            result = false;
+            return false;
+        }
+
+        result = JNIEnv.CallBooleanMethod(manager, method);
+        return true;
+    }
+
+    private static bool TryInvokeReaderErrNoArg(IntPtr managerClass, IntPtr manager, string methodName)
+    {
+        return TryInvokeReaderErrNoArg(managerClass, manager, methodName, out _, out _);
+    }
+
+    private static bool TryInvokeReaderErrNoArg(IntPtr managerClass, IntPtr manager, string methodName, out bool ok, out string errName)
+    {
+        var method = JNIEnv.GetMethodID(managerClass, methodName, "()Lcom/uhf/api/cls/Reader$READER_ERR;");
+        if (method == IntPtr.Zero)
+        {
+            ok = false;
+            errName = "MethodNotFound";
+            return false;
+        }
+
+        var errObj = JNIEnv.CallObjectMethod(manager, method);
+        if (errObj == IntPtr.Zero)
+        {
+            ok = false;
+            errName = "NullReaderErr";
+            return true;
+        }
+
+        errName = ReadEnumName(errObj) ?? "UnknownReaderErr";
+        ok = string.Equals(errName, "MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+        return true;
+    }
+
+    private static string? ReadEnumName(IntPtr enumObj)
+    {
+        var enumClass = JNIEnv.GetObjectClass(enumObj);
+        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+        if (nameMethod == IntPtr.Zero)
+            return null;
+
+        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+        return nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
+    }
+
+    private static string? TryExtractBestEpc(IntPtr listHandle)
     {
         var listClass = JNIEnv.FindClass("java/util/List");
         var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
@@ -185,11 +247,40 @@ public partial class RfidScannerService
         if (size <= 0)
             return null;
 
-        var getArgs = new JValue[] { new(0) };
-        var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
-        if (tagInfo == IntPtr.Zero)
-            return null;
+        string? bestEpc = null;
+        var bestRssi = int.MinValue;
 
+        for (var i = 0; i < size; i++)
+        {
+            var getArgs = new JValue[] { new(i) };
+            var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
+            if (tagInfo == IntPtr.Zero)
+                continue;
+
+            var epc = TryExtractEpcFromTag(tagInfo);
+            if (string.IsNullOrWhiteSpace(epc))
+                continue;
+
+            var rssi = TryExtractRssiFromTag(tagInfo);
+            if (rssi > bestRssi)
+            {
+                bestRssi = rssi;
+                bestEpc = epc;
+            }
+        }
+
+        return bestEpc;
+    }
+
+    private static int TryExtractRssiFromTag(IntPtr tagInfo)
+    {
+        var tagClass = JNIEnv.GetObjectClass(tagInfo);
+        var rssiField = JNIEnv.GetFieldID(tagClass, "RSSI", "I");
+        return rssiField == IntPtr.Zero ? int.MinValue : JNIEnv.GetIntField(tagInfo, rssiField);
+    }
+
+    private static string? TryExtractEpcFromTag(IntPtr tagInfo)
+    {
         var tagClass = JNIEnv.GetObjectClass(tagInfo);
         var epcField = JNIEnv.GetFieldID(tagClass, "EpcId", "[B");
         if (epcField == IntPtr.Zero)
