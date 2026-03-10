@@ -170,6 +170,23 @@ public partial class SealInspectionViewModel : ObservableObject
         OnPropertyChanged(nameof(CanSend));
     }
 
+    private static async Task<FileResult?> CapturePhotoAsync(string title)
+    {
+        if (MediaPicker.Default.IsCaptureSupported)
+        {
+            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = title
+            });
+        }
+
+        return await FilePicker.PickAsync(new PickOptions
+        {
+            PickerTitle = title,
+            FileTypes = FilePickerFileType.Images
+        });
+    }
+
     [RelayCommand]
     private async Task LoadSealImageAsync(object? sealParameter)
     {
@@ -177,11 +194,16 @@ public partial class SealInspectionViewModel : ObservableObject
         if (index < 0 || index >= SealImages.Count)
             return;
 
-        var result = await FilePicker.PickAsync(new PickOptions
+        FileResult? result;
+        try
         {
-            PickerTitle = "Selecciona imagen del sello",
-            FileTypes = FilePickerFileType.Images
-        });
+            result = await CapturePhotoAsync("Toma foto del sello");
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            return;
+        }
 
         if (result is null)
             return;
@@ -207,11 +229,16 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadContainerImageAsync()
     {
-        var result = await FilePicker.PickAsync(new PickOptions
+        FileResult? result;
+        try
         {
-            PickerTitle = "Selecciona imagen del contenedor",
-            FileTypes = FilePickerFileType.Images
-        });
+            result = await CapturePhotoAsync("Toma foto del contenedor");
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            return;
+        }
 
         if (result is null)
             return;
