@@ -57,6 +57,6 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
             return;
 
-        _vm.StatusText = $"Sello #{sealNumber} listo para lectura RFID remota. Pulsa Read seal para capturar EPC.";
+        _vm.StatusText = $"Sello #{sealNumber} listo. Pulsa Read seal para activar antena y capturar EPC.";
     }
 }
