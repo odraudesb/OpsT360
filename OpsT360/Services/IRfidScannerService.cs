@@ -2,6 +2,7 @@ namespace OpsT360.Services;
 
 public interface IRfidScannerService
 {
+    Task<RfidReadResult> StartAntennaAsync(CancellationToken cancellationToken = default);
     Task<RfidReadResult> TryReadSingleEpcAsync(CancellationToken cancellationToken = default);
 }
 

@@ -5,31 +5,49 @@ namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
+    private partial Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var setup = TryGetReader();
+            if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
+                return Task.FromResult(RfidReadResult.Fail(setup.Message));
+
+            TrySetPower(setup.ManagerClass, setup.Manager);
+            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
+            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
+
+            var started = TryStartInventory(setup.ManagerClass, setup.Manager);
+            var message = started
+                ? "Antena RFID activada. Ahora pulsa Read seal y gatilla para capturar EPC."
+                : "Antena preparada. Si tu SDK no expone start, pulsa Read seal para iniciar lectura por timer.";
+
+            return Task.FromResult(RfidReadResult.Ok(message));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(RfidReadResult.Fail($"No se pudo activar antena RFID: {ex.Message}"));
+        }
+    }
+
     private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var managerClass = JNIEnv.FindClass("com/handheld/uhfr/UHFRManager");
-            if (managerClass == IntPtr.Zero)
-                return RfidReadResult.Fail("No se encontró UHFRManager en los JAR del SDK.");
+            var setup = TryGetReader();
+            if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
+                return RfidReadResult.Fail(setup.Message);
 
-            var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
-            if (getInstance == IntPtr.Zero)
-                return RfidReadResult.Fail("No se encontró getInstance() en UHFRManager.");
-
-            var manager = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
-            if (manager == IntPtr.Zero)
-                return RfidReadResult.Fail("No fue posible inicializar el módulo RFID (getInstance = null).");
-
-            TrySetPower(managerClass, manager);
-            TryInvokeNoArg(managerClass, manager, "stopTagInventory");
-            TryInvokeNoArg(managerClass, manager, "stopInventory");
+            TrySetPower(setup.ManagerClass, setup.Manager);
+            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
+            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
+            TryStartInventory(setup.ManagerClass, setup.Manager);
 
             for (var i = 0; i < 10; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var tagsList = TryInventory(managerClass, manager);
+                var tagsList = TryInventory(setup.ManagerClass, setup.Manager);
                 if (tagsList != IntPtr.Zero)
                 {
                     var epc = TryExtractFirstEpc(tagsList);
@@ -52,6 +70,23 @@ public partial class RfidScannerService
         }
     }
 
+    private static (bool Success, string Message, IntPtr ManagerClass, IntPtr Manager) TryGetReader()
+    {
+        var managerClass = JNIEnv.FindClass("com/handheld/uhfr/UHFRManager");
+        if (managerClass == IntPtr.Zero)
+            return (false, "No se encontró UHFRManager en los JAR del SDK.", IntPtr.Zero, IntPtr.Zero);
+
+        var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
+        if (getInstance == IntPtr.Zero)
+            return (false, "No se encontró getInstance() en UHFRManager.", IntPtr.Zero, IntPtr.Zero);
+
+        var manager = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
+        if (manager == IntPtr.Zero)
+            return (false, "No fue posible inicializar el módulo RFID (getInstance = null).", IntPtr.Zero, IntPtr.Zero);
+
+        return (true, string.Empty, managerClass, manager);
+    }
+
     private static void TrySetPower(IntPtr managerClass, IntPtr manager)
     {
         var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
@@ -60,6 +95,13 @@ public partial class RfidScannerService
 
         var powerArgs = new JValue[] { new(30), new(30) };
         JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
+    }
+
+    private static bool TryStartInventory(IntPtr managerClass, IntPtr manager)
+    {
+        return TryInvokeNoArg(managerClass, manager, "startTagInventory")
+               || TryInvokeNoArg(managerClass, manager, "startInventory")
+               || TryInvokeNoArg(managerClass, manager, "startInventoryTag");
     }
 
     private static IntPtr TryInventory(IntPtr managerClass, IntPtr manager)
@@ -82,18 +124,23 @@ public partial class RfidScannerService
         return IntPtr.Zero;
     }
 
-    private static void TryInvokeNoArg(IntPtr managerClass, IntPtr manager, string methodName)
+    private static bool TryInvokeNoArg(IntPtr managerClass, IntPtr manager, string methodName)
     {
         var method = JNIEnv.GetMethodID(managerClass, methodName, "()V");
         if (method != IntPtr.Zero)
         {
             JNIEnv.CallVoidMethod(manager, method);
-            return;
+            return true;
         }
 
         method = JNIEnv.GetMethodID(managerClass, methodName, "()Z");
         if (method != IntPtr.Zero)
+        {
             JNIEnv.CallBooleanMethod(manager, method);
+            return true;
+        }
+
+        return false;
     }
 
     private static string? TryExtractFirstEpc(IntPtr listHandle)

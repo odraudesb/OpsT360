@@ -42,6 +42,14 @@ public partial class SealInspectionViewModel : ObservableObject
         _rfidScannerService = rfidScannerService;
     }
 
+
+    [RelayCommand]
+    private async Task StartAntennaAsync()
+    {
+        var result = await _rfidScannerService.StartAntennaAsync();
+        StatusText = result.Message;
+    }
+
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
     {
         var index = sealNumber - 1;
