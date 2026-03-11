@@ -28,7 +28,6 @@ public partial class RfidScannerService
 
             var powerDetail = TrySetPower(managerClass, manager);
             var startDetail = TryStartReading(managerClass, manager, out var started);
-
             if (!started)
                 return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {startDetail}. setPower={powerDetail}");
 
@@ -86,12 +85,6 @@ public partial class RfidScannerService
         catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
-        }
-        catch (Java.Lang.Throwable jex)
-        {
-            var detail = DescribeJavaThrowable(jex);
-            LogStep($"TryReadSingleEpc: Java error -> {detail}");
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
        
    
