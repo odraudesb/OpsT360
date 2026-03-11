@@ -139,12 +139,7 @@ public partial class RfidScannerService
             LogStep($"TryReadSingleEpc: Java error -> {detail}");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
-        catch (Java.Lang.Throwable jex)
-        {
-            var detail = DescribeJavaThrowable(jex);
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
-        }
-  
+       
    
         catch (Exception ex)
         {
