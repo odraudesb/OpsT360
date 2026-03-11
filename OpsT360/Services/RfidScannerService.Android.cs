@@ -1,5 +1,6 @@
 #if ANDROID
 using Android.Runtime;
+using Android.OS;
 
 namespace OpsT360.Services;
 
@@ -25,6 +26,11 @@ public partial class RfidScannerService
                 return Task.FromResult(RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}"));
 
             return Task.FromResult(RfidReadResult.Ok("Antena RFID activada. Pulsa Read seal para capturar EPC."));
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return Task.FromResult(RfidReadResult.Fail($"No se pudo activar antena RFID: {detail}"));
         }
         catch (Exception ex)
         {
@@ -78,6 +84,11 @@ public partial class RfidScannerService
         catch (OperationCanceledException)
         {
             return RfidReadResult.Fail("Lectura RFID cancelada.");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"Error RFID Java: {detail}");
         }
         catch (Exception ex)
         {
@@ -297,6 +308,19 @@ public partial class RfidScannerService
             return null;
 
         return Convert.ToHexString(bytes).Trim();
+    }
+
+    private static string DescribeJavaThrowable(Java.Lang.Throwable throwable)
+    {
+        var message = throwable.Message ?? throwable.Class?.Name ?? "JavaThrowable";
+
+        if (message.Contains("cn.pda.serialport.SerialPort", StringComparison.OrdinalIgnoreCase))
+        {
+            var abi = Build.SupportedAbis is { Length: > 0 } ? string.Join(",", Build.SupportedAbis) : "unknown";
+            return $"{message}. Posible incompatibilidad ABI (SDK UHF6 requiere libSerialPort 32-bit). ABIs dispositivo: {abi}";
+        }
+
+        return message;
     }
 
     private void SaveLastEpc(string epc)
