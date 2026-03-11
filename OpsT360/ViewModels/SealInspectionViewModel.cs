@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpsT360.Models;
@@ -20,6 +21,10 @@ public partial class SealInspectionViewModel : ObservableObject
         ["TEMU0927644"] = new() { EntityId = 12345, ShippingLine = "ONE", Goods = "Arándano fresco", Booking = "BK2025-000113", OriginWeight = 20880 }
     };
 
+
+    private static readonly Regex EpcHexRegex = new("^[0-9A-F]{8,64}$", RegexOptions.Compiled);
+    private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
+
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
     public ObservableCollection<EvidenceImage> SealImages { get; } = new(Enumerable.Range(1, 4).Select(i => new EvidenceImage { Label = $"Seal Image #{i}" }));
@@ -31,7 +36,7 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Pulsa Start antenna y luego Read Seal #1 para capturar EPC remoto (ST-E100).";
+    [ObservableProperty] private string statusText = "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -43,32 +48,56 @@ public partial class SealInspectionViewModel : ObservableObject
         _rfidScannerService = rfidScannerService;
     }
 
-
-    [RelayCommand]
-    private async Task StartAntennaAsync()
-    {
-        var result = await _rfidScannerService.StartAntennaAsync();
-        StatusText = result.Message;
-    }
-
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
     {
         var index = sealNumber - 1;
         if (index < 0 || index >= Seals.Count)
             return false;
 
-        var read = await _rfidScannerService.TryReadSingleEpcAsync();
-        if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+        if (IsBusy)
         {
-            StatusText = read.Message;
+            StatusText = "Lectura RFID en curso. Espera un momento...";
             return false;
         }
 
-        Seals[index].Code = read.Epc.Trim().ToUpperInvariant();
-        StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
-        OnPropertyChanged(nameof(CanUploadImages));
-        OnPropertyChanged(nameof(CanSend));
-        return true;
+        IsBusy = true;
+        try
+        {
+            using var cts = new CancellationTokenSource(RfidReadTimeout);
+            var read = await _rfidScannerService.TryReadSingleEpcAsync(cts.Token);
+            if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+            {
+                StatusText = read.Message;
+                return false;
+            }
+
+            var normalized = NormalizeEpc(read.Epc);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                StatusText = $"El lector devolvió un valor no EPC ({read.Epc}). Revisa configuración RFID/UHF en el handheld.";
+                return false;
+            }
+
+            Seals[index].Code = normalized;
+            StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return true;
+        }
+        catch (System.OperationCanceledException)
+        {
+            StatusText = "Timeout RFID: no se detectó tag en 8s. Acerca el sello y reintenta.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Error inesperado en lectura RFID: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     partial void OnContainerIdChanged(string value)
@@ -102,10 +131,10 @@ public partial class SealInspectionViewModel : ObservableObject
         if (SealEntryLocked && Seals[index].IsLocked)
             return;
 
-        var code = Seals[index].Code?.Trim().ToUpperInvariant();
+        var code = NormalizeEpc(Seals[index].Code);
         if (string.IsNullOrWhiteSpace(code))
         {
-            StatusText = $"Primero captura el código del sello #{sealNumber} con Read seal.";
+            StatusText = $"El sello #{sealNumber} no contiene un EPC RFID válido (hexadecimal). Usa Read seal (RFID), no código de barras.";
             return;
         }
 
@@ -296,6 +325,15 @@ public partial class SealInspectionViewModel : ObservableObject
     }
 
     private ContainerProfile ResolveProfile() => _profiles.TryGetValue(ContainerId.Trim(), out var profile) ? profile : new ContainerProfile { EntityId = 100004 };
+
+    private static string? NormalizeEpc(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim().ToUpperInvariant();
+        return EpcHexRegex.IsMatch(normalized) ? normalized : null;
+    }
 
     private static int ResolveSealIndex(object? parameter)
     {
