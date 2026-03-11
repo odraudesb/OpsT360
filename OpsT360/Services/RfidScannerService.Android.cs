@@ -125,6 +125,14 @@ public partial class RfidScannerService
             LogStep($"TryReadSingleEpc: Java error -> {detail}");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+       
+   
         catch (Exception ex)
         {
             LogStep($"TryReadSingleEpc: .NET error -> {ex.Message}");
@@ -390,7 +398,7 @@ public partial class RfidScannerService
         return name;
     }
 
-    private static string? TryExtractFirstEpc(IntPtr listHandle)
+    private static string? TryExtractBestEpc(IntPtr listHandle)
     {
         var listClass = JNIEnv.FindClass("java/util/List");
         var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
