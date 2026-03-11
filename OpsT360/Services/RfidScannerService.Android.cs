@@ -9,7 +9,7 @@ public partial class RfidScannerService
 {
     private const string RfidImplVersion = "RFIDv2026.03.11.6";
     private const string LogTag = "OpsT360.RFID";
-    private const bool SkipSdkSetPower = false;
+    private static readonly bool SkipSdkSetPower = false;
     private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
 
     private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
@@ -43,12 +43,6 @@ public partial class RfidScannerService
 
             LogStep("StartAntenna: success");
             return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada. Pulsa Read seal para capturar EPC.");
-        }
-        catch (Java.Lang.Throwable jex)
-        {
-            var detail = DescribeJavaThrowable(jex);
-            LogStep($"StartAntenna: Java error -> {detail}");
-            return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {detail}");
         }
         catch (System.OperationCanceledException)
         {
@@ -398,6 +392,49 @@ public partial class RfidScannerService
         return name;
     }
 
+    private static void DeleteGlobalRefSafe(IntPtr handle)
+    {
+        if (handle == IntPtr.Zero)
+            return;
+
+        try
+        {
+            JNIEnv.DeleteGlobalRef(handle);
+        }
+        catch
+        {
+            // Evita crash por doble liberación o ref inválida.
+        }
+    }
+
+    private static void ClearPendingJavaException()
+    {
+        var pending = JNIEnv.ExceptionOccurred();
+        if (pending != IntPtr.Zero)
+        {
+            JNIEnv.ExceptionClear();
+        }
+    }
+
+    private static string? ReadEnumName(IntPtr enumObj)
+    {
+        var enumClass = JNIEnv.GetObjectClass(enumObj);
+        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+        if (nameMethod == IntPtr.Zero)
+        {
+            DeleteLocalRefSafe(enumClass);
+            return null;
+        }
+
+        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+        var name = nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
+        if (nameObj != IntPtr.Zero)
+            DeleteLocalRefSafe(nameObj);
+
+        DeleteLocalRefSafe(enumClass);
+        return name;
+    }
+
     private static string? TryExtractBestEpc(IntPtr listHandle)
     {
         var listClass = JNIEnv.FindClass("java/util/List");
@@ -454,20 +491,6 @@ public partial class RfidScannerService
             return null;
 
         return Convert.ToHexString(bytes).Trim();
-    }
-
-    private static string DescribeJavaThrowable(Java.Lang.Throwable throwable)
-    {
-        var message = throwable.Message ?? throwable.Class?.Name ?? "JavaThrowable";
-
-        if (message.Contains("cn.pda.serialport.SerialPort", StringComparison.OrdinalIgnoreCase))
-        {
-            var abis = Android.OS.Build.SupportedAbis;
-            var abi = abis is { Count: > 0 } ? string.Join(",", abis) : "unknown";
-            return $"{message}. Posible incompatibilidad ABI (SDK UHF6 requiere libSerialPort 32-bit). ABIs dispositivo: {abi}";
-        }
-
-        return message;
     }
 
     private static void LogStep(string message)
