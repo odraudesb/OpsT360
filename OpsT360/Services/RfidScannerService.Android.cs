@@ -9,11 +9,8 @@ public partial class RfidScannerService
 {
     private const string RfidImplVersion = "RFIDv2026.03.11.6";
     private const string LogTag = "OpsT360.RFID";
-    private const bool SkipSdkSetPower = true;
-    private readonly object _sync = new();
+    private const bool SkipSdkSetPower = false;
     private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
-    private string? _lastEpc;
-    private DateTimeOffset _lastEpcAt = DateTimeOffset.MinValue;
 
     private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
     {
@@ -33,14 +30,15 @@ public partial class RfidScannerService
             managerClass = setup.ManagerClass;
             manager = setup.Manager;
 
-            TrySetPowerSafely(setup.ManagerClass, setup.Manager);
+            TrySetPowerSafely(setup.ManagerClass, setup.Manager, out var powerDetail);
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             var started = TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail);
             if (!started)
             {
-                LogStep($"StartAntenna: start inventory failed -> {startDetail}");
-                return RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}");
+                var reason = string.IsNullOrWhiteSpace(powerDetail) ? startDetail : $"{startDetail}. setPower: {powerDetail}";
+                LogStep($"StartAntenna: start inventory failed -> {reason}");
+                return RfidReadResult.Fail($"No fue posible activar antena RFID: {reason}");
             }
 
             LogStep("StartAntenna: success");
@@ -87,7 +85,7 @@ public partial class RfidScannerService
             managerClass = setup.ManagerClass;
             manager = setup.Manager;
 
-            TrySetPowerSafely(setup.ManagerClass, setup.Manager);
+            TrySetPowerSafely(setup.ManagerClass, setup.Manager, out var powerDetail);
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             if (!TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail))
@@ -96,42 +94,36 @@ public partial class RfidScannerService
                 return RfidReadResult.Fail($"[{RfidImplVersion}] No fue posible iniciar inventario RFID en UHF6: {startDetail}");
             }
 
-            for (var i = 0; i < 35; i++)
+            cancellationToken.ThrowIfCancellationRequested();
+            var tagsList = TryInventory(setup.ManagerClass, setup.Manager);
+            if (tagsList != IntPtr.Zero)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var tagsList = TryInventory(setup.ManagerClass, setup.Manager);
-                if (tagsList != IntPtr.Zero)
-                {
-                    var epc = TryExtractBestEpc(tagsList);
-                    if (!string.IsNullOrWhiteSpace(epc))
-                    {
-                        SaveLastEpc(epc);
-                        StopAnyInventory(setup.ManagerClass, setup.Manager);
-                        LogStep($"TryReadSingleEpc: EPC read -> {epc}");
-                        return RfidReadResult.Ok(epc);
-                    }
-                }
-
-                var cached = GetRecentEpc();
-                if (!string.IsNullOrWhiteSpace(cached))
+                var epc = TryExtractFirstEpc(tagsList);
+                if (!string.IsNullOrWhiteSpace(epc))
                 {
                     StopAnyInventory(setup.ManagerClass, setup.Manager);
-                    LogStep($"TryReadSingleEpc: using cached EPC -> {cached}");
-                    return RfidReadResult.Ok(cached);
+                    LogStep($"TryReadSingleEpc: EPC read -> {epc}");
+                    return RfidReadResult.Ok(epc);
                 }
-
-                await Task.Delay(120, cancellationToken);
             }
 
             StopAnyInventory(setup.ManagerClass, setup.Manager);
             LogStep("TryReadSingleEpc: timeout/no EPC");
-            return RfidReadResult.Fail("No se detectó EPC por antena RFID. Verifica distancia, orientación y potencia.");
+            var detail = string.IsNullOrWhiteSpace(powerDetail)
+                ? "No se detectó EPC por antena RFID."
+                : $"No se detectó EPC por antena RFID. setPower: {powerDetail}";
+            return RfidReadResult.Fail($"{detail} Verifica distancia, orientación y potencia.");
         }
         catch (System.OperationCanceledException)
         {
             LogStep("TryReadSingleEpc: canceled/timeout");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Java.Lang.Throwable jex)
         {
@@ -191,24 +183,38 @@ public partial class RfidScannerService
             DeleteGlobalRefSafe(managerClass);
     }
 
-    private static void TrySetPower(IntPtr managerClass, IntPtr manager)
+    private static bool TrySetPower(IntPtr managerClass, IntPtr manager, out string detail)
     {
         var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
         if (setPower == IntPtr.Zero)
-            return;
+        {
+            detail = "MethodNotFound";
+            return false;
+        }
 
         var powerArgs = new JValue[] { new(30), new(30) };
-        JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
+        var errObj = JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
+        if (errObj == IntPtr.Zero)
+        {
+            detail = "NullReaderErr";
+            return false;
+        }
+
+        detail = ReadEnumName(errObj) ?? "UnknownReaderErr";
+        return detail.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void TrySetPowerSafely(IntPtr managerClass, IntPtr manager)
+    private static bool TrySetPowerSafely(IntPtr managerClass, IntPtr manager, out string detail)
     {
-        // En algunos firmwares (p.ej. C6 Android 13) setPower puede abortar en capa nativa (SIGABRT).
-        // Se omite por defecto para priorizar estabilidad; el lector usa potencia/configuración actual del módulo.
         if (SkipSdkSetPower)
-            return;
+        {
+            detail = "SkippedByConfig";
+            return false;
+        }
 
-        TrySetPower(managerClass, manager);
+        var ok = TrySetPower(managerClass, manager, out detail);
+        LogStep($"TrySetPowerSafely: {(ok ? "ok" : "fail")} -> {detail}");
+        return ok;
     }
 
     private static void StopAnyInventory(IntPtr managerClass, IntPtr manager)
@@ -300,7 +306,7 @@ public partial class RfidScannerService
         }
 
         errName = ReadEnumName(errObj) ?? "UnknownReaderErr";
-        ok = string.Equals(errName, "MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+        ok = errName.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
         return true;
     }
 
@@ -325,7 +331,7 @@ public partial class RfidScannerService
         }
 
         errName = ReadEnumName(errObj) ?? "UnknownReaderErr";
-        ok = string.Equals(errName, "MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+        ok = errName.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
         return true;
     }
 
@@ -401,9 +407,6 @@ public partial class RfidScannerService
         if (size <= 0)
             return null;
 
-        string? bestEpc = null;
-        var bestRssi = int.MinValue;
-
         for (var i = 0; i < size; i++)
         {
             var getArgs = new JValue[] { new(i) };
@@ -412,33 +415,17 @@ public partial class RfidScannerService
                 continue;
 
             var epc = TryExtractEpcFromTag(tagInfo);
-            if (string.IsNullOrWhiteSpace(epc))
-            {
-                DeleteLocalRefSafe(tagInfo);
-                continue;
-            }
-
-            var rssi = TryExtractRssiFromTag(tagInfo);
             DeleteLocalRefSafe(tagInfo);
-            if (rssi > bestRssi)
-            {
-                bestRssi = rssi;
-                bestEpc = epc;
-            }
+            if (string.IsNullOrWhiteSpace(epc))
+                continue;
+
+            DeleteLocalRefSafe(listClass);
+            return epc;
         }
 
         DeleteLocalRefSafe(listClass);
 
-        return bestEpc;
-    }
-
-    private static int TryExtractRssiFromTag(IntPtr tagInfo)
-    {
-        var tagClass = JNIEnv.GetObjectClass(tagInfo);
-        var rssiField = JNIEnv.GetFieldID(tagClass, "RSSI", "I");
-        var value = rssiField == IntPtr.Zero ? int.MinValue : JNIEnv.GetIntField(tagInfo, rssiField);
-        DeleteLocalRefSafe(tagClass);
-        return value;
+        return null;
     }
 
     private static string? TryExtractEpcFromTag(IntPtr tagInfo)
@@ -490,27 +477,5 @@ public partial class RfidScannerService
         Log.Debug(LogTag, line);
     }
 
-    private void SaveLastEpc(string epc)
-    {
-        lock (_sync)
-        {
-            _lastEpc = epc.Trim().ToUpperInvariant();
-            _lastEpcAt = DateTimeOffset.UtcNow;
-        }
-    }
-
-    private string? GetRecentEpc()
-    {
-        lock (_sync)
-        {
-            if (_lastEpcAt == DateTimeOffset.MinValue)
-                return null;
-
-            if (DateTimeOffset.UtcNow - _lastEpcAt > TimeSpan.FromSeconds(4))
-                return null;
-
-            return _lastEpc;
-        }
-    }
 }
 #endif
