@@ -50,13 +50,9 @@
             <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="RFID seal registry" FontAttributes="Bold" TextColor="#8A93A6" />
-                    <Label Text="Pulsa Start antenna y luego Read seal para leer por antena remota (sin gatillo) en ST-E100."
+                    <Label Text="Pulsa Read seal para activar antena y leer por RFID remoto (sin gatillo) en ST-E100."
                            FontSize="12"
                            TextColor="#6E7891" />
-                    <Button Text="Start antenna"
-                            Command="{Binding StartAntennaAsyncCommand}"
-                            BackgroundColor="#24379E"
-                            TextColor="White" />
 
                     <VerticalStackLayout Spacing="10">
                         <Label Text="Seal #1" TextColor="#8A93A6" FontSize="12" />

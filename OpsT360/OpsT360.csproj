@@ -46,9 +46,19 @@
     <RfidSdkRoot Condition="'$(RfidSdkRoot)' == ''">..\ST-E7100 SDK USER MANUAL\UHF6_SDK_v2.13\jar_so</RfidSdkRoot>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+    <!--
+      UHF6 SDK incluye libSerialPort/libdevapi solo para armeabi-v7a.
+      En arm64 suele lanzar NoClassDefFoundError: cn.pda.serialport.SerialPort.
+      Forzamos ABI 32-bit para compatibilidad con este SDK del fabricante.
+    -->
+    <RuntimeIdentifiers>android-arm</RuntimeIdentifiers>
+  </PropertyGroup>
+
   <ItemGroup Condition="Exists('$(RfidSdkRoot)\UHF6_v1.9.7.jar') and Exists('$(RfidSdkRoot)\ModuleAPI_J.jar')">
     <AndroidJavaLibrary Include="$(RfidSdkRoot)\UHF6_v1.9.7.jar" />
     <AndroidJavaLibrary Include="$(RfidSdkRoot)\ModuleAPI_J.jar" />
+    <AndroidJavaLibrary Include="$(RfidSdkRoot)\jxl.jar" Condition="Exists('$(RfidSdkRoot)\jxl.jar')" />
     <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libSerialPort.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libSerialPort.so')" />
     <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libdevapi.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libdevapi.so')" />
     <AndroidNativeLibrary Include="$(RfidSdkRoot)\jniLibs\armeabi-v7a\libModuleAPIJni.so" Condition="Exists('$(RfidSdkRoot)\jniLibs\armeabi-v7a\libModuleAPIJni.so')" />
