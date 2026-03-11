@@ -26,30 +26,30 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Button button || !int.TryParse(button.ClassId, out var sealNumber))
             return;
 
-        var entry = sealNumber switch
-        {
-            1 => SealEntry1,
-            2 => SealEntry2,
-            3 => SealEntry3,
-            4 => SealEntry4,
-            _ => null
-        };
-
-        if (entry is null)
+        if (!button.IsEnabled)
             return;
 
-        entry.Focus();
-
-        var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
-        if (sdkCaptured)
+        button.IsEnabled = false;
+        try
         {
-            _vm.ReadSealCommand.Execute(sealNumber.ToString());
-            return;
+            var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
+            if (sdkCaptured)
+            {
+                _vm.ReadSealCommand.Execute(sealNumber.ToString());
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_vm.StatusText))
+                _vm.StatusText = "No se obtuvo EPC por SDK RFID. Verifica que el handheld esté en modo UHF y no en escáner de código de barras.";
         }
-
-        // Fallback: si ya llegó EPC por el hand-held como teclado, confirmar lectura inmediatamente
-        if (!string.IsNullOrWhiteSpace(entry.Text))
-            _vm.ReadSealCommand.Execute(sealNumber.ToString());
+        catch (Exception ex)
+        {
+            _vm.StatusText = $"Error en botón Read seal: {ex.Message}";
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
     }
 
     private void OnSealEntryFocused(object? sender, FocusEventArgs e)
@@ -57,6 +57,6 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
             return;
 
-        _vm.StatusText = $"Sello #{sealNumber} listo para lectura RFID remota. Pulsa Read seal para capturar EPC.";
+        _vm.StatusText = $"Sello #{sealNumber} listo. Pulsa Read seal para activar antena y capturar EPC.";
     }
 }
