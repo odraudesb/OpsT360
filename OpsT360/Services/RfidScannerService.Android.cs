@@ -81,7 +81,7 @@ public partial class RfidScannerService
             StopAnyInventory(setup.ManagerClass, setup.Manager);
             return RfidReadResult.Fail("No se detectó EPC por antena RFID. Verifica distancia, orientación y potencia.");
         }
-        catch (OperationCanceledException)
+        catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail("Lectura RFID cancelada.");
         }
@@ -316,7 +316,8 @@ public partial class RfidScannerService
 
         if (message.Contains("cn.pda.serialport.SerialPort", StringComparison.OrdinalIgnoreCase))
         {
-            var abi = Build.SupportedAbis is { Length: > 0 } ? string.Join(",", Build.SupportedAbis) : "unknown";
+            var abis = Android.OS.Build.SupportedAbis;
+            var abi = abis is { Count: > 0 } ? string.Join(",", abis) : "unknown";
             return $"{message}. Posible incompatibilidad ABI (SDK UHF6 requiere libSerialPort 32-bit). ABIs dispositivo: {abi}";
         }
 
