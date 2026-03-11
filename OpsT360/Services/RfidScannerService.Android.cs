@@ -113,6 +113,20 @@ public partial class RfidScannerService
             LogStep("TryReadSingleEpc: canceled/timeout");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+       
+   
         catch (Exception ex)
         {
             LogStep($"TryReadSingleEpc: .NET error -> {ex.Message}");
@@ -378,7 +392,50 @@ public partial class RfidScannerService
         return name;
     }
 
-    private static string? TryExtractFirstEpc(IntPtr listHandle)
+    private static void DeleteGlobalRefSafe(IntPtr handle)
+    {
+        if (handle == IntPtr.Zero)
+            return;
+
+        try
+        {
+            JNIEnv.DeleteGlobalRef(handle);
+        }
+        catch
+        {
+            // Evita crash por doble liberación o ref inválida.
+        }
+    }
+
+    private static void ClearPendingJavaException()
+    {
+        var pending = JNIEnv.ExceptionOccurred();
+        if (pending != IntPtr.Zero)
+        {
+            JNIEnv.ExceptionClear();
+        }
+    }
+
+    private static string? ReadEnumName(IntPtr enumObj)
+    {
+        var enumClass = JNIEnv.GetObjectClass(enumObj);
+        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+        if (nameMethod == IntPtr.Zero)
+        {
+            DeleteLocalRefSafe(enumClass);
+            return null;
+        }
+
+        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+        var name = nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
+        if (nameObj != IntPtr.Zero)
+            DeleteLocalRefSafe(nameObj);
+
+        DeleteLocalRefSafe(enumClass);
+        return name;
+    }
+
+    private static string? TryExtractBestEpc(IntPtr listHandle)
     {
         var listClass = JNIEnv.FindClass("java/util/List");
         var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
