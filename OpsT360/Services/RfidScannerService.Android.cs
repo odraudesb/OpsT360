@@ -61,6 +61,7 @@ public partial class RfidScannerService
             var setup = TryGetReader();
             if (!setup.Success)
                 return RfidReadResult.Fail(setup.Message);
+            }
 
             managerClass = setup.ManagerClass;
             manager = setup.Manager;
@@ -82,10 +83,24 @@ public partial class RfidScannerService
             LogStep($"TryReadSingleEpc ok -> {epc}");
             return RfidReadResult.Ok(epc);
         }
-        catch (OperationCanceledException)
+        catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+       
+   
         catch (Exception ex)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error leyendo RFID: {ex.Message}");
@@ -106,7 +121,10 @@ public partial class RfidScannerService
         var managerClass = JNIEnv.NewGlobalRef(managerClassLocal);
         var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
         if (getInstance == IntPtr.Zero)
+        {
+            DeleteGlobalRefSafe(managerClass);
             return (false, "No se encontró getInstance() en UHFRManager.", IntPtr.Zero, IntPtr.Zero);
+        }
 
         var managerLocal = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
         if (managerLocal == IntPtr.Zero)
@@ -195,7 +213,35 @@ public partial class RfidScannerService
         return IntPtr.Zero;
     }
 
-    private static string? TryExtractFirstEpc(IntPtr listHandle)
+    private static void ClearPendingJavaException()
+    {
+        var pending = JNIEnv.ExceptionOccurred();
+        if (pending != IntPtr.Zero)
+        {
+            JNIEnv.ExceptionClear();
+        }
+    }
+
+    private static string? ReadEnumName(IntPtr enumObj)
+    {
+        var enumClass = JNIEnv.GetObjectClass(enumObj);
+        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+        if (nameMethod == IntPtr.Zero)
+        {
+            DeleteLocalRefSafe(enumClass);
+            return null;
+        }
+
+        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+        var name = nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
+        if (nameObj != IntPtr.Zero)
+            DeleteLocalRefSafe(nameObj);
+
+        DeleteLocalRefSafe(enumClass);
+        return name;
+    }
+
+    private static string? TryExtractBestEpc(IntPtr listHandle)
     {
         var listClass = JNIEnv.FindClass("java/util/List");
         var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
@@ -226,13 +272,21 @@ public partial class RfidScannerService
         if (epcField == IntPtr.Zero)
             epcField = JNIEnv.GetFieldID(tagClass, "epc", "[B");
         if (epcField == IntPtr.Zero)
+        {
+            DeleteLocalRefSafe(tagClass);
             return null;
+        }
 
         var epcBytesArray = JNIEnv.GetObjectField(tagInfo, epcField);
         if (epcBytesArray == IntPtr.Zero)
+        {
+            DeleteLocalRefSafe(tagClass);
             return null;
+        }
 
         var bytes = JNIEnv.GetArray<byte>(epcBytesArray);
+        DeleteLocalRefSafe(epcBytesArray);
+        DeleteLocalRefSafe(tagClass);
         if (bytes is null || bytes.Length == 0)
             return null;
 
