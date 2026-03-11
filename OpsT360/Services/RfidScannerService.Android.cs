@@ -1,5 +1,6 @@
 #if ANDROID
 using Android.Runtime;
+using Android.OS;
 
 namespace OpsT360.Services;
 
@@ -95,6 +96,11 @@ public partial class RfidScannerService
         catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Java.Lang.Throwable jex)
         {
