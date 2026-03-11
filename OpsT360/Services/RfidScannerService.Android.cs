@@ -1,12 +1,14 @@
 #if ANDROID
 using Android.Runtime;
-using Android.OS;
+using Android.Util;
+using System.Diagnostics;
 
 namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
-    private const string RfidImplVersion = "RFIDv2026.03.11.5";
+    private const string RfidImplVersion = "RFIDv2026.03.11.6";
+    private const string LogTag = "OpsT360.RFID";
     private const bool SkipSdkSetPower = true;
     private readonly object _sync = new();
     private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
@@ -17,12 +19,16 @@ public partial class RfidScannerService
     {
         IntPtr managerClass = IntPtr.Zero;
         IntPtr manager = IntPtr.Zero;
+        LogStep("StartAntenna: requested");
         await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
             if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
+            {
+                LogStep($"StartAntenna: reader setup failed -> {setup.Message}");
                 return RfidReadResult.Fail(setup.Message);
+            }
 
             managerClass = setup.ManagerClass;
             manager = setup.Manager;
@@ -32,21 +38,28 @@ public partial class RfidScannerService
 
             var started = TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail);
             if (!started)
+            {
+                LogStep($"StartAntenna: start inventory failed -> {startDetail}");
                 return RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}");
+            }
 
+            LogStep("StartAntenna: success");
             return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada. Pulsa Read seal para capturar EPC.");
         }
         catch (Java.Lang.Throwable jex)
         {
             var detail = DescribeJavaThrowable(jex);
+            LogStep($"StartAntenna: Java error -> {detail}");
             return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {detail}");
         }
         catch (System.OperationCanceledException)
         {
+            LogStep("StartAntenna: canceled/timeout");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
         }
         catch (Exception ex)
         {
+            LogStep($"StartAntenna: .NET error -> {ex.Message}");
             return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {ex.Message}");
         }
         finally
@@ -60,12 +73,16 @@ public partial class RfidScannerService
     {
         IntPtr managerClass = IntPtr.Zero;
         IntPtr manager = IntPtr.Zero;
+        LogStep("TryReadSingleEpc: requested");
         await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
             if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
+            {
+                LogStep($"TryReadSingleEpc: reader setup failed -> {setup.Message}");
                 return RfidReadResult.Fail(setup.Message);
+            }
 
             managerClass = setup.ManagerClass;
             manager = setup.Manager;
@@ -74,7 +91,10 @@ public partial class RfidScannerService
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             if (!TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail))
+            {
+                LogStep($"TryReadSingleEpc: start inventory failed -> {startDetail}");
                 return RfidReadResult.Fail($"[{RfidImplVersion}] No fue posible iniciar inventario RFID en UHF6: {startDetail}");
+            }
 
             for (var i = 0; i < 35; i++)
             {
@@ -88,6 +108,7 @@ public partial class RfidScannerService
                     {
                         SaveLastEpc(epc);
                         StopAnyInventory(setup.ManagerClass, setup.Manager);
+                        LogStep($"TryReadSingleEpc: EPC read -> {epc}");
                         return RfidReadResult.Ok(epc);
                     }
                 }
@@ -96,6 +117,7 @@ public partial class RfidScannerService
                 if (!string.IsNullOrWhiteSpace(cached))
                 {
                     StopAnyInventory(setup.ManagerClass, setup.Manager);
+                    LogStep($"TryReadSingleEpc: using cached EPC -> {cached}");
                     return RfidReadResult.Ok(cached);
                 }
 
@@ -103,11 +125,19 @@ public partial class RfidScannerService
             }
 
             StopAnyInventory(setup.ManagerClass, setup.Manager);
+            LogStep("TryReadSingleEpc: timeout/no EPC");
             return RfidReadResult.Fail("No se detectó EPC por antena RFID. Verifica distancia, orientación y potencia.");
         }
         catch (System.OperationCanceledException)
         {
+            LogStep("TryReadSingleEpc: canceled/timeout");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            LogStep($"TryReadSingleEpc: Java error -> {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Java.Lang.Throwable jex)
         {
@@ -118,6 +148,7 @@ public partial class RfidScannerService
    
         catch (Exception ex)
         {
+            LogStep($"TryReadSingleEpc: .NET error -> {ex.Message}");
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID: {ex.Message}");
         }
         finally
@@ -319,17 +350,8 @@ public partial class RfidScannerService
     }
     private static void DeleteLocalRefSafe(IntPtr handle)
     {
-        if (handle == IntPtr.Zero)
-            return;
-
-        try
-        {
-            JNIEnv.DeleteLocalRef(handle);
-        }
-        catch
-        {
-            // Evita crash por doble liberación o ref inválida.
-        }
+        // Mitigación de estabilidad: algunos runtimes JNI abortan proceso si el tipo real no coincide.
+        // Evitamos DeleteLocalRef manual aquí; las local refs se liberan al cerrar el frame JNI.
     }
 
     private static void DeleteGlobalRefSafe(IntPtr handle)
@@ -353,7 +375,6 @@ public partial class RfidScannerService
         if (pending != IntPtr.Zero)
         {
             JNIEnv.ExceptionClear();
-            DeleteLocalRefSafe(pending);
         }
     }
 
@@ -465,6 +486,13 @@ public partial class RfidScannerService
         }
 
         return message;
+    }
+
+    private static void LogStep(string message)
+    {
+        var line = $"[{RfidImplVersion}] {message}";
+        Debug.WriteLine(line);
+        Log.Debug(LogTag, line);
     }
 
     private void SaveLastEpc(string epc)
