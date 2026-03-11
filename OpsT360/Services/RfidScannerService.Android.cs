@@ -6,7 +6,7 @@ namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
-    private const string RfidImplVersion = "RFIDv2026.03.11.4";
+    private const string RfidImplVersion = "RFIDv2026.03.11.5";
     private const bool SkipSdkSetPower = true;
     private readonly object _sync = new();
     private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
@@ -119,6 +119,11 @@ public partial class RfidScannerService
             var detail = DescribeJavaThrowable(jex);
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
    
         catch (Exception ex)
         {
@@ -138,24 +143,24 @@ public partial class RfidScannerService
             return (false, "No se encontró UHFRManager en los JAR del SDK.", IntPtr.Zero, IntPtr.Zero);
 
         var managerClass = JNIEnv.NewGlobalRef(managerClassLocal);
-        DeleteRefSafe(managerClassLocal);
+        DeleteLocalRefSafe(managerClassLocal);
 
         var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
         if (getInstance == IntPtr.Zero)
         {
-            DeleteRefSafe(managerClass);
+            DeleteGlobalRefSafe(managerClass);
             return (false, "No se encontró getInstance() en UHFRManager.", IntPtr.Zero, IntPtr.Zero);
         }
 
         var managerLocal = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
         if (managerLocal == IntPtr.Zero)
         {
-            DeleteRefSafe(managerClass);
+            DeleteGlobalRefSafe(managerClass);
             return (false, "No fue posible inicializar el módulo RFID (getInstance = null).", IntPtr.Zero, IntPtr.Zero);
         }
 
         var manager = JNIEnv.NewGlobalRef(managerLocal);
-        DeleteRefSafe(managerLocal);
+        DeleteLocalRefSafe(managerLocal);
 
         return (true, string.Empty, managerClass, manager);
     }
@@ -163,10 +168,10 @@ public partial class RfidScannerService
     private static void ReleaseReaderHandles(IntPtr managerClass, IntPtr manager)
     {
         if (manager != IntPtr.Zero)
-            DeleteRefSafe(manager);
+            DeleteGlobalRefSafe(manager);
 
         if (managerClass != IntPtr.Zero)
-            DeleteRefSafe(managerClass);
+            DeleteGlobalRefSafe(managerClass);
     }
 
     private static void TrySetPower(IntPtr managerClass, IntPtr manager)
@@ -321,32 +326,33 @@ public partial class RfidScannerService
             return IntPtr.Zero;
         }
     }
-
-
-    private static void DeleteRefSafe(IntPtr handle)
+    private static void DeleteLocalRefSafe(IntPtr handle)
     {
         if (handle == IntPtr.Zero)
             return;
 
         try
         {
-            var refType = JNIEnv.GetObjectRefType(handle);
-            switch (refType)
-            {
-                case JniObjectReferenceType.Local:
-                    JNIEnv.DeleteLocalRef(handle);
-                    break;
-                case JniObjectReferenceType.Global:
-                case JniObjectReferenceType.WeakGlobal:
-                    JNIEnv.DeleteGlobalRef(handle);
-                    break;
-                default:
-                    break;
-            }
+            JNIEnv.DeleteLocalRef(handle);
         }
         catch
         {
-            // Evita crash por liberar tipo de referencia inválido en firmwares sensibles JNI.
+            // Evita crash por doble liberación o ref inválida.
+        }
+    }
+
+    private static void DeleteGlobalRefSafe(IntPtr handle)
+    {
+        if (handle == IntPtr.Zero)
+            return;
+
+        try
+        {
+            JNIEnv.DeleteGlobalRef(handle);
+        }
+        catch
+        {
+            // Evita crash por doble liberación o ref inválida.
         }
     }
 
@@ -356,7 +362,7 @@ public partial class RfidScannerService
         if (pending != IntPtr.Zero)
         {
             JNIEnv.ExceptionClear();
-            DeleteRefSafe(pending);
+            DeleteLocalRefSafe(pending);
         }
     }
 
@@ -366,16 +372,16 @@ public partial class RfidScannerService
         var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
         if (nameMethod == IntPtr.Zero)
         {
-            DeleteRefSafe(enumClass);
+            DeleteLocalRefSafe(enumClass);
             return null;
         }
 
         var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
         var name = nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
         if (nameObj != IntPtr.Zero)
-            DeleteRefSafe(nameObj);
+            DeleteLocalRefSafe(nameObj);
 
-        DeleteRefSafe(enumClass);
+        DeleteLocalRefSafe(enumClass);
         return name;
     }
 
@@ -401,12 +407,12 @@ public partial class RfidScannerService
             var epc = TryExtractEpcFromTag(tagInfo);
             if (string.IsNullOrWhiteSpace(epc))
             {
-                DeleteRefSafe(tagInfo);
+                DeleteLocalRefSafe(tagInfo);
                 continue;
             }
 
             var rssi = TryExtractRssiFromTag(tagInfo);
-            DeleteRefSafe(tagInfo);
+            DeleteLocalRefSafe(tagInfo);
             if (rssi > bestRssi)
             {
                 bestRssi = rssi;
@@ -414,7 +420,7 @@ public partial class RfidScannerService
             }
         }
 
-        DeleteRefSafe(listClass);
+        DeleteLocalRefSafe(listClass);
 
         return bestEpc;
     }
@@ -424,7 +430,7 @@ public partial class RfidScannerService
         var tagClass = JNIEnv.GetObjectClass(tagInfo);
         var rssiField = JNIEnv.GetFieldID(tagClass, "RSSI", "I");
         var value = rssiField == IntPtr.Zero ? int.MinValue : JNIEnv.GetIntField(tagInfo, rssiField);
-        DeleteRefSafe(tagClass);
+        DeleteLocalRefSafe(tagClass);
         return value;
     }
 
@@ -436,20 +442,20 @@ public partial class RfidScannerService
             epcField = JNIEnv.GetFieldID(tagClass, "epc", "[B");
         if (epcField == IntPtr.Zero)
         {
-            DeleteRefSafe(tagClass);
+            DeleteLocalRefSafe(tagClass);
             return null;
         }
 
         var epcBytesArray = JNIEnv.GetObjectField(tagInfo, epcField);
         if (epcBytesArray == IntPtr.Zero)
         {
-            DeleteRefSafe(tagClass);
+            DeleteLocalRefSafe(tagClass);
             return null;
         }
 
         var bytes = JNIEnv.GetArray<byte>(epcBytesArray);
-        DeleteRefSafe(epcBytesArray);
-        DeleteRefSafe(tagClass);
+        DeleteLocalRefSafe(epcBytesArray);
+        DeleteLocalRefSafe(tagClass);
         if (bytes is null || bytes.Length == 0)
             return null;
 
