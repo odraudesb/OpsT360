@@ -1,5 +1,6 @@
 #if ANDROID
 using Android.Runtime;
+using Android.OS;
 
 namespace OpsT360.Services;
 
@@ -113,6 +114,12 @@ public partial class RfidScannerService
             var detail = DescribeJavaThrowable(jex);
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
+   
         catch (Exception ex)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID: {ex.Message}");
