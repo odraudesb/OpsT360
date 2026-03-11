@@ -3,8 +3,8 @@ using Android.Runtime;
 using Android.Util;
 using System.Diagnostics;
 
-namespace OpsT360.Services;
-
+namespace OpsT360.Services
+{
 public partial class RfidScannerService
 {
     private const string RfidImplVersion = "RFIDv2026.03.11.6";
@@ -35,7 +35,7 @@ public partial class RfidScannerService
             LogStep($"StartAntenna ok. setPower={powerDetail}, start={startDetail}");
             return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada.");
         }
-        catch (OperationCanceledException)
+        catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
         }
@@ -86,12 +86,6 @@ public partial class RfidScannerService
         catch (System.OperationCanceledException)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
-        }
-        catch (Java.Lang.Throwable jex)
-        {
-            var detail = DescribeJavaThrowable(jex);
-            LogStep($"TryReadSingleEpc: Java error -> {detail}");
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Java.Lang.Throwable jex)
         {
@@ -198,6 +192,7 @@ public partial class RfidScannerService
             var args = new JValue[] { new((short)180) };
             return JNIEnv.CallObjectMethod(manager, method, args);
         }
+    }
 
         method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
         if (method != IntPtr.Zero)
@@ -211,34 +206,6 @@ public partial class RfidScannerService
             return JNIEnv.CallObjectMethod(manager, method);
 
         return IntPtr.Zero;
-    }
-
-    private static void ClearPendingJavaException()
-    {
-        var pending = JNIEnv.ExceptionOccurred();
-        if (pending != IntPtr.Zero)
-        {
-            JNIEnv.ExceptionClear();
-        }
-    }
-
-    private static string? ReadEnumName(IntPtr enumObj)
-    {
-        var enumClass = JNIEnv.GetObjectClass(enumObj);
-        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
-        if (nameMethod == IntPtr.Zero)
-        {
-            DeleteLocalRefSafe(enumClass);
-            return null;
-        }
-
-        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
-        var name = nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
-        if (nameObj != IntPtr.Zero)
-            DeleteLocalRefSafe(nameObj);
-
-        DeleteLocalRefSafe(enumClass);
-        return name;
     }
 
     private static string? TryExtractBestEpc(IntPtr listHandle)
@@ -313,5 +280,6 @@ public partial class RfidScannerService
         Debug.WriteLine(line);
         Log.Debug(LogTag, line);
     }
+}
 }
 #endif
