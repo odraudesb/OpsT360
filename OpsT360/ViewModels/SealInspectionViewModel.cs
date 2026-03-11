@@ -53,6 +53,13 @@ public partial class SealInspectionViewModel : ObservableObject
         if (index < 0 || index >= Seals.Count)
             return false;
 
+        var antennaStart = await _rfidScannerService.StartAntennaAsync();
+        if (!antennaStart.Success)
+        {
+            StatusText = antennaStart.Message;
+            return false;
+        }
+
         var read = await _rfidScannerService.TryReadSingleEpcAsync();
         if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
         {
