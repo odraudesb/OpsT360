@@ -6,6 +6,7 @@ namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
+    private const string RfidImplVersion = "RFIDv2026.03.11.1";
     private readonly object _sync = new();
     private string? _lastEpc;
     private DateTimeOffset _lastEpcAt = DateTimeOffset.MinValue;
@@ -25,16 +26,16 @@ public partial class RfidScannerService
             if (!started)
                 return Task.FromResult(RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}"));
 
-            return Task.FromResult(RfidReadResult.Ok("Antena RFID activada. Pulsa Read seal para capturar EPC."));
+            return Task.FromResult(RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada. Pulsa Read seal para capturar EPC."));
         }
         catch (Java.Lang.Throwable jex)
         {
             var detail = DescribeJavaThrowable(jex);
-            return Task.FromResult(RfidReadResult.Fail($"No se pudo activar antena RFID: {detail}"));
+            return Task.FromResult(RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {detail}"));
         }
         catch (Exception ex)
         {
-            return Task.FromResult(RfidReadResult.Fail($"No se pudo activar antena RFID: {ex.Message}"));
+            return Task.FromResult(RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {ex.Message}"));
         }
     }
 
@@ -50,7 +51,7 @@ public partial class RfidScannerService
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             if (!TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail))
-                return RfidReadResult.Fail($"No fue posible iniciar inventario RFID en UHF6: {startDetail}");
+                return RfidReadResult.Fail($"[{RfidImplVersion}] No fue posible iniciar inventario RFID en UHF6: {startDetail}");
 
             for (var i = 0; i < 35; i++)
             {
@@ -88,11 +89,11 @@ public partial class RfidScannerService
         catch (Java.Lang.Throwable jex)
         {
             var detail = DescribeJavaThrowable(jex);
-            return RfidReadResult.Fail($"Error RFID Java: {detail}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Exception ex)
         {
-            return RfidReadResult.Fail($"Error RFID: {ex.Message}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID: {ex.Message}");
         }
     }
 
@@ -126,46 +127,24 @@ public partial class RfidScannerService
     private static void StopAnyInventory(IntPtr managerClass, IntPtr manager)
     {
         TryInvokeBoolNoArg(managerClass, manager, "stopTagInventory");
-        TryInvokeBoolNoArg(managerClass, manager, "stopInventory");
         TryInvokeReaderErrNoArg(managerClass, manager, "asyncStopReading");
     }
 
     private static bool TryStartInventory(IntPtr managerClass, IntPtr manager, out string detail)
     {
-        if (TryInvokeBoolNoArg(managerClass, manager, "startTagInventory", out var byTagInv))
-        {
-            if (byTagInv)
-            {
-                detail = "startTagInventory";
-                return true;
-            }
-        }
-
-        if (TryInvokeBoolNoArg(managerClass, manager, "startInventory", out var byInv))
-        {
-            if (byInv)
-            {
-                detail = "startInventory";
-                return true;
-            }
-        }
-
-        if (TryInvokeBoolNoArg(managerClass, manager, "startInventoryTag", out var byInvTag))
-        {
-            if (byInvTag)
-            {
-                detail = "startInventoryTag";
-                return true;
-            }
-        }
-
         if (TryInvokeReaderErrNoArg(managerClass, manager, "asyncStartReading", out var asyncOk, out var asyncErr))
         {
-            detail = asyncOk ? "asyncStartReading" : $"asyncStartReading={asyncErr}";
+            detail = asyncOk ? "asyncStartReading()" : $"asyncStartReading()={asyncErr}";
             return asyncOk;
         }
 
-        detail = "Ningún método de arranque disponible en UHFRManager";
+        if (TryInvokeReaderErrWithInt(managerClass, manager, "asyncStartReading", 240, out var timedOk, out var timedErr))
+        {
+            detail = timedOk ? "asyncStartReading(240)" : $"asyncStartReading(240)={timedErr}";
+            return timedOk;
+        }
+
+        detail = "No se encontró asyncStartReading en UHFRManager";
         return false;
     }
 
@@ -199,7 +178,7 @@ public partial class RfidScannerService
 
     private static bool TryInvokeBoolNoArg(IntPtr managerClass, IntPtr manager, string methodName, out bool result)
     {
-        var method = JNIEnv.GetMethodID(managerClass, methodName, "()Z");
+        var method = TryGetMethodIdSafe(managerClass, methodName, "()Z");
         if (method == IntPtr.Zero)
         {
             result = false;
@@ -217,7 +196,7 @@ public partial class RfidScannerService
 
     private static bool TryInvokeReaderErrNoArg(IntPtr managerClass, IntPtr manager, string methodName, out bool ok, out string errName)
     {
-        var method = JNIEnv.GetMethodID(managerClass, methodName, "()Lcom/uhf/api/cls/Reader$READER_ERR;");
+        var method = TryGetMethodIdSafe(managerClass, methodName, "()Lcom/uhf/api/cls/Reader$READER_ERR;");
         if (method == IntPtr.Zero)
         {
             ok = false;
@@ -236,6 +215,53 @@ public partial class RfidScannerService
         errName = ReadEnumName(errObj) ?? "UnknownReaderErr";
         ok = string.Equals(errName, "MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
         return true;
+    }
+
+
+    private static bool TryInvokeReaderErrWithInt(IntPtr managerClass, IntPtr manager, string methodName, int value, out bool ok, out string errName)
+    {
+        var method = TryGetMethodIdSafe(managerClass, methodName, "(I)Lcom/uhf/api/cls/Reader$READER_ERR;");
+        if (method == IntPtr.Zero)
+        {
+            ok = false;
+            errName = "MethodNotFound";
+            return false;
+        }
+
+        var args = new JValue[] { new(value) };
+        var errObj = JNIEnv.CallObjectMethod(manager, method, args);
+        if (errObj == IntPtr.Zero)
+        {
+            ok = false;
+            errName = "NullReaderErr";
+            return true;
+        }
+
+        errName = ReadEnumName(errObj) ?? "UnknownReaderErr";
+        ok = string.Equals(errName, "MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+        return true;
+    }
+
+    private static IntPtr TryGetMethodIdSafe(IntPtr classHandle, string methodName, string signature)
+    {
+        try
+        {
+            var method = JNIEnv.GetMethodID(classHandle, methodName, signature);
+            ClearPendingJavaException();
+            return method;
+        }
+        catch
+        {
+            ClearPendingJavaException();
+            return IntPtr.Zero;
+        }
+    }
+
+    private static void ClearPendingJavaException()
+    {
+        var pending = JNIEnv.ExceptionOccurred();
+        if (pending != IntPtr.Zero)
+            JNIEnv.ExceptionClear();
     }
 
     private static string? ReadEnumName(IntPtr enumObj)
