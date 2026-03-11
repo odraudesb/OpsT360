@@ -1,126 +1,175 @@
 #if ANDROID
 using Android.Runtime;
+using Android.Util;
+using System.Diagnostics;
 
-namespace OpsT360.Services;
-
+namespace OpsT360.Services
+{
 public partial class RfidScannerService
 {
-    private readonly object _sync = new();
-    private string? _lastEpc;
-    private DateTimeOffset _lastEpcAt = DateTimeOffset.MinValue;
+    private const string RfidImplVersion = "RFIDv2026.03.11.6";
+    private const string LogTag = "OpsT360.RFID";
+    private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
 
-    private partial Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
+    private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
     {
+        IntPtr managerClass = IntPtr.Zero;
+        IntPtr manager = IntPtr.Zero;
+
+        await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
-            if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
-                return Task.FromResult(RfidReadResult.Fail(setup.Message));
+            if (!setup.Success)
+                return RfidReadResult.Fail(setup.Message);
 
-            TrySetPower(setup.ManagerClass, setup.Manager);
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStopReading");
+            managerClass = setup.ManagerClass;
+            manager = setup.Manager;
 
-            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
-                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+            var powerDetail = TrySetPower(managerClass, manager);
+            var startDetail = TryStartReading(managerClass, manager, out var started);
 
+            if (!started)
+                return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {startDetail}. setPower={powerDetail}");
 
-            var message = started
-                ? "Antena RFID activada en modo remoto. Pulsa Read seal para capturar EPC (sin gatillo)."
-                : "Antena preparada. Pulsa Read seal para capturar EPC por inventario temporizado.";
-
-            return Task.FromResult(RfidReadResult.Ok(message));
+            LogStep($"StartAntenna ok. setPower={powerDetail}, start={startDetail}");
+            return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada.");
+        }
+        catch (System.OperationCanceledException)
+        {
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
         }
         catch (Exception ex)
         {
-            return Task.FromResult(RfidReadResult.Fail($"No se pudo activar antena RFID: {ex.Message}"));
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error activando RFID: {ex.Message}");
+        }
+        finally
+        {
+            ReleaseReaderHandles(managerClass, manager);
+            _rfidOpLock.Release();
         }
     }
 
     private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
     {
+        IntPtr managerClass = IntPtr.Zero;
+        IntPtr manager = IntPtr.Zero;
+
+        await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
-            if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
+            if (!setup.Success)
                 return RfidReadResult.Fail(setup.Message);
 
-            TrySetPower(setup.ManagerClass, setup.Manager);
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopTagInventory");
-            TryInvokeNoArg(setup.ManagerClass, setup.Manager, "stopInventory");
-            var started = TryStartInventory(setup.ManagerClass, setup.Manager)
-                          || TryInvokeNoArg(setup.ManagerClass, setup.Manager, "asyncStartReading");
+            managerClass = setup.ManagerClass;
+            manager = setup.Manager;
 
+            var powerDetail = TrySetPower(managerClass, manager);
+            var startDetail = TryStartReading(managerClass, manager, out var started);
             if (!started)
-                return RfidReadResult.Fail("No fue posible iniciar inventario RFID en el SDK UHF6.");
+                return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {startDetail}. setPower={powerDetail}");
 
-            for (var i = 0; i < 30; i++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-                var tagsList = TryInventory(setup.ManagerClass, setup.Manager);
-                if (tagsList != IntPtr.Zero)
-                {
-                    var epc = TryExtractFirstEpc(tagsList);
-                    if (!string.IsNullOrWhiteSpace(epc))
-                    {
-                        SaveLastEpc(epc);
-                        return RfidReadResult.Ok(epc);
-                    }
-                }
+            var tags = TryInventory(managerClass, manager);
+            var epc = tags == IntPtr.Zero ? null : TryExtractFirstEpc(tags);
+            TryStopReading(managerClass, manager);
 
-                var cached = GetRecentEpc();
-                if (!string.IsNullOrWhiteSpace(cached))
-                    return RfidReadResult.Ok(cached);
+            if (string.IsNullOrWhiteSpace(epc))
+                return RfidReadResult.Fail($"[{RfidImplVersion}] No se capturó sticker RFID. Acerca el sello y reintenta.");
 
-                await Task.Delay(200, cancellationToken);
-            }
-
-            return RfidReadResult.Fail("No se detectó EPC por antena RFID remota. Verifica distancia y potencia de lectura.");
+            LogStep($"TryReadSingleEpc ok -> {epc}");
+            return RfidReadResult.Ok(epc);
         }
-        catch (OperationCanceledException)
+        catch (System.OperationCanceledException)
         {
-            return RfidReadResult.Fail("Lectura RFID cancelada.");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
         }
         catch (Exception ex)
         {
-            return RfidReadResult.Fail($"Error RFID: {ex.Message}");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error leyendo RFID: {ex.Message}");
+        }
+        finally
+        {
+            ReleaseReaderHandles(managerClass, manager);
+            _rfidOpLock.Release();
         }
     }
 
     private static (bool Success, string Message, IntPtr ManagerClass, IntPtr Manager) TryGetReader()
     {
-        var managerClass = JNIEnv.FindClass("com/handheld/uhfr/UHFRManager");
-        if (managerClass == IntPtr.Zero)
+        var managerClassLocal = JNIEnv.FindClass("com/handheld/uhfr/UHFRManager");
+        if (managerClassLocal == IntPtr.Zero)
             return (false, "No se encontró UHFRManager en los JAR del SDK.", IntPtr.Zero, IntPtr.Zero);
 
+        var managerClass = JNIEnv.NewGlobalRef(managerClassLocal);
         var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
         if (getInstance == IntPtr.Zero)
             return (false, "No se encontró getInstance() en UHFRManager.", IntPtr.Zero, IntPtr.Zero);
 
-        var manager = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
-        if (manager == IntPtr.Zero)
-            return (false, "No fue posible inicializar el módulo RFID (getInstance = null).", IntPtr.Zero, IntPtr.Zero);
+        var managerLocal = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
+        if (managerLocal == IntPtr.Zero)
+            return (false, "No fue posible inicializar módulo RFID (getInstance = null).", IntPtr.Zero, IntPtr.Zero);
 
+        var manager = JNIEnv.NewGlobalRef(managerLocal);
         return (true, string.Empty, managerClass, manager);
     }
 
-    private static void TrySetPower(IntPtr managerClass, IntPtr manager)
+    private static void ReleaseReaderHandles(IntPtr managerClass, IntPtr manager)
+    {
+        if (manager != IntPtr.Zero)
+            JNIEnv.DeleteGlobalRef(manager);
+
+        if (managerClass != IntPtr.Zero)
+            JNIEnv.DeleteGlobalRef(managerClass);
+    }
+
+    private static string TrySetPower(IntPtr managerClass, IntPtr manager)
     {
         var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
         if (setPower == IntPtr.Zero)
-            return;
+            return "MethodNotFound";
 
-        var powerArgs = new JValue[] { new(30), new(30) };
-        JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
+        var args = new JValue[] { new(30), new(30) };
+        var result = JNIEnv.CallObjectMethod(manager, setPower, args);
+        return ReadEnumName(result) ?? "Unknown";
     }
 
-    private static bool TryStartInventory(IntPtr managerClass, IntPtr manager)
+    private static string TryStartReading(IntPtr managerClass, IntPtr manager, out bool started)
     {
-        return TryInvokeNoArg(managerClass, manager, "startTagInventory")
-               || TryInvokeNoArg(managerClass, manager, "startInventory")
-               || TryInvokeNoArg(managerClass, manager, "startInventoryTag");
+        var noArg = JNIEnv.GetMethodID(managerClass, "asyncStartReading", "()Lcom/uhf/api/cls/Reader$READER_ERR;");
+        if (noArg != IntPtr.Zero)
+        {
+            var result = JNIEnv.CallObjectMethod(manager, noArg);
+            var name = ReadEnumName(result) ?? "Unknown";
+            started = name.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+            return name;
+        }
+
+        var timed = JNIEnv.GetMethodID(managerClass, "asyncStartReading", "(I)Lcom/uhf/api/cls/Reader$READER_ERR;");
+        if (timed != IntPtr.Zero)
+        {
+            var args = new JValue[] { new(240) };
+            var result = JNIEnv.CallObjectMethod(manager, timed, args);
+            var name = ReadEnumName(result) ?? "Unknown";
+            started = name.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+            return name;
+        }
+
+        started = false;
+        return "MethodNotFound";
+    }
+
+    private static void TryStopReading(IntPtr managerClass, IntPtr manager)
+    {
+        var stop1 = JNIEnv.GetMethodID(managerClass, "stopTagInventory", "()Z");
+        if (stop1 != IntPtr.Zero)
+            JNIEnv.CallBooleanMethod(manager, stop1);
+
+        var stop2 = JNIEnv.GetMethodID(managerClass, "asyncStopReading", "()Lcom/uhf/api/cls/Reader$READER_ERR;");
+        if (stop2 != IntPtr.Zero)
+            JNIEnv.CallObjectMethod(manager, stop2);
     }
 
     private static IntPtr TryInventory(IntPtr managerClass, IntPtr manager)
@@ -128,52 +177,22 @@ public partial class RfidScannerService
         var method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(S)Ljava/util/List;");
         if (method != IntPtr.Zero)
         {
-            var timerArgs = new JValue[] { new((short)180) };
-            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
+            var args = new JValue[] { new((short)180) };
+            return JNIEnv.CallObjectMethod(manager, method, args);
         }
 
         method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
         if (method != IntPtr.Zero)
         {
-            var timerArgs = new JValue[] { new((short)100) };
-            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
-        }
-
-        method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(I)Ljava/util/List;");
-        if (method != IntPtr.Zero)
-        {
-            var timerArgs = new JValue[] { new(180) };
-            return JNIEnv.CallObjectMethod(manager, method, timerArgs);
+            var args = new JValue[] { new((short)120) };
+            return JNIEnv.CallObjectMethod(manager, method, args);
         }
 
         method = JNIEnv.GetMethodID(managerClass, "tagInventoryRealTime", "()Ljava/util/List;");
         if (method != IntPtr.Zero)
             return JNIEnv.CallObjectMethod(manager, method);
 
-        method = JNIEnv.GetMethodID(managerClass, "inventoryRealTime", "()Ljava/util/List;");
-        if (method != IntPtr.Zero)
-            return JNIEnv.CallObjectMethod(manager, method);
-
         return IntPtr.Zero;
-    }
-
-    private static bool TryInvokeNoArg(IntPtr managerClass, IntPtr manager, string methodName)
-    {
-        var method = JNIEnv.GetMethodID(managerClass, methodName, "()V");
-        if (method != IntPtr.Zero)
-        {
-            JNIEnv.CallVoidMethod(manager, method);
-            return true;
-        }
-
-        method = JNIEnv.GetMethodID(managerClass, methodName, "()Z");
-        if (method != IntPtr.Zero)
-        {
-            JNIEnv.CallBooleanMethod(manager, method);
-            return true;
-        }
-
-        return false;
     }
 
     private static string? TryExtractFirstEpc(IntPtr listHandle)
@@ -181,15 +200,27 @@ public partial class RfidScannerService
         var listClass = JNIEnv.FindClass("java/util/List");
         var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
         var getMethod = JNIEnv.GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
+        if (sizeMethod == IntPtr.Zero || getMethod == IntPtr.Zero)
+            return null;
+
         var size = JNIEnv.CallIntMethod(listHandle, sizeMethod);
-        if (size <= 0)
-            return null;
+        for (var i = 0; i < size; i++)
+        {
+            var getArgs = new JValue[] { new(i) };
+            var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
+            if (tagInfo == IntPtr.Zero)
+                continue;
 
-        var getArgs = new JValue[] { new(0) };
-        var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
-        if (tagInfo == IntPtr.Zero)
-            return null;
+            var epc = TryExtractEpcFromTag(tagInfo);
+            if (!string.IsNullOrWhiteSpace(epc))
+                return epc;
+        }
 
+        return null;
+    }
+
+    private static string? TryExtractEpcFromTag(IntPtr tagInfo)
+    {
         var tagClass = JNIEnv.GetObjectClass(tagInfo);
         var epcField = JNIEnv.GetFieldID(tagClass, "EpcId", "[B");
         if (epcField == IntPtr.Zero)
@@ -208,27 +239,26 @@ public partial class RfidScannerService
         return Convert.ToHexString(bytes).Trim();
     }
 
-    private void SaveLastEpc(string epc)
+    private static string? ReadEnumName(IntPtr enumObj)
     {
-        lock (_sync)
-        {
-            _lastEpc = epc.Trim().ToUpperInvariant();
-            _lastEpcAt = DateTimeOffset.UtcNow;
-        }
+        if (enumObj == IntPtr.Zero)
+            return null;
+
+        var enumClass = JNIEnv.GetObjectClass(enumObj);
+        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+        if (nameMethod == IntPtr.Zero)
+            return null;
+
+        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+        return nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
     }
 
-    private string? GetRecentEpc()
+    private static void LogStep(string message)
     {
-        lock (_sync)
-        {
-            if (_lastEpcAt == DateTimeOffset.MinValue)
-                return null;
-
-            if (DateTimeOffset.UtcNow - _lastEpcAt > TimeSpan.FromSeconds(4))
-                return null;
-
-            return _lastEpc;
-        }
+        var line = $"[{RfidImplVersion}] {message}";
+        Debug.WriteLine(line);
+        Log.Debug(LogTag, line);
     }
+}
 }
 #endif
