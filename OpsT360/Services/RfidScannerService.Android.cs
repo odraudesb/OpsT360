@@ -6,7 +6,8 @@ namespace OpsT360.Services;
 
 public partial class RfidScannerService
 {
-    private const string RfidImplVersion = "RFIDv2026.03.11.1";
+    private const string RfidImplVersion = "RFIDv2026.03.11.2";
+    private const bool SkipSdkSetPower = true;
     private readonly object _sync = new();
     private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
     private string? _lastEpc;
@@ -21,7 +22,7 @@ public partial class RfidScannerService
             if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
                 return RfidReadResult.Fail(setup.Message);
 
-            TrySetPower(setup.ManagerClass, setup.Manager);
+            TrySetPowerSafely(setup.ManagerClass, setup.Manager);
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             var started = TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail);
@@ -58,7 +59,7 @@ public partial class RfidScannerService
             if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
                 return RfidReadResult.Fail(setup.Message);
 
-            TrySetPower(setup.ManagerClass, setup.Manager);
+            TrySetPowerSafely(setup.ManagerClass, setup.Manager);
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             if (!TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail))
@@ -102,6 +103,11 @@ public partial class RfidScannerService
             var detail = DescribeJavaThrowable(jex);
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
+        }
    
         catch (Exception ex)
         {
@@ -138,6 +144,16 @@ public partial class RfidScannerService
 
         var powerArgs = new JValue[] { new(30), new(30) };
         JNIEnv.CallObjectMethod(manager, setPower, powerArgs);
+    }
+
+    private static void TrySetPowerSafely(IntPtr managerClass, IntPtr manager)
+    {
+        // En algunos firmwares (p.ej. C6 Android 13) setPower puede abortar en capa nativa (SIGABRT).
+        // Se omite por defecto para priorizar estabilidad; el lector usa potencia/configuración actual del módulo.
+        if (SkipSdkSetPower)
+            return;
+
+        TrySetPower(managerClass, manager);
     }
 
     private static void StopAnyInventory(IntPtr managerClass, IntPtr manager)
