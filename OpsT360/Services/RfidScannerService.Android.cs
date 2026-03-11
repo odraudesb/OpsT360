@@ -8,39 +8,50 @@ public partial class RfidScannerService
 {
     private const string RfidImplVersion = "RFIDv2026.03.11.1";
     private readonly object _sync = new();
+    private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
     private string? _lastEpc;
     private DateTimeOffset _lastEpcAt = DateTimeOffset.MinValue;
 
-    private partial Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
+    private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
     {
+        await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
             if (!setup.Success || setup.ManagerClass == IntPtr.Zero || setup.Manager == IntPtr.Zero)
-                return Task.FromResult(RfidReadResult.Fail(setup.Message));
+                return RfidReadResult.Fail(setup.Message);
 
             TrySetPower(setup.ManagerClass, setup.Manager);
             StopAnyInventory(setup.ManagerClass, setup.Manager);
 
             var started = TryStartInventory(setup.ManagerClass, setup.Manager, out var startDetail);
             if (!started)
-                return Task.FromResult(RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}"));
+                return RfidReadResult.Fail($"No fue posible activar antena RFID: {startDetail}");
 
-            return Task.FromResult(RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada. Pulsa Read seal para capturar EPC."));
+            return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada. Pulsa Read seal para capturar EPC.");
         }
         catch (Java.Lang.Throwable jex)
         {
             var detail = DescribeJavaThrowable(jex);
-            return Task.FromResult(RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {detail}"));
+            return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {detail}");
+        }
+        catch (System.OperationCanceledException)
+        {
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
         }
         catch (Exception ex)
         {
-            return Task.FromResult(RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {ex.Message}"));
+            return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {ex.Message}");
+        }
+        finally
+        {
+            _rfidOpLock.Release();
         }
     }
 
     private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
     {
+        await _rfidOpLock.WaitAsync(cancellationToken);
         try
         {
             var setup = TryGetReader();
@@ -84,7 +95,12 @@ public partial class RfidScannerService
         }
         catch (System.OperationCanceledException)
         {
-            return RfidReadResult.Fail("Lectura RFID cancelada.");
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
+        }
+        catch (Java.Lang.Throwable jex)
+        {
+            var detail = DescribeJavaThrowable(jex);
+            return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID Java: {detail}");
         }
         catch (Java.Lang.Throwable jex)
         {
@@ -94,6 +110,10 @@ public partial class RfidScannerService
         catch (Exception ex)
         {
             return RfidReadResult.Fail($"[{RfidImplVersion}] Error RFID: {ex.Message}");
+        }
+        finally
+        {
+            _rfidOpLock.Release();
         }
     }
 

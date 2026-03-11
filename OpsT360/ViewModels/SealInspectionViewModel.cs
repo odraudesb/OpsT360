@@ -23,6 +23,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
 
     private static readonly Regex EpcHexRegex = new("^[0-9A-F]{8,64}$", RegexOptions.Compiled);
+    private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
@@ -53,32 +54,50 @@ public partial class SealInspectionViewModel : ObservableObject
         if (index < 0 || index >= Seals.Count)
             return false;
 
-        var antennaStart = await _rfidScannerService.StartAntennaAsync();
-        if (!antennaStart.Success)
+        if (IsBusy)
         {
-            StatusText = antennaStart.Message;
+            StatusText = "Lectura RFID en curso. Espera un momento...";
             return false;
         }
 
-        var read = await _rfidScannerService.TryReadSingleEpcAsync();
-        if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+        IsBusy = true;
+        try
         {
-            StatusText = read.Message;
+            using var cts = new CancellationTokenSource(RfidReadTimeout);
+            var read = await _rfidScannerService.TryReadSingleEpcAsync(cts.Token);
+            if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
+            {
+                StatusText = read.Message;
+                return false;
+            }
+
+            var normalized = NormalizeEpc(read.Epc);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                StatusText = $"El lector devolvió un valor no EPC ({read.Epc}). Revisa configuración RFID/UHF en el handheld.";
+                return false;
+            }
+
+            Seals[index].Code = normalized;
+            StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return true;
+        }
+        catch (System.OperationCanceledException)
+        {
+            StatusText = "Timeout RFID: no se detectó tag en 8s. Acerca el sello y reintenta.";
             return false;
         }
-
-        var normalized = NormalizeEpc(read.Epc);
-        if (string.IsNullOrWhiteSpace(normalized))
+        catch (Exception ex)
         {
-            StatusText = $"El lector devolvió un valor no EPC ({read.Epc}). Revisa configuración RFID/UHF en el handheld.";
+            StatusText = $"Error inesperado en lectura RFID: {ex.Message}";
             return false;
         }
-
-        Seals[index].Code = normalized;
-        StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
-        OnPropertyChanged(nameof(CanUploadImages));
-        OnPropertyChanged(nameof(CanSend));
-        return true;
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     partial void OnContainerIdChanged(string value)

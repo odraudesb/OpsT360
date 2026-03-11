@@ -26,14 +26,30 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Button button || !int.TryParse(button.ClassId, out var sealNumber))
             return;
 
-        var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
-        if (sdkCaptured)
-        {
-            _vm.ReadSealCommand.Execute(sealNumber.ToString());
+        if (!button.IsEnabled)
             return;
-        }
 
-        _vm.StatusText = "No se obtuvo EPC por SDK RFID. Verifica que el handheld esté en modo UHF y no en escáner de código de barras.";
+        button.IsEnabled = false;
+        try
+        {
+            var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
+            if (sdkCaptured)
+            {
+                _vm.ReadSealCommand.Execute(sealNumber.ToString());
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_vm.StatusText))
+                _vm.StatusText = "No se obtuvo EPC por SDK RFID. Verifica que el handheld esté en modo UHF y no en escáner de código de barras.";
+        }
+        catch (Exception ex)
+        {
+            _vm.StatusText = $"Error en botón Read seal: {ex.Message}";
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
     }
 
     private void OnSealEntryFocused(object? sender, FocusEventArgs e)
