@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Net;
 using OpsT360.Models;
 
 namespace OpsT360.Services;
@@ -13,7 +14,9 @@ public class LoginService : ILoginService
     public static readonly string[] LoginFallbackUrls =
     {
         PrimaryLoginUrl,
-        "http://38.242.225.119/api/auth/login"
+        "http://38.242.225.119/api/auth/login",
+        "https://38.242.225.119:3000/api/auth/login",
+        "https://38.242.225.119/api/auth/login"
     };
 
     public LoginService(HttpClient httpClient, IAuthState authState)
@@ -44,7 +47,7 @@ public class LoginService : ILoginService
         }
 
         throw new HttpRequestException(
-            $"No se pudo conectar al login. Endpoints probados: {string.Join(" | ", LoginFallbackUrls)}",
+            $"No se pudo completar login. Endpoints probados: {string.Join(" | ", LoginFallbackUrls)}. Último error: {lastError?.Message}",
             lastError);
     }
 
@@ -57,11 +60,16 @@ public class LoginService : ILoginService
             Content = JsonContent.Create(request)
         };
 
+        httpRequest.Headers.Accept.ParseAdd("application/json");
+
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                throw new HttpRequestException($"Login API respondió 403 Forbidden en {endpoint}. El backend/proxy está bloqueando la petición (WAF, whitelist IP o reglas de CORS/ingress). Body: {body}");
+
             throw new HttpRequestException($"Login API respondió {(int)response.StatusCode} en {endpoint}. Body: {body}");
         }
 
