@@ -1,278 +1,451 @@
 #if ANDROID
+using System;
+using System.Diagnostics;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Android.Runtime;
 using Android.Util;
-using System.Diagnostics;
+using JClass = Java.Lang.Class;
+using Throwable = Java.Lang.Throwable;
+using AndroidApplication = Android.App.Application;
 
 namespace OpsT360.Services
 {
-public partial class RfidScannerService
-{
-    private const string RfidImplVersion = "RFIDv2026.03.11.6";
-    private const string LogTag = "OpsT360.RFID";
-    private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
-
-    private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
+    public partial class RfidScannerService
     {
-        IntPtr managerClass = IntPtr.Zero;
-        IntPtr manager = IntPtr.Zero;
+        private const string RfidImplVersion = "RFIDv2026.03.11.13";
+        private const string LogTag = "OpsT360.RFID";
 
-        await _rfidOpLock.WaitAsync(cancellationToken);
-        try
+        private readonly SemaphoreSlim _rfidOpLock = new(1, 1);
+
+        private static readonly object _readerSync = new();
+
+        private static IntPtr _managerClass = IntPtr.Zero;
+        private static IntPtr _manager = IntPtr.Zero;
+        private static string _managerClassName = "com.handheld.uhfr.UHFRManager";
+
+        private static readonly string[] CandidateManagerClasses =
         {
-            var setup = TryGetReader();
-            if (!setup.Success)
-                return RfidReadResult.Fail(setup.Message);
+            "com.handheld.uhfr.UHFRManager"
+        };
 
-            managerClass = setup.ManagerClass;
-            manager = setup.Manager;
+        public static string PlatformEnsureReaderOpened()
+        {
+            lock (_readerSync)
+            {
+                try
+                {
+                    if (_managerClass != IntPtr.Zero && _manager != IntPtr.Zero)
+                        return $"[{RfidImplVersion}] Reader ya estaba abierto.";
 
-            var powerDetail = TrySetPower(managerClass, manager);
-            var startDetail = TryStartReading(managerClass, manager, out var started);
-            if (!started)
-                return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {startDetail}. setPower={powerDetail}");
+                    if (!TryLoadManagerClass(out var javaClassName, out var managerClass, out var detail))
+                        return $"[{RfidImplVersion}] No se pudo cargar clase RFID. {detail}";
 
-            LogStep($"StartAntenna ok. setPower={powerDetail}, start={startDetail}");
-            return RfidReadResult.Ok($"[{RfidImplVersion}] Antena RFID activada.");
+                    var sigClass = javaClassName.Replace('.', '/');
+                    var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", $"()L{sigClass};");
+                    if (getInstance == IntPtr.Zero)
+                    {
+                        DeleteGlobalRefSafe(managerClass);
+                        return $"[{RfidImplVersion}] No existe getInstance() en {javaClassName}.";
+                    }
+
+                    var managerLocal = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
+                    if (managerLocal == IntPtr.Zero)
+                    {
+                        DeleteGlobalRefSafe(managerClass);
+                        return $"[{RfidImplVersion}] getInstance() devolvió null en {javaClassName}.";
+                    }
+
+                    _managerClassName = javaClassName;
+                    _managerClass = managerClass;
+                    _manager = JNIEnv.NewGlobalRef(managerLocal);
+                    DeleteLocalRefSafe(managerLocal);
+
+                    return $"[{RfidImplVersion}] Reader abierto correctamente: {_managerClassName}";
+                }
+                catch (Throwable ex)
+                {
+                    return $"[{RfidImplVersion}] Error abriendo reader: {ex.GetType().Name}: {ex.Message}";
+                }
+                catch (Exception ex)
+                {
+                    return $"[{RfidImplVersion}] Error abriendo reader: {ex.GetType().Name}: {ex.Message}";
+                }
+            }
         }
-        catch (System.OperationCanceledException)
-        {
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
-        }
-        catch (Exception ex)
-        {
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Error activando RFID: {ex.Message}");
-        }
-        finally
-        {
-            ReleaseReaderHandles(managerClass, manager);
-            _rfidOpLock.Release();
-        }
-    }
 
-    private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
-    {
-        IntPtr managerClass = IntPtr.Zero;
-        IntPtr manager = IntPtr.Zero;
-
-        await _rfidOpLock.WaitAsync(cancellationToken);
-        try
+        public static void PlatformCloseReader()
         {
-            var setup = TryGetReader();
-            if (!setup.Success)
-                return RfidReadResult.Fail(setup.Message);
+            lock (_readerSync)
+            {
+                try
+                {
+                    if (_managerClass != IntPtr.Zero && _manager != IntPtr.Zero)
+                    {
+                        var closeVoid = JNIEnv.GetMethodID(_managerClass, "close", "()V");
+                        if (closeVoid != IntPtr.Zero)
+                        {
+                            JNIEnv.CallVoidMethod(_manager, closeVoid);
+                        }
+                        else
+                        {
+                            var closeBool = JNIEnv.GetMethodID(_managerClass, "close", "()Z");
+                            if (closeBool != IntPtr.Zero)
+                                JNIEnv.CallBooleanMethod(_manager, closeBool);
+                        }
+                    }
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    DeleteGlobalRefSafe(_manager);
+                    DeleteGlobalRefSafe(_managerClass);
+                    _manager = IntPtr.Zero;
+                    _managerClass = IntPtr.Zero;
+                }
+            }
+        }
+
+        private partial async Task<RfidReadResult> StartAntennaPlatformAsync(CancellationToken cancellationToken)
+        {
+            await _rfidOpLock.WaitAsync(cancellationToken);
+            try
+            {
+                string openMsg;
+                lock (_readerSync)
+                {
+                    openMsg = PlatformEnsureReaderOpened();
+                }
+
+                LogStep(openMsg);
+
+                if (_managerClass == IntPtr.Zero || _manager == IntPtr.Zero)
+                    return RfidReadResult.Fail(openMsg);
+
+                string powerDetail;
+                lock (_readerSync)
+                {
+                    powerDetail = TrySetPower(_managerClass, _manager, 30, 30);
+                }
+
+                LogStep($"StartAntenna setPower={powerDetail}");
+                return new RfidReadResult(true, "ANTENNA_READY", null, $"[{RfidImplVersion}] Antena RFID lista.");
+            }
+            catch (OperationCanceledException)
+            {
+                return RfidReadResult.Fail($"[{RfidImplVersion}] Activación RFID cancelada por timeout.");
+            }
+            catch (Exception ex)
+            {
+                return RfidReadResult.Fail($"[{RfidImplVersion}] Error activando RFID: {ex.Message}");
+            }
+            finally
+            {
+                _rfidOpLock.Release();
+            }
+        }
+
+        private partial async Task<RfidReadResult> TryReadSingleEpcPlatformAsync(CancellationToken cancellationToken)
+        {
+            await _rfidOpLock.WaitAsync(cancellationToken);
+            try
+            {
+                string openMsg;
+                lock (_readerSync)
+                {
+                    openMsg = PlatformEnsureReaderOpened();
+                }
+
+                LogStep(openMsg);
+
+                if (_managerClass == IntPtr.Zero || _manager == IntPtr.Zero)
+                    return RfidReadResult.Fail(openMsg);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                string powerDetail;
+                IntPtr tags;
+                (string? Epc, string? Tid) tagData;
+
+                lock (_readerSync)
+                {
+                    powerDetail = TrySetPower(_managerClass, _manager, 30, 30);
+                    LogStep($"setPower={powerDetail}");
+
+                    tags = TryInventorySimple(_managerClass, _manager);
+                    tagData = tags == IntPtr.Zero ? (null, null) : TryExtractBestTag(tags);
+                }
+
+                if (string.IsNullOrWhiteSpace(tagData.Epc))
+                    return RfidReadResult.Fail($"[{RfidImplVersion}] Reader abierto y potencia aplicada, pero no se leyó ningún tag. Acerca más el sticker RFID.");
+
+                LogStep($"TryReadSingleEpc ok -> EPC={tagData.Epc} | TID={(string.IsNullOrWhiteSpace(tagData.Tid) ? "(vacío)" : tagData.Tid)}");
+                return RfidReadResult.Ok(tagData.Epc!, null);
+            }
+            catch (OperationCanceledException)
+            {
+                return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
+            }
+            catch (Exception ex)
+            {
+                return RfidReadResult.Fail($"[{RfidImplVersion}] Error leyendo RFID: {ex.Message}");
+            }
+            finally
+            {
+                _rfidOpLock.Release();
+            }
+        }
+
+        private static bool TryLoadManagerClass(out string javaClassName, out IntPtr classHandle, out string detail)
+        {
+            javaClassName = string.Empty;
+            classHandle = IntPtr.Zero;
+
+            var errors = new StringBuilder();
+
+            try
+            {
+                var loader = AndroidApplication.Context?.ClassLoader;
+                if (loader == null)
+                {
+                    detail = "AndroidApplication.Context.ClassLoader es null.";
+                    return false;
+                }
+
+                foreach (var candidate in CandidateManagerClasses)
+                {
+                    try
+                    {
+                        using var clazz = JClass.ForName(candidate, false, loader);
+                        if (clazz == null)
+                        {
+                            errors.AppendLine($"{candidate} -> null");
+                            continue;
+                        }
+
+                        javaClassName = candidate;
+                        classHandle = JNIEnv.NewGlobalRef(clazz.Handle);
+                        detail = $"Clase cargada: {candidate}";
+                        return true;
+                    }
+                    catch (Throwable ex)
+                    {
+                        errors.AppendLine($"{candidate} -> {ex.GetType().Name}: {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.AppendLine($"{candidate} -> {ex.GetType().Name}: {ex.Message}");
+                    }
+                }
+
+                detail = errors.Length == 0
+                    ? "No se pudo cargar ninguna clase candidata."
+                    : errors.ToString();
+
+                return false;
+            }
+            catch (Throwable ex)
+            {
+                detail = $"Error cargando clase RFID: {ex.GetType().Name}: {ex.Message}";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                detail = $"Error cargando clase RFID: {ex.GetType().Name}: {ex.Message}";
+                return false;
+            }
+        }
+
+        private static string TrySetPower(IntPtr managerClass, IntPtr manager, int readPower, int writePower)
+        {
+            var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
+            if (setPower == IntPtr.Zero)
+                return "MethodNotFound";
+
+            var args = new JValue[] { new JValue(readPower), new JValue(writePower) };
+            var result = JNIEnv.CallObjectMethod(manager, setPower, args);
+            var name = ReadEnumName(result) ?? "Unknown";
+            DeleteLocalRefSafe(result);
+            return name;
+        }
+
+        private static IntPtr TryInventorySimple(IntPtr managerClass, IntPtr manager)
+        {
+            var method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(S)Ljava/util/List;");
+            if (method != IntPtr.Zero)
+            {
+                var args = new JValue[] { new JValue((short)50) };
+                return JNIEnv.CallObjectMethod(manager, method, args);
             }
 
-            managerClass = setup.ManagerClass;
-            manager = setup.Manager;
+            method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
+            if (method != IntPtr.Zero)
+            {
+                var args = new JValue[] { new JValue((short)50) };
+                return JNIEnv.CallObjectMethod(manager, method, args);
+            }
 
-            var powerDetail = TrySetPower(managerClass, manager);
-            var startDetail = TryStartReading(managerClass, manager, out var started);
-            if (!started)
-                return RfidReadResult.Fail($"[{RfidImplVersion}] No se pudo activar antena RFID: {startDetail}. setPower={powerDetail}");
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var tags = TryInventory(managerClass, manager);
-            var epc = tags == IntPtr.Zero ? null : TryExtractFirstEpc(tags);
-            TryStopReading(managerClass, manager);
-
-            if (string.IsNullOrWhiteSpace(epc))
-                return RfidReadResult.Fail($"[{RfidImplVersion}] No se capturó sticker RFID. Acerca el sello y reintenta.");
-
-            LogStep($"TryReadSingleEpc ok -> {epc}");
-            return RfidReadResult.Ok(epc);
-        }
-        catch (System.OperationCanceledException)
-        {
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Lectura RFID cancelada por timeout.");
-        }
-       
-   
-        catch (Exception ex)
-        {
-            return RfidReadResult.Fail($"[{RfidImplVersion}] Error leyendo RFID: {ex.Message}");
-        }
-        finally
-        {
-            ReleaseReaderHandles(managerClass, manager);
-            _rfidOpLock.Release();
-        }
-    }
-
-    private static (bool Success, string Message, IntPtr ManagerClass, IntPtr Manager) TryGetReader()
-    {
-        var managerClassLocal = JNIEnv.FindClass("com/handheld/uhfr/UHFRManager");
-        if (managerClassLocal == IntPtr.Zero)
-            return (false, "No se encontró UHFRManager en los JAR del SDK.", IntPtr.Zero, IntPtr.Zero);
-
-        var managerClass = JNIEnv.NewGlobalRef(managerClassLocal);
-        var getInstance = JNIEnv.GetStaticMethodID(managerClass, "getInstance", "()Lcom/handheld/uhfr/UHFRManager;");
-        if (getInstance == IntPtr.Zero)
-        {
-            DeleteGlobalRefSafe(managerClass);
-            return (false, "No se encontró getInstance() en UHFRManager.", IntPtr.Zero, IntPtr.Zero);
+            return IntPtr.Zero;
         }
 
-        var managerLocal = JNIEnv.CallStaticObjectMethod(managerClass, getInstance);
-        if (managerLocal == IntPtr.Zero)
-            return (false, "No fue posible inicializar módulo RFID (getInstance = null).", IntPtr.Zero, IntPtr.Zero);
-
-        var manager = JNIEnv.NewGlobalRef(managerLocal);
-        return (true, string.Empty, managerClass, manager);
-    }
-
-    private static void ReleaseReaderHandles(IntPtr managerClass, IntPtr manager)
-    {
-        if (manager != IntPtr.Zero)
-            JNIEnv.DeleteGlobalRef(manager);
-
-        if (managerClass != IntPtr.Zero)
-            JNIEnv.DeleteGlobalRef(managerClass);
-    }
-
-    private static string TrySetPower(IntPtr managerClass, IntPtr manager)
-    {
-        var setPower = JNIEnv.GetMethodID(managerClass, "setPower", "(II)Lcom/uhf/api/cls/Reader$READER_ERR;");
-        if (setPower == IntPtr.Zero)
-            return "MethodNotFound";
-
-        var args = new JValue[] { new(30), new(30) };
-        var result = JNIEnv.CallObjectMethod(manager, setPower, args);
-        return ReadEnumName(result) ?? "Unknown";
-    }
-
-    private static string TryStartReading(IntPtr managerClass, IntPtr manager, out bool started)
-    {
-        var noArg = JNIEnv.GetMethodID(managerClass, "asyncStartReading", "()Lcom/uhf/api/cls/Reader$READER_ERR;");
-        if (noArg != IntPtr.Zero)
+        private static IntPtr TryInventoryWithTidPreferred(IntPtr managerClass, IntPtr manager)
         {
-            var result = JNIEnv.CallObjectMethod(manager, noArg);
-            var name = ReadEnumName(result) ?? "Unknown";
-            started = name.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
+            var method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
+            if (method != IntPtr.Zero)
+            {
+                var args = new JValue[] { new JValue((short)50) };
+                return JNIEnv.CallObjectMethod(manager, method, args);
+            }
+
+            return TryInventorySimple(managerClass, manager);
+        }
+
+        private static (string? Epc, string? Tid) TryExtractBestTag(IntPtr listHandle)
+        {
+            var listClass = JNIEnv.FindClass("java/util/List");
+            if (listClass == IntPtr.Zero)
+                return (null, null);
+
+            var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
+            var getMethod = JNIEnv.GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
+            if (sizeMethod == IntPtr.Zero || getMethod == IntPtr.Zero)
+                return (null, null);
+
+            var size = JNIEnv.CallIntMethod(listHandle, sizeMethod);
+            for (var i = 0; i < size; i++)
+            {
+                var getArgs = new JValue[] { new JValue(i) };
+                var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
+                if (tagInfo == IntPtr.Zero)
+                    continue;
+
+                var data = TryExtractEpcAndTidFromTag(tagInfo);
+
+                // NO liberar tagInfo manualmente aquí.
+                // En este SDK/handheld estaba provocando crash nativo.
+
+                if (!string.IsNullOrWhiteSpace(data.Epc))
+                    return data;
+            }
+
+            return (null, null);
+        }
+
+        private static (string? Epc, string? Tid) TryExtractEpcAndTidFromTag(IntPtr tagInfo)
+        {
+            var tagClass = JNIEnv.GetObjectClass(tagInfo);
+            if (tagClass == IntPtr.Zero)
+                return (null, null);
+
+            var epc = TryExtractByteArrayField(tagInfo, tagClass, "EpcId", "epc");
+          //  var tid = TryExtractTidFromTag(tagInfo, tagClass);
+
+            return (epc, null);
+        }
+
+        private static string? TryExtractTidFromTag(IntPtr tagInfo, IntPtr tagClass)
+        {
+            var dataField = JNIEnv.GetFieldID(tagClass, "EmbededData", "[B");
+            if (dataField == IntPtr.Zero)
+                dataField = JNIEnv.GetFieldID(tagClass, "embededData", "[B");
+            if (dataField == IntPtr.Zero)
+                return null;
+
+            var dataArray = JNIEnv.GetObjectField(tagInfo, dataField);
+            if (dataArray == IntPtr.Zero)
+                return null;
+
+            var bytes = JNIEnv.GetArray<byte>(dataArray);
+            if (bytes is null || bytes.Length == 0)
+                return null;
+
+            var len = TryReadLengthField(tagInfo, tagClass, "EmbededDatalen");
+            if (len <= 0)
+                len = TryReadLengthField(tagInfo, tagClass, "embededDatalen");
+
+            if (len > 0 && len < bytes.Length)
+                bytes = bytes[..len];
+
+            return bytes.Length == 0 ? null : Convert.ToHexString(bytes).Trim();
+        }
+
+        private static string? TryExtractByteArrayField(IntPtr tagInfo, IntPtr tagClass, params string[] fieldNames)
+        {
+            foreach (var fieldName in fieldNames)
+            {
+                var field = JNIEnv.GetFieldID(tagClass, fieldName, "[B");
+                if (field == IntPtr.Zero)
+                    continue;
+
+                var arrayHandle = JNIEnv.GetObjectField(tagInfo, field);
+                if (arrayHandle == IntPtr.Zero)
+                    continue;
+
+                var bytes = JNIEnv.GetArray<byte>(arrayHandle);
+                if (bytes is { Length: > 0 })
+                    return Convert.ToHexString(bytes).Trim();
+            }
+
+            return null;
+        }
+
+        private static int TryReadLengthField(IntPtr tagInfo, IntPtr tagClass, string fieldName)
+        {
+            var intField = JNIEnv.GetFieldID(tagClass, fieldName, "I");
+            if (intField != IntPtr.Zero)
+                return JNIEnv.GetIntField(tagInfo, intField);
+
+            var shortField = JNIEnv.GetFieldID(tagClass, fieldName, "S");
+            if (shortField != IntPtr.Zero)
+                return JNIEnv.GetShortField(tagInfo, shortField);
+
+            return -1;
+        }
+
+        private static string? ReadEnumName(IntPtr enumObj)
+        {
+            if (enumObj == IntPtr.Zero)
+                return null;
+
+            var enumClass = JNIEnv.GetObjectClass(enumObj);
+            if (enumClass == IntPtr.Zero)
+                return null;
+
+            var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
+            if (nameMethod == IntPtr.Zero)
+                return null;
+
+            var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
+            var name = nameObj == IntPtr.Zero
+                ? null
+                : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
+
+            DeleteLocalRefSafe(nameObj);
+            DeleteLocalRefSafe(enumClass);
             return name;
         }
 
-        var timed = JNIEnv.GetMethodID(managerClass, "asyncStartReading", "(I)Lcom/uhf/api/cls/Reader$READER_ERR;");
-        if (timed != IntPtr.Zero)
+        private static void LogStep(string message)
         {
-            var args = new JValue[] { new(240) };
-            var result = JNIEnv.CallObjectMethod(manager, timed, args);
-            var name = ReadEnumName(result) ?? "Unknown";
-            started = name.Contains("MT_OK_ERR", StringComparison.OrdinalIgnoreCase);
-            return name;
+            var line = $"[{RfidImplVersion}] {message}";
+            Debug.WriteLine(line);
+            Log.Debug(LogTag, line);
         }
 
-        started = false;
-        return "MethodNotFound";
-    }
-
-    private static void TryStopReading(IntPtr managerClass, IntPtr manager)
-    {
-        var stop1 = JNIEnv.GetMethodID(managerClass, "stopTagInventory", "()Z");
-        if (stop1 != IntPtr.Zero)
-            JNIEnv.CallBooleanMethod(manager, stop1);
-
-        var stop2 = JNIEnv.GetMethodID(managerClass, "asyncStopReading", "()Lcom/uhf/api/cls/Reader$READER_ERR;");
-        if (stop2 != IntPtr.Zero)
-            JNIEnv.CallObjectMethod(manager, stop2);
-    }
-
-    private static IntPtr TryInventory(IntPtr managerClass, IntPtr manager)
-    {
-        var method = JNIEnv.GetMethodID(managerClass, "tagInventoryByTimer", "(S)Ljava/util/List;");
-        if (method != IntPtr.Zero)
+        private static void DeleteGlobalRefSafe(IntPtr handle)
         {
-            var args = new JValue[] { new((short)180) };
-            return JNIEnv.CallObjectMethod(manager, method, args);
-        }
-    }
-
-        method = JNIEnv.GetMethodID(managerClass, "tagEpcTidInventoryByTimer", "(S)Ljava/util/List;");
-        if (method != IntPtr.Zero)
-        {
-            var args = new JValue[] { new((short)120) };
-            return JNIEnv.CallObjectMethod(manager, method, args);
+            if (handle != IntPtr.Zero)
+                JNIEnv.DeleteGlobalRef(handle);
         }
 
-        method = JNIEnv.GetMethodID(managerClass, "tagInventoryRealTime", "()Ljava/util/List;");
-        if (method != IntPtr.Zero)
-            return JNIEnv.CallObjectMethod(manager, method);
-
-        return IntPtr.Zero;
-    }
-
-    private static string? TryExtractBestEpc(IntPtr listHandle)
-    {
-        var listClass = JNIEnv.FindClass("java/util/List");
-        var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
-        var getMethod = JNIEnv.GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
-        if (sizeMethod == IntPtr.Zero || getMethod == IntPtr.Zero)
-            return null;
-
-        var size = JNIEnv.CallIntMethod(listHandle, sizeMethod);
-        for (var i = 0; i < size; i++)
+        private static void DeleteLocalRefSafe(IntPtr handle)
         {
-            var getArgs = new JValue[] { new(i) };
-            var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
-            if (tagInfo == IntPtr.Zero)
-                continue;
-
-            var epc = TryExtractEpcFromTag(tagInfo);
-            if (!string.IsNullOrWhiteSpace(epc))
-                return epc;
+            if (handle != IntPtr.Zero)
+                JNIEnv.DeleteLocalRef(handle);
         }
-
-        return null;
     }
-
-    private static string? TryExtractEpcFromTag(IntPtr tagInfo)
-    {
-        var tagClass = JNIEnv.GetObjectClass(tagInfo);
-        var epcField = JNIEnv.GetFieldID(tagClass, "EpcId", "[B");
-        if (epcField == IntPtr.Zero)
-            epcField = JNIEnv.GetFieldID(tagClass, "epc", "[B");
-        if (epcField == IntPtr.Zero)
-        {
-            DeleteLocalRefSafe(tagClass);
-            return null;
-        }
-
-        var epcBytesArray = JNIEnv.GetObjectField(tagInfo, epcField);
-        if (epcBytesArray == IntPtr.Zero)
-        {
-            DeleteLocalRefSafe(tagClass);
-            return null;
-        }
-
-        var bytes = JNIEnv.GetArray<byte>(epcBytesArray);
-        DeleteLocalRefSafe(epcBytesArray);
-        DeleteLocalRefSafe(tagClass);
-        if (bytes is null || bytes.Length == 0)
-            return null;
-
-        return Convert.ToHexString(bytes).Trim();
-    }
-
-    private static string? ReadEnumName(IntPtr enumObj)
-    {
-        if (enumObj == IntPtr.Zero)
-            return null;
-
-        var enumClass = JNIEnv.GetObjectClass(enumObj);
-        var nameMethod = JNIEnv.GetMethodID(enumClass, "name", "()Ljava/lang/String;");
-        if (nameMethod == IntPtr.Zero)
-            return null;
-
-        var nameObj = JNIEnv.CallObjectMethod(enumObj, nameMethod);
-        return nameObj == IntPtr.Zero ? null : JNIEnv.GetString(nameObj, JniHandleOwnership.DoNotTransfer);
-    }
-
-    private static void LogStep(string message)
-    {
-        var line = $"[{RfidImplVersion}] {message}";
-        Debug.WriteLine(line);
-        Log.Debug(LogTag, line);
-    }
-}
 }
 #endif

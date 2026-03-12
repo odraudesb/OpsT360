@@ -21,8 +21,8 @@ public partial class SealInspectionViewModel : ObservableObject
         ["TEMU0927644"] = new() { EntityId = 12345, ShippingLine = "ONE", Goods = "Arándano fresco", Booking = "BK2025-000113", OriginWeight = 20880 }
     };
 
-
     private static readonly Regex EpcHexRegex = new("^[0-9A-F]{8,64}$", RegexOptions.Compiled);
+    private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
@@ -40,7 +40,9 @@ public partial class SealInspectionViewModel : ObservableObject
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
-    public bool CanSend => AreAllSealsCaptured && SealImages.All(i => i.Bytes is { Length: > 0 }) && ContainerImage.Bytes is { Length: > 0 };
+    public bool CanSend => AreAllSealsCaptured
+                           && SealImages.All(i => i.Bytes is { Length: > 0 })
+                           && ContainerImage.Bytes is { Length: > 0 };
 
     public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService)
     {
@@ -65,26 +67,29 @@ public partial class SealInspectionViewModel : ObservableObject
         {
             using var cts = new CancellationTokenSource(RfidReadTimeout);
             var read = await _rfidScannerService.TryReadSingleEpcAsync(cts.Token);
+
             if (!read.Success || string.IsNullOrWhiteSpace(read.Epc))
             {
                 StatusText = read.Message;
                 return false;
             }
 
-            var normalized = NormalizeEpc(read.Epc);
-            if (string.IsNullOrWhiteSpace(normalized))
+            var normalizedEpc = NormalizeEpc(read.Epc);
+            if (string.IsNullOrWhiteSpace(normalizedEpc))
             {
                 StatusText = $"El lector devolvió un valor no EPC ({read.Epc}). Revisa configuración RFID/UHF en el handheld.";
                 return false;
             }
 
-            Seals[index].Code = normalized;
+            Seals[index].Code = normalizedEpc;
+          //  Seals[index].Tid = NormalizeHex(read.Tid) ?? string.Empty;
+
             StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
             OnPropertyChanged(nameof(CanUploadImages));
             OnPropertyChanged(nameof(CanSend));
             return true;
         }
-        catch (System.OperationCanceledException)
+        catch (OperationCanceledException)
         {
             StatusText = "Timeout RFID: no se detectó tag en 8s. Acerca el sello y reintenta.";
             return false;
@@ -107,9 +112,7 @@ public partial class SealInspectionViewModel : ObservableObject
             return;
 
         foreach (var item in _profiles.Keys.Where(k => k.Contains(value, StringComparison.OrdinalIgnoreCase)).Take(6))
-        {
             ContainerSuggestions.Add(item);
-        }
     }
 
     [RelayCommand]
@@ -139,6 +142,7 @@ public partial class SealInspectionViewModel : ObservableObject
         }
 
         Seals[index].Code = code;
+        Seals[index].Tid = NormalizeHex(Seals[index].Tid) ?? string.Empty;
         Seals[index].IsLocked = true;
         CurrentSealIndex = Math.Max(CurrentSealIndex, index + 1);
 
@@ -178,6 +182,7 @@ public partial class SealInspectionViewModel : ObservableObject
         foreach (var seal in Seals)
         {
             seal.Code = string.Empty;
+            seal.Tid = string.Empty;
             seal.IsLocked = false;
         }
 
@@ -298,6 +303,7 @@ public partial class SealInspectionViewModel : ObservableObject
         {
             var profile = ResolveProfile();
             var xml = BuildXml(profile);
+
             var fields = new Dictionary<string, string>
             {
                 ["eventId"] = "301",
@@ -312,11 +318,18 @@ public partial class SealInspectionViewModel : ObservableObject
                 ["eventDate"] = DateTime.UtcNow.ToString("O")
             };
 
-            var files = SealImages.Where(i => i.Bytes != null).Select(i => (i.FileName ?? $"seal-{i.Label}.jpg", i.Bytes!)).ToList();
+            var files = SealImages
+                .Where(i => i.Bytes != null)
+                .Select(i => (i.FileName ?? $"seal-{i.Label}.jpg", i.Bytes!))
+                .ToList();
+
             files.Add((ContainerImage.FileName ?? "container.jpg", ContainerImage.Bytes!));
 
             var sent = await _transactionsService.RegisterWithFilesAsync(fields, files);
-            await Application.Current!.MainPage!.DisplayAlert(sent ? "Enviado" : "Error", sent ? "Transacción enviada." : "No se pudo enviar.", "OK");
+            await Application.Current!.MainPage!.DisplayAlert(
+                sent ? "Enviado" : "Error",
+                sent ? "Transacción enviada." : "No se pudo enviar.",
+                "OK");
         }
         finally
         {
@@ -324,7 +337,10 @@ public partial class SealInspectionViewModel : ObservableObject
         }
     }
 
-    private ContainerProfile ResolveProfile() => _profiles.TryGetValue(ContainerId.Trim(), out var profile) ? profile : new ContainerProfile { EntityId = 100004 };
+    private ContainerProfile ResolveProfile() =>
+        _profiles.TryGetValue(ContainerId.Trim(), out var profile)
+            ? profile
+            : new ContainerProfile { EntityId = 100004 };
 
     private static string? NormalizeEpc(string? value)
     {
@@ -333,6 +349,15 @@ public partial class SealInspectionViewModel : ObservableObject
 
         var normalized = value.Trim().ToUpperInvariant();
         return EpcHexRegex.IsMatch(normalized) ? normalized : null;
+    }
+
+    private static string? NormalizeHex(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim().ToUpperInvariant();
+        return GenericHexRegex.IsMatch(normalized) ? normalized : null;
     }
 
     private static int ResolveSealIndex(object? parameter)
@@ -348,7 +373,14 @@ public partial class SealInspectionViewModel : ObservableObject
 
     private string BuildXml(ContainerProfile profile)
     {
-        var seals = Seals.Select((s, i) => string.IsNullOrWhiteSpace(s.Code) ? $"SLL{i + 1}X" : s.Code).ToArray();
+        var seals = Seals
+            .Select((s, i) => string.IsNullOrWhiteSpace(s.Code) ? $"SLL{i + 1}X" : s.Code.Trim().ToUpperInvariant())
+            .ToArray();
+
+        //var tids = Seals
+        //    .Select(s => string.IsNullOrWhiteSpace(s.Tid) ? string.Empty : s.Tid.Trim().ToUpperInvariant())
+        //    .ToArray();
+
         var now = DateTime.UtcNow.ToString("O");
         var container = ContainerId.Trim().ToUpperInvariant();
 
@@ -359,8 +391,10 @@ public partial class SealInspectionViewModel : ObservableObject
         sb.Append($"<tamaño>{profile.Size}</tamaño><naviera>{profile.ShippingLine}</naviera><mercancía>{profile.Goods}</mercancía>");
         sb.Append($"<booking>{profile.Booking}</booking><peso_origen>{profile.OriginWeight}</peso_origen>");
         sb.Append($"<sello-1>{seals[0]}</sello-1><sello-2>{seals[1]}</sello-2><sello-3>{seals[2]}</sello-3><sello-4>{seals[3]}</sello-4>");
+        //sb.Append($"<tid_1>{tids[0]}</tid_1><tid_2>{tids[1]}</tid_2><tid_3>{tids[2]}</tid_3><tid_4>{tids[3]}</tid_4>");
         sb.Append($"<sello_aduana>{profile.CustomsSeal}</sello_aduana><observaciones>{profile.Observations}</observaciones>");
-        sb.Append($"<fecha_registro>{now}</fecha_registro></Contenedor>");
+        sb.Append($"<fecha_registro>{now}</fecha_registro>");
+        sb.Append("</Contenedor>");
         return sb.ToString();
     }
 }
