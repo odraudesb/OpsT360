@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -253,9 +254,22 @@ public partial class SealInspectionViewModel : ObservableObject
         image.Base64 = Convert.ToBase64String(bytes);
         image.ValidationStatus = "pending";
 
-        var ok = await _transactionsService.ValidatePhotoAsync(image.Base64, image.FileName);
-        image.ValidationStatus = ok ? "success" : "failed";
-        StatusText = ok ? $"{image.Label} validada." : $"{image.Label} falló validación.";
+        try
+        {
+            var ok = await _transactionsService.ValidatePhotoAsync(image.Base64, image.FileName);
+            image.ValidationStatus = ok ? "success" : "failed";
+            StatusText = ok ? $"{image.Label} validada." : $"{image.Label} falló validación.";
+        }
+        catch (HttpRequestException ex)
+        {
+            image.ValidationStatus = "pending";
+            StatusText = $"{image.Label} cargada, pero no se pudo validar por red: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            image.ValidationStatus = "pending";
+            StatusText = $"{image.Label} cargada, pero la validación devolvió error: {ex.Message}";
+        }
 
         OnPropertyChanged(nameof(CanSend));
     }
