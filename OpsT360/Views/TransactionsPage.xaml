@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OpsT360.Views.TransactionsPage"
+             Title="Transactions"
+             BackgroundColor="#EEF0F5">
+    <Grid RowDefinitions="Auto,*">
+        <Grid BackgroundColor="#4357E8" Padding="20,26,20,18" ColumnDefinitions="*,Auto">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Hi, Rodrigo"
+                       FontSize="30"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+                <Label Text="Transacciones"
+                       FontSize="13"
+                       TextColor="#E4E8FF" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1"
+                    Text="T ▾"
+                    Clicked="OnPageMenuClicked"
+                    BackgroundColor="Transparent"
+                    BorderColor="White"
+                    BorderWidth="2"
+                    CornerRadius="20"
+                    WidthRequest="56"
+                    HeightRequest="40"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    FontSize="16" />
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="14" Spacing="10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Border BackgroundColor="White" Stroke="#E0E4EE" StrokeShape="RoundRectangle 10" Padding="12,8">
+                        <Entry Placeholder="Search"
+                               TextChanged="OnSearchTextChanged"
+                               TextColor="#2C3550"
+                               PlaceholderColor="#B3BBCC"
+                               BackgroundColor="Transparent" />
+                    </Border>
+                    <Button Grid.Column="1" Text="↻" WidthRequest="46" BackgroundColor="White" TextColor="#6B7387" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Border BackgroundColor="White" Stroke="#E0E4EE" StrokeShape="RoundRectangle 10" Padding="12,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Status" TextColor="#A1A8B7" FontAttributes="Bold" />
+                            <Label Grid.Column="1" Text="⌄" TextColor="#6B7387" />
+                        </Grid>
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="White" Stroke="#E0E4EE" StrokeShape="RoundRectangle 10" Padding="12,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Category" TextColor="#A1A8B7" FontAttributes="Bold" />
+                            <Label Grid.Column="1" Text="⌄" TextColor="#6B7387" />
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <CollectionView x:Name="TransactionsCollection"
+                                ItemsSource="{Binding Transactions}"
+                                SelectionMode="Single"
+                                SelectionChanged="OnTransactionSelected">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="White" Stroke="#E2E6F0" StrokeShape="RoundRectangle 14" Padding="12" Margin="0,8,0,0">
+                                <VerticalStackLayout Spacing="8">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <Label Text="◻" TextColor="#5B70FF" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="{Binding Code}" TextColor="#2A3247" FontAttributes="Bold" FontSize="28" />
+                                        <Label Grid.Column="2" Text="⚠" TextColor="#D65C5C" IsVisible="{Binding HasAlert}" FontSize="20" />
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                        <Label Text="Last Event" TextColor="#6D7485" />
+                                        <Label Grid.Column="1" Text="{Binding LastEvent}" TextColor="#5B70FF" FontAttributes="Bold" HorizontalTextAlignment="End" />
+
+                                        <Label Grid.Row="1" Text="Container Type" TextColor="#6D7485" />
+                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding ContainerType}" TextColor="#2B3348" HorizontalTextAlignment="End" />
+
+                                        <Label Grid.Row="2" Text="Ship" TextColor="#6D7485" />
+                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Ship}" TextColor="#2B3348" HorizontalTextAlignment="End" />
+
+                                        <Label Grid.Row="3" Text="Category" TextColor="#6D7485" />
+                                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding Category}" TextColor="#2B3348" HorizontalTextAlignment="End" />
+
+                                        <Label Grid.Row="4" Text="Status" TextColor="#6D7485" />
+                                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding Status}" TextColor="#5B70FF" FontAttributes="Bold" HorizontalTextAlignment="End" />
+
+                                        <Label Grid.Row="5" Text="Event Date" TextColor="#6D7485" />
+                                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding EventDate}" TextColor="#2B3348" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

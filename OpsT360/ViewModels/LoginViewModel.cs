@@ -150,10 +150,11 @@ public class LoginViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task NavigateToSealInspectionAsync()
+    private Task NavigateToSealInspectionAsync()
     {
-        var next = _serviceProvider.GetRequiredService<SealInspectionPage>();
-        await Application.Current!.MainPage!.Navigation.PushAsync(next);
+        var next = _serviceProvider.GetRequiredService<MainMenuPage>();
+        Application.Current!.MainPage = new NavigationPage(next);
+        return Task.CompletedTask;
     }
 
     private static string ResolveLocalIpAddress()
