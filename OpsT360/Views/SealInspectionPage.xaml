@@ -59,8 +59,15 @@
                         <Entry x:Name="SealEntry1" Placeholder="Capture seal #1" Text="{Binding Seals[0].Code}" IsReadOnly="{Binding Seals[0].IsLocked}" Completed="OnSealCompleted" ClassId="1" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                             <Button Text="Read seal" ClassId="1" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageAsyncCommand}" CommandParameter="1" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
+                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="1" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
                         </Grid>
+                        <Label Text="{Binding SealImages[0].FileName, StringFormat='Foto: {0}'}"
+                               FontSize="11"
+                               TextColor="#6E7891" />
+                        <Image Source="{Binding SealImages[0].PreviewImage}"
+                               HeightRequest="120"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding SealImages[0].HasImage}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="10">
@@ -68,8 +75,15 @@
                         <Entry x:Name="SealEntry2" Placeholder="Capture seal #2" Text="{Binding Seals[1].Code}" IsReadOnly="{Binding Seals[1].IsLocked}" Completed="OnSealCompleted" ClassId="2" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                             <Button Text="Read seal" ClassId="2" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageAsyncCommand}" CommandParameter="2" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
+                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="2" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
                         </Grid>
+                        <Label Text="{Binding SealImages[1].FileName, StringFormat='Foto: {0}'}"
+                               FontSize="11"
+                               TextColor="#6E7891" />
+                        <Image Source="{Binding SealImages[1].PreviewImage}"
+                               HeightRequest="120"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding SealImages[1].HasImage}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="10">
@@ -77,8 +91,15 @@
                         <Entry x:Name="SealEntry3" Placeholder="Capture seal #3" Text="{Binding Seals[2].Code}" IsReadOnly="{Binding Seals[2].IsLocked}" Completed="OnSealCompleted" ClassId="3" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                             <Button Text="Read seal" ClassId="3" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageAsyncCommand}" CommandParameter="3" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
+                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="3" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
                         </Grid>
+                        <Label Text="{Binding SealImages[2].FileName, StringFormat='Foto: {0}'}"
+                               FontSize="11"
+                               TextColor="#6E7891" />
+                        <Image Source="{Binding SealImages[2].PreviewImage}"
+                               HeightRequest="120"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding SealImages[2].HasImage}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="10">
@@ -86,14 +107,28 @@
                         <Entry x:Name="SealEntry4" Placeholder="Capture seal #4" Text="{Binding Seals[3].Code}" IsReadOnly="{Binding Seals[3].IsLocked}" Completed="OnSealCompleted" ClassId="4" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                             <Button Text="Read seal" ClassId="4" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageAsyncCommand}" CommandParameter="4" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
+                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="4" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
                         </Grid>
+                        <Label Text="{Binding SealImages[3].FileName, StringFormat='Foto: {0}'}"
+                               FontSize="11"
+                               TextColor="#6E7891" />
+                        <Image Source="{Binding SealImages[3].PreviewImage}"
+                               HeightRequest="120"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding SealImages[3].HasImage}" />
                     </VerticalStackLayout>
 
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,6,0,0">
                         <Label Text="Container image" VerticalTextAlignment="Center" TextColor="#8A93A6" FontAttributes="Bold"/>
-                        <Button Grid.Column="1" Text="Upload" Command="{Binding LoadContainerImageAsyncCommand}" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" WidthRequest="90" />
+                        <Button Grid.Column="1" Text="Upload" Command="{Binding LoadContainerImageCommand}" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" WidthRequest="90" />
                     </Grid>
+                    <Label Text="{Binding ContainerImage.FileName, StringFormat='Foto contenedor: {0}'}"
+                           FontSize="11"
+                           TextColor="#6E7891" />
+                    <Image Source="{Binding ContainerImage.PreviewImage}"
+                           HeightRequest="150"
+                           Aspect="AspectFill"
+                           IsVisible="{Binding ContainerImage.HasImage}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -110,7 +145,7 @@
                                 Text="Send"
                                 BackgroundColor="#11192C"
                                 IsEnabled="{Binding CanSend}"
-                                Command="{Binding SendAsyncCommand}" />
+                                Command="{Binding SendCommand}" />
                     </Grid>
 
                     <Button Text="Cancel"
