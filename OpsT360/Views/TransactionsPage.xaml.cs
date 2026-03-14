@@ -26,11 +26,10 @@ public partial class TransactionsPage : ContentPage
         BindingContext = this;
     }
 
-    private async void OnPageMenuClicked(object? sender, EventArgs e)
+    private void OnPageMenuClicked(object? sender, EventArgs e)
     {
-        var option = await DisplayActionSheet("Ir a", "Cancelar", null, "Transactions", "Seals");
-        if (option is "Transactions" or "Seals")
-            SwitchToTab(option);
+        var flyout = (Parent as NavigationPage)?.Parent as MainMenuPage;
+        flyout?.OpenMenu();
     }
 
     private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -53,29 +52,11 @@ public partial class TransactionsPage : ContentPage
         _sealInspectionViewModel.ContainerId = selected.Code;
         _sealInspectionViewModel.StatusText = $"Contenedor {selected.Code} cargado desde Transactions.";
 
-        SwitchToTab("Seals");
+        var flyout = (Parent as NavigationPage)?.Parent as MainMenuPage;
+        flyout?.NavigateTo(MainMenuOption.SealPlacement);
 
         if (sender is CollectionView cv)
             cv.SelectedItem = null;
-    }
-
-    private void SwitchToTab(string tabTitle)
-    {
-        var navigationPage = Parent as NavigationPage;
-        var tabs = navigationPage?.Parent as TabbedPage;
-        if (tabs is null)
-            return;
-
-        var targetTab = tabs.Children.FirstOrDefault(child =>
-            string.Equals(child.Title, tabTitle, StringComparison.OrdinalIgnoreCase));
-
-        if (targetTab is null)
-            return;
-
-        tabs.CurrentPage = targetTab;
-
-        if (targetTab is NavigationPage nav)
-            _ = nav.PopToRootAsync(false);
     }
 
     public sealed record TransactionCard(
