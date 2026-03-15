@@ -38,6 +38,8 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string statusText = "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
+    [ObservableProperty] private bool isInspectionChangeMode;
+    [ObservableProperty] private string operationTitle = "Colocación de Sellos [Etiquetas]";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -49,6 +51,18 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         _transactionsService = transactionsService;
         _rfidScannerService = rfidScannerService;
+    }
+
+    public void ConfigureOperationMode(bool isInspectionChange)
+    {
+        IsInspectionChangeMode = isInspectionChange;
+        OperationTitle = isInspectionChange
+            ? "Cambio de Sellos [Etiquetas] por Inspección"
+            : "Colocación de Sellos [Etiquetas]";
+
+        StatusText = isInspectionChange
+            ? "Modo inspección activo: los sellos previos deben quedar Deactivated (Reason: Inspection) antes de registrar los nuevos."
+            : "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
     }
 
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)

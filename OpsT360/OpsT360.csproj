@@ -24,6 +24,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Defensive excludes to avoid stale/local files causing MainMenuPage partial class conflicts -->
+		<MauiXaml Remove="Views\MainMenuPage.xaml" />
+		<Compile Remove="Views\MainMenuPage.xaml.cs" />
+		<!-- Defensive excludes for invalid MAUI image naming from src/assets explicit includes -->
+		<MauiImage Remove="src\assets\images\logo-360.png" />
+		<MauiImage Remove="src\assets\images\iconoT360.png" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<MauiXaml Update="Views/*.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -31,6 +40,7 @@
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>
+
 
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
