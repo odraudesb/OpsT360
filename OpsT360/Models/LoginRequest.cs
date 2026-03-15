@@ -14,5 +14,5 @@ public class LoginRequest
     public string Ip { get; set; } = "127.0.0.1";
 
     [JsonPropertyName("device")]
-    public string Device { get; set; } = "web";
+    public string Device { get; set; } = "android";
 }

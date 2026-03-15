@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
@@ -19,7 +17,7 @@ public class LoginViewModel : INotifyPropertyChanged
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _ip = "127.0.0.1";
-    private string _device = "web";
+    private string _device = "android";
     private bool _isBusy;
     private bool _isPasswordHidden = true;
     private string _statusMessage = string.Empty;
@@ -100,8 +98,8 @@ public class LoginViewModel : INotifyPropertyChanged
         _authState = authState;
         _serviceProvider = serviceProvider;
 
-        Ip = ResolveLocalIpAddress();
-        Device = "web";
+        Ip = "127.0.0.1";
+        Device = "android";
 
         LoginCommand = new AsyncRelayCommand(LoginAsync, () => CanLogin);
         TogglePasswordVisibilityCommand = new RelayCommand(TogglePasswordVisibility);
@@ -114,7 +112,7 @@ public class LoginViewModel : INotifyPropertyChanged
 
     private async Task LoginAsync()
     {
-        if (!CanLogin)
+        if (!CanLogin || IsBusy)
             return;
 
         IsBusy = true;
@@ -126,8 +124,8 @@ public class LoginViewModel : INotifyPropertyChanged
             {
                 Username = Username.Trim(),
                 Password = Password,
-                Ip = Ip,
-                Device = "web"
+                Ip = Ip.Trim(),
+                Device = Device
             });
 
             if (string.IsNullOrWhiteSpace(token))
@@ -140,9 +138,9 @@ public class LoginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            _authState.SetToken("offline-test-token");
-            StatusMessage = $"Error de red al conectar a {LoginService.PrimaryLoginUrl}. Se activó modo prueba para seguir a la siguiente pantalla. Detalle: {ex.Message} {(ex.InnerException is null ? string.Empty : "| " + ex.InnerException.Message)}";
-            await NavigateToSealInspectionAsync();
+            _authState.SetToken(string.Empty);
+            System.Diagnostics.Debug.WriteLine(ex.ToString());
+            StatusMessage = $"Error al iniciar sesión: {ex.Message}";
         }
         finally
         {
@@ -160,20 +158,6 @@ public class LoginViewModel : INotifyPropertyChanged
         });
 
         return Task.CompletedTask;
-    }
-
-    private static string ResolveLocalIpAddress()
-    {
-        try
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            var ip = host.AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a));
-            return ip?.ToString() ?? "127.0.0.1";
-        }
-        catch
-        {
-            return "127.0.0.1";
-        }
     }
 
     private bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)

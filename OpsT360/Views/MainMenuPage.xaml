@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OpsT360.Views.MainMenuPage"
+             Title="iT360° Application"
+             BackgroundColor="#EEF0F5">
+    <Grid RowDefinitions="Auto,*">
+        <Grid BackgroundColor="#4357E8" HeightRequest="74" Padding="12,16,12,8" ColumnDefinitions="Auto,*,Auto">
+            <Button Text="☰"
+                    Clicked="OnHamburgerClicked"
+                    BackgroundColor="Transparent"
+                    TextColor="White"
+                    FontSize="24"
+                    WidthRequest="44"
+                    HeightRequest="44" />
+
+            <Label Grid.Column="1"
+                   Text="iT360° Application"
+                   TextColor="White"
+                   FontAttributes="Bold"
+                   FontSize="36"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center" />
+
+            <Border Grid.Column="2"
+                    Stroke="White"
+                    StrokeThickness="2"
+                    WidthRequest="42"
+                    HeightRequest="42"
+                    StrokeShape="RoundRectangle 21"
+                    VerticalOptions="Center"
+                    HorizontalOptions="End">
+                <Label Text="T"
+                       TextColor="White"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       FontSize="22"
+                       FontAttributes="Bold" />
+            </Border>
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="1" Padding="0,14,0,0" Spacing="0">
+            <Button Text="Colocación de Sellos [Etiquetas]"
+                    FontAttributes="Bold"
+                    FontSize="22"
+                    HorizontalOptions="Fill"
+                    HorizontalTextAlignment="Start"
+                    TextColor="#21252C"
+                    Padding="16,14"
+                    BackgroundColor="White"
+                    Clicked="OnOpenSealPlacementClicked" />
+
+            <BoxView HeightRequest="1" Color="#D9DDE6" />
+
+            <Button Text="Cambio de Sellos [Etiquetas] por Inspección"
+                    FontSize="17"
+                    HorizontalTextAlignment="Start"
+                    TextColor="#3A4151"
+                    Padding="16,14"
+                    BackgroundColor="White"
+                    Clicked="OnOpenSealInspectionChangeClicked" />
+
+            <BoxView HeightRequest="1" Color="#D9DDE6" />
+
+            <Button Text="Change Languaje"
+                    FontSize="17"
+                    HorizontalTextAlignment="Start"
+                    TextColor="#3A4151"
+                    Padding="16,14"
+                    BackgroundColor="White"
+                    Clicked="OnChangeLanguageClicked" />
+
+            <BoxView HeightRequest="1" Color="#D9DDE6" />
+
+            <Button Text="Cerrar Sesión"
+                    FontSize="17"
+                    HorizontalTextAlignment="Start"
+                    TextColor="#3A4151"
+                    Padding="16,14"
+                    BackgroundColor="White"
+                    Clicked="OnLogoutClicked" />
+
+            <BoxView HeightRequest="1" Color="#D9DDE6" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
