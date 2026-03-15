@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="OpsT360.Views.TransactionsPage"
-             Title="Transactions"
+             Title="iT360° Application"
              BackgroundColor="#EEF0F5">
     <Grid RowDefinitions="Auto,*">
         <Grid BackgroundColor="#4357E8" Padding="20,26,20,18" ColumnDefinitions="*,Auto">
