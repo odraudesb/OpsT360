@@ -61,7 +61,11 @@ public sealed class MainMenuPage : FlyoutPage
     public void Logout()
     {
         var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-        Application.Current!.MainPage = new NavigationPage(loginPage);
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            Application.Current!.MainPage = new NavigationPage(loginPage);
+        });
     }
 
     private ContentPage? GetCurrentDetailPage()
@@ -106,7 +110,7 @@ public sealed class MainMenuPage : FlyoutPage
 
         navPage.ToolbarItems.Add(new ToolbarItem
         {
-            IconImageSource = "logo-360.svg",
+            Text = "iT360",
             Priority = 0,
             Order = ToolbarItemOrder.Primary,
             Command = new Command(() => { })

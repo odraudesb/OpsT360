@@ -151,7 +151,12 @@ public class LoginViewModel : INotifyPropertyChanged
     private Task NavigateToSealInspectionAsync()
     {
         var next = _serviceProvider.GetRequiredService<MainMenuPage>();
-        Application.Current!.MainPage = next;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            Application.Current!.MainPage = next;
+        });
+
         return Task.CompletedTask;
     }
 
