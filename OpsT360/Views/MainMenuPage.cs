@@ -67,7 +67,7 @@ public sealed class MainMenuPage : FlyoutPage
     private ContentPage? GetCurrentDetailPage()
     {
         if (Detail is NavigationPage nav)
-            return nav.CurrentPage;
+            return nav.CurrentPage as ContentPage;
 
         return Detail as ContentPage;
     }
