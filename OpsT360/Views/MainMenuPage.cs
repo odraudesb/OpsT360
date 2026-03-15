@@ -84,7 +84,7 @@ public sealed class MainMenuPage : FlyoutPage
                 {
                     new Image
                     {
-                        Source = "logo-360.png",
+                        Source = "logo-360.svg",
                         HeightRequest = 200,
                         WidthRequest = 200,
                         Aspect = Aspect.AspectFit,
@@ -106,7 +106,7 @@ public sealed class MainMenuPage : FlyoutPage
 
         navPage.ToolbarItems.Add(new ToolbarItem
         {
-            IconImageSource = "iconoT360.png",
+            IconImageSource = "logo-360.svg",
             Priority = 0,
             Order = ToolbarItemOrder.Primary,
             Command = new Command(() => { })

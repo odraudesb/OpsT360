@@ -32,6 +32,7 @@
 		</MauiXaml>
 	</ItemGroup>
 
+
 	<ItemGroup>
 		<MauiImage Include="src\assets\images\logo-360.png" Link="Resources\Images\logo-360.png" />
 		<MauiImage Include="src\assets\images\iconoT360.png" Link="Resources\Images\iconoT360.png" />
