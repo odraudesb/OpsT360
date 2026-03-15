@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="OpsT360.Views.SealInspectionPage"
-             Title="RFID Seals Activation"
+             Title="iT360° Application"
              BackgroundColor="#F3F5FB">
     <ScrollView>
         <VerticalStackLayout Padding="16,18,16,28" Spacing="14">
@@ -12,7 +12,7 @@
                 </Border>
                 <VerticalStackLayout Grid.Column="1" Spacing="2">
                     <Label Text="OPS T360" FontSize="12" TextColor="#6E7891" FontAttributes="Bold" />
-                    <Label Text="RFID Seals Activation" FontSize="24" FontAttributes="Bold" TextColor="#1C2537" />
+                    <Label Text="{Binding OperationTitle}" FontSize="24" FontAttributes="Bold" TextColor="#1C2537" />
                 </VerticalStackLayout>
             </Grid>
 
