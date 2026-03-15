@@ -32,7 +32,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<LoginViewModel>();
         builder.Services.AddSingleton<SealInspectionViewModel>();
         builder.Services.AddSingleton<LoginPage>();
+        builder.Services.AddSingleton<TransactionsPage>();
         builder.Services.AddSingleton<SealInspectionPage>();
+        builder.Services.AddSingleton<MainMenuPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
