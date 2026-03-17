@@ -1,4 +1,5 @@
-using System.Net.Http.Json;
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Net;
 using OpsT360.Models;
@@ -29,16 +30,13 @@ public class LoginService : ILoginService
     {
         Exception? lastError = null;
 
-        foreach (var url in LoginFallbackUrls)
+        foreach (var loginUrl in LoginFallbackUrls)
         {
             try
             {
-                var token = await TryLoginEndpointAsync(url, request, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(token))
-                {
-                    _authState.SetToken(token);
-                    return token;
-                }
+                var token = await TryLoginEndpointAsync(loginUrl, request, cancellationToken);
+                _authState.SetToken(token);
+                return token;
             }
             catch (Exception ex)
             {
@@ -55,29 +53,48 @@ public class LoginService : ILoginService
     {
         var endpoint = new Uri(loginUrl, UriKind.Absolute);
 
+        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        System.Diagnostics.Debug.WriteLine($"LOGIN URL: {endpoint}");
+        System.Diagnostics.Debug.WriteLine($"LOGIN REQUEST: {json}");
+
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            Content = JsonContent.Create(request)
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
 
         httpRequest.Headers.Accept.ParseAdd("application/json");
 
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        System.Diagnostics.Debug.WriteLine($"LOGIN STATUS: {(int)response.StatusCode}");
+        System.Diagnostics.Debug.WriteLine($"LOGIN RESPONSE: {body}");
 
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (response.StatusCode == HttpStatusCode.Forbidden)
-                throw new HttpRequestException($"Login API respondió 403 Forbidden en {endpoint}. El backend/proxy está bloqueando la petición (WAF, whitelist IP o reglas de CORS/ingress). Body: {body}");
+            {
+                throw new HttpRequestException(
+                    $"Login API respondió 403 Forbidden en {endpoint}. Body: {body}");
+            }
 
-            throw new HttpRequestException($"Login API respondió {(int)response.StatusCode} en {endpoint}. Body: {body}");
+            throw new HttpRequestException(
+                $"Login API respondió {(int)response.StatusCode} en {endpoint}. Body: {body}");
         }
 
-        var payload = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken);
+        var payload = JsonSerializer.Deserialize<LoginResponse>(body, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
         var token = payload?.Data?.Token;
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new JsonException($"Login sin token en respuesta de {endpoint}.");
+            throw new JsonException($"Login sin token en respuesta de {endpoint}. Body: {body}");
         }
 
         return token;
