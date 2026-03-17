@@ -86,12 +86,14 @@ public sealed class MainMenuPage : FlyoutPage
             {
                 Children =
                 {
-                    new Image
+                    new Label
                     {
-                        Source = "logo-360.svg",
-                        HeightRequest = 200,
-                        WidthRequest = 200,
-                        Aspect = Aspect.AspectFit,
+                        Text = "iT360°",
+                        TextColor = Colors.White,
+                        FontSize = 54,
+                        FontAttributes = FontAttributes.Bold,
+                        HorizontalTextAlignment = TextAlignment.Center,
+                        VerticalTextAlignment = TextAlignment.Center,
                         HorizontalOptions = LayoutOptions.Center,
                         VerticalOptions = LayoutOptions.Center
                     }
@@ -107,14 +109,6 @@ public sealed class MainMenuPage : FlyoutPage
             BarBackgroundColor = Color.FromArgb("#4357E8"),
             BarTextColor = Colors.White
         };
-
-        navPage.ToolbarItems.Add(new ToolbarItem
-        {
-            Text = "iT360",
-            Priority = 0,
-            Order = ToolbarItemOrder.Primary,
-            Command = new Command(() => { })
-        });
 
         return navPage;
     }
