@@ -25,6 +25,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex EpcHexRegex = new("^[0-9A-F]{8,64}$", RegexOptions.Compiled);
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
@@ -113,6 +114,89 @@ public partial class SealInspectionViewModel : ObservableObject
         {
             StatusText = $"Error inesperado en lectura RFID: {ex.Message}";
             return false;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public async Task<int> TryCaptureRemainingSealsFromSdkAsync()
+    {
+        if (IsBusy)
+        {
+            StatusText = "Lectura RFID en curso. Espera un momento...";
+            return 0;
+        }
+
+        var pendingIndexes = Seals
+            .Select((seal, index) => new { seal, index })
+            .Where(x => !x.seal.IsLocked)
+            .Select(x => x.index)
+            .ToList();
+
+        if (pendingIndexes.Count == 0)
+        {
+            StatusText = "Todos los sellos ya fueron leídos.";
+            return 0;
+        }
+
+        var existing = new HashSet<string>(
+            Seals.Select(s => NormalizeEpc(s.Code)).Where(code => !string.IsNullOrWhiteSpace(code))!,
+            StringComparer.OrdinalIgnoreCase);
+
+        IsBusy = true;
+        try
+        {
+            using var cts = new CancellationTokenSource(RfidBatchReadTimeout);
+            var batch = await _rfidScannerService.TryReadDistinctEpcsAsync(4, cts.Token);
+            if (!batch.Success || batch.Epcs.Count == 0)
+            {
+                StatusText = batch.Message;
+                return 0;
+            }
+
+            var loaded = 0;
+            foreach (var rawEpc in batch.Epcs)
+            {
+                var epc = NormalizeEpc(rawEpc);
+                if (string.IsNullOrWhiteSpace(epc) || existing.Contains(epc))
+                    continue;
+
+                if (loaded >= pendingIndexes.Count)
+                    break;
+
+                var targetIndex = pendingIndexes[loaded];
+                Seals[targetIndex].Code = epc;
+                ReadSeal((targetIndex + 1).ToString());
+                existing.Add(epc);
+                loaded++;
+            }
+
+            if (loaded == 0)
+            {
+                StatusText = "Se detectaron tags RFID, pero ninguno era EPC nuevo para los sellos pendientes.";
+                return 0;
+            }
+
+            var remaining = Seals.Count(s => !s.IsLocked);
+            StatusText = remaining == 0
+                ? "4 sellos capturados automáticamente con EPC distintos." 
+                : $"Se capturaron {loaded} EPC(s) nuevos. Faltan {remaining} sello(s).";
+
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return loaded;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = "Timeout RFID: no se completó la lectura múltiple de sellos.";
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Error inesperado en lectura múltiple RFID: {ex.Message}";
+            return 0;
         }
         finally
         {

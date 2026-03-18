@@ -54,28 +54,9 @@ public partial class SealInspectionPage : ContentPage
 
     private async void OnReadNextSealClicked(object? sender, EventArgs e)
     {
-        if (_vm.IsBusy)
-            return;
-
-        var nextSeal = _vm.Seals.FirstOrDefault(s => !s.IsLocked);
-        if (nextSeal is null)
-        {
-            _vm.StatusText = "Todos los sellos ya fueron leídos.";
-            return;
-        }
-
-        var sealNumber = nextSeal.Number;
         try
         {
-            var sdkCaptured = await _vm.TryCaptureSealFromSdkAsync(sealNumber);
-            if (sdkCaptured)
-            {
-                _vm.ReadSealCommand.Execute(sealNumber.ToString());
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(_vm.StatusText))
-                _vm.StatusText = "No se obtuvo EPC por SDK RFID. Verifica que el handheld esté en modo UHF y no en escáner de código de barras.";
+            await _vm.TryCaptureRemainingSealsFromSdkAsync();
         }
         catch (Exception ex)
         {
