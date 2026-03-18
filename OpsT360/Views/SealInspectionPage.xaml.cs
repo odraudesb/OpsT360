@@ -52,6 +52,18 @@ public partial class SealInspectionPage : ContentPage
         }
     }
 
+    private async void OnReadNextSealClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            await _vm.TryCaptureRemainingSealsFromSdkAsync();
+        }
+        catch (Exception ex)
+        {
+            _vm.StatusText = $"Error en botón Leer Sellos: {ex.Message}";
+        }
+    }
+
     private void OnSealEntryFocused(object? sender, FocusEventArgs e)
     {
         if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
