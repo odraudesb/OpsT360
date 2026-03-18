@@ -1,7 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
 using OpsT360.Models;
 using OpsT360.Services;
 using OpsT360.Views;
@@ -24,8 +30,8 @@ public class LoginViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public IAsyncRelayCommand LoginCommand { get; }
-    public IRelayCommand TogglePasswordVisibilityCommand { get; }
+    public AsyncRelayCommand LoginCommand { get; }
+    public RelayCommand TogglePasswordVisibilityCommand { get; }
 
     public string Username
     {
@@ -85,21 +91,25 @@ public class LoginViewModel : INotifyPropertyChanged
         set => SetProperty(ref _statusMessage, value);
     }
 
-    public bool CanLogin => !IsBusy
-        && !string.IsNullOrWhiteSpace(Username)
-        && !string.IsNullOrWhiteSpace(Password);
+    public bool CanLogin =>
+        !IsBusy &&
+        !string.IsNullOrWhiteSpace(Username) &&
+        !string.IsNullOrWhiteSpace(Password);
 
-    public Color SignInButtonColor => CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
-    public string PasswordToggleGlyph => IsPasswordHidden ? "👁" : "🙈";
+    public Color SignInButtonColor =>
+        CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
 
-    public LoginViewModel(ILoginService loginService, IAuthState authState, IServiceProvider serviceProvider)
+    public string PasswordToggleGlyph =>
+        IsPasswordHidden ? "👁" : "🙈";
+
+    public LoginViewModel(
+        ILoginService loginService,
+        IAuthState authState,
+        IServiceProvider serviceProvider)
     {
         _loginService = loginService;
         _authState = authState;
         _serviceProvider = serviceProvider;
-
-        Ip = "127.0.0.1";
-        Device = "android";
 
         LoginCommand = new AsyncRelayCommand(LoginAsync, () => CanLogin);
         TogglePasswordVisibilityCommand = new RelayCommand(TogglePasswordVisibility);
@@ -120,21 +130,32 @@ public class LoginViewModel : INotifyPropertyChanged
 
         try
         {
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: antes de llamar al servicio");
+
             var token = await _loginService.LoginAsync(new LoginRequest
             {
                 Username = Username.Trim(),
                 Password = Password,
                 Ip = Ip.Trim(),
-                Device = Device
+                Device = Device.Trim()
             });
+
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: después de llamar al servicio");
 
             if (string.IsNullOrWhiteSpace(token))
             {
+                _authState.SetToken(string.Empty);
                 StatusMessage = "No se pudo iniciar sesión.";
                 return;
             }
 
-            await NavigateToSealInspectionAsync();
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: antes de guardar token");
+            _authState.SetToken(token);
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: después de guardar token");
+
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: antes de navegar");
+            await NavigateToMainMenuAsync();
+            System.Diagnostics.Debug.WriteLine("LOGIN VM: después de navegar");
         }
         catch (Exception ex)
         {
@@ -148,25 +169,27 @@ public class LoginViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task NavigateToSealInspectionAsync()
+    private async Task NavigateToMainMenuAsync()
     {
+        System.Diagnostics.Debug.WriteLine("NAV: 1 - resolviendo MainMenuPage");
         var next = _serviceProvider.GetRequiredService<MainMenuPage>();
+
+        System.Diagnostics.Debug.WriteLine("NAV: 2 - MainMenuPage resuelta");
 
         await MainThread.InvokeOnMainThreadAsync(() =>
         {
+            System.Diagnostics.Debug.WriteLine("NAV: 3 - asignando MainPage");
             Application.Current!.MainPage = next;
-        });
-    }
-
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            Application.Current!.MainPage = next;
+            System.Diagnostics.Debug.WriteLine("NAV: 4 - MainPage asignada");
         });
 
-        return Task.CompletedTask;
+        System.Diagnostics.Debug.WriteLine("NAV: 5 - navegación terminada");
     }
 
-    private bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
+    private bool SetProperty<T>(
+        ref T storage,
+        T value,
+        [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(storage, value))
             return false;

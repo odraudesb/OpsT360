@@ -1,7 +1,9 @@
+using System;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using OpsT360.Models;
 
 namespace OpsT360.Services;
@@ -9,9 +11,9 @@ namespace OpsT360.Services;
 public class LoginService : ILoginService
 {
     private readonly HttpClient _httpClient;
-    private readonly IAuthState _authState;
 
     public const string PrimaryLoginUrl = "http://38.242.225.119:3000/api/auth/login";
+
     public static readonly string[] LoginFallbackUrls =
     {
         PrimaryLoginUrl,
@@ -20,10 +22,9 @@ public class LoginService : ILoginService
         "https://38.242.225.119/api/auth/login"
     };
 
-    public LoginService(HttpClient httpClient, IAuthState authState)
+    public LoginService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _authState = authState;
     }
 
     public async Task<string?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -34,9 +35,7 @@ public class LoginService : ILoginService
         {
             try
             {
-                var token = await TryLoginEndpointAsync(loginUrl, request, cancellationToken);
-                _authState.SetToken(token);
-                return token;
+                return await TryLoginEndpointAsync(loginUrl, request, cancellationToken);
             }
             catch (Exception ex)
             {

@@ -11,6 +11,7 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
+
         builder
             .UseMauiApp<App>()
             .ConfigureFonts(fonts =>
@@ -29,12 +30,15 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<IRfidScannerService, RfidScannerService>();
 
-        builder.Services.AddSingleton<LoginViewModel>();
-        builder.Services.AddSingleton<SealInspectionViewModel>();
-        builder.Services.AddSingleton<LoginPage>();
-        builder.Services.AddSingleton<TransactionsPage>();
-        builder.Services.AddSingleton<SealInspectionPage>();
-        builder.Services.AddSingleton<MainMenuPage>();
+        // Pages y ViewModels visuales: TRANSIENT
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<LoginPage>();
+
+        builder.Services.AddTransient<SealInspectionViewModel>();
+        builder.Services.AddTransient<SealInspectionPage>();
+
+        builder.Services.AddTransient<TransactionsPage>();
+        builder.Services.AddTransient<MainMenuPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

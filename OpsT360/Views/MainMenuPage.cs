@@ -1,4 +1,10 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
+using OpsT360.Services;
 using OpsT360.ViewModels;
 
 namespace OpsT360.Views;
@@ -6,26 +12,19 @@ namespace OpsT360.Views;
 public sealed class MainMenuPage : FlyoutPage
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly SealInspectionPage _sealInspectionPage;
-    private readonly SealInspectionViewModel _sealInspectionViewModel;
     private readonly NavigationPage _homeNavigation;
-    private readonly NavigationPage _sealNavigation;
 
-    public MainMenuPage(
-        IServiceProvider serviceProvider,
-        SealInspectionPage sealInspectionPage,
-        SealInspectionViewModel sealInspectionViewModel)
+    private NavigationPage? _sealNavigation;
+    private SealInspectionViewModel? _sealInspectionViewModel;
+
+    public MainMenuPage(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _sealInspectionPage = sealInspectionPage;
-        _sealInspectionViewModel = sealInspectionViewModel;
 
         FlyoutLayoutBehavior = FlyoutLayoutBehavior.Popover;
-        Flyout = new MainMenuFlyout(this);
+        Flyout = CreateFlyoutPage();
 
         _homeNavigation = CreateNavigationPage(CreateHomePage());
-        _sealNavigation = CreateNavigationPage(_sealInspectionPage);
-
         Detail = _homeNavigation;
     }
 
@@ -33,15 +32,17 @@ public sealed class MainMenuPage : FlyoutPage
 
     public void NavigateToSealPlacement()
     {
-        _sealInspectionViewModel.ConfigureOperationMode(isInspectionChange: false);
-        Detail = _sealNavigation;
+        EnsureSealPage();
+        _sealInspectionViewModel!.ConfigureOperationMode(isInspectionChange: false);
+        Detail = _sealNavigation!;
         IsPresented = false;
     }
 
     public void NavigateToSealInspectionChange()
     {
-        _sealInspectionViewModel.ConfigureOperationMode(isInspectionChange: true);
-        Detail = _sealNavigation;
+        EnsureSealPage();
+        _sealInspectionViewModel!.ConfigureOperationMode(isInspectionChange: true);
+        Detail = _sealNavigation!;
         IsPresented = false;
     }
 
@@ -52,6 +53,7 @@ public sealed class MainMenuPage : FlyoutPage
             return;
 
         var selected = await page.DisplayActionSheet("Change language", "Cancel", null, "Español", "English");
+
         if (selected is "Español" or "English")
             await page.DisplayAlert("Language", $"Selected language: {selected}", "OK");
 
@@ -60,12 +62,31 @@ public sealed class MainMenuPage : FlyoutPage
 
     public void Logout()
     {
+        var authState = _serviceProvider.GetRequiredService<IAuthState>();
+        authState.SetToken(string.Empty);
+
         var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
             Application.Current!.MainPage = new NavigationPage(loginPage);
         });
+    }
+
+    private void EnsureSealPage()
+    {
+        if (_sealNavigation is not null && _sealInspectionViewModel is not null)
+            return;
+
+        var sealPage = _serviceProvider.GetRequiredService<SealInspectionPage>();
+
+        var vm = sealPage.BindingContext as SealInspectionViewModel
+                 ?? _serviceProvider.GetRequiredService<SealInspectionViewModel>();
+
+        sealPage.BindingContext = vm;
+
+        _sealInspectionViewModel = vm;
+        _sealNavigation = CreateNavigationPage(sealPage);
     }
 
     private ContentPage? GetCurrentDetailPage()
@@ -78,6 +99,32 @@ public sealed class MainMenuPage : FlyoutPage
 
     private ContentPage CreateHomePage()
     {
+        var layout = new VerticalStackLayout
+        {
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.Center,
+            Spacing = 24
+        };
+
+        layout.Children.Add(new Image
+        {
+            Source = "logo.png",
+            WidthRequest = 220,
+            HeightRequest = 220,
+            Aspect = Aspect.AspectFit,
+            HorizontalOptions = LayoutOptions.Center
+        });
+
+        layout.Children.Add(new Label
+        {
+            Text = "iT360°",
+            TextColor = Colors.White,
+            FontSize = 34,
+            FontAttributes = FontAttributes.Bold,
+            HorizontalTextAlignment = TextAlignment.Center,
+            HorizontalOptions = LayoutOptions.Center
+        });
+
         return new ContentPage
         {
             Title = "iT360° Application",
@@ -86,74 +133,108 @@ public sealed class MainMenuPage : FlyoutPage
             {
                 Children =
                 {
-                    new Label
-                    {
-                        Text = "iT360°",
-                        TextColor = Colors.White,
-                        FontSize = 54,
-                        FontAttributes = FontAttributes.Bold,
-                        HorizontalTextAlignment = TextAlignment.Center,
-                        VerticalTextAlignment = TextAlignment.Center,
-                        HorizontalOptions = LayoutOptions.Center,
-                        VerticalOptions = LayoutOptions.Center
-                    }
+                    layout
                 }
             }
         };
     }
 
+    private ContentPage CreateFlyoutPage()
+    {
+        var header = new Grid
+        {
+            BackgroundColor = Color.FromArgb("#4357E8"),
+            Padding = new Thickness(20, 50, 20, 24)
+        };
+
+        header.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        header.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var logo = new Image
+        {
+            Source = "logo.png",
+            WidthRequest = 90,
+            HeightRequest = 90,
+            Aspect = Aspect.AspectFit,
+            HorizontalOptions = LayoutOptions.Start
+        };
+
+        var title = new Label
+        {
+            Text = "iT360° Application",
+            TextColor = Colors.White,
+            FontSize = 22,
+            FontAttributes = FontAttributes.Bold,
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+
+        header.Children.Add(logo);
+        Grid.SetRow(logo, 0);
+
+        header.Children.Add(title);
+        Grid.SetRow(title, 1);
+
+        var menuLayout = new VerticalStackLayout
+        {
+            Spacing = 8,
+            Padding = new Thickness(16, 18)
+        };
+
+        menuLayout.Children.Add(CreateMenuButton("Colocación de Sellos [Etiquetas]", NavigateToSealPlacement));
+        menuLayout.Children.Add(CreateMenuButton("Cambio de Sellos [Etiquetas] por Inspección", NavigateToSealInspectionChange));
+        menuLayout.Children.Add(CreateMenuButton("Change Language", async () => await ChangeLanguageAsync()));
+        menuLayout.Children.Add(CreateMenuButton("Cerrar Sesión", Logout));
+
+        var scroll = new ScrollView
+        {
+            Content = menuLayout
+        };
+
+        var root = new Grid
+        {
+            BackgroundColor = Colors.White
+        };
+
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Star });
+
+        root.Children.Add(header);
+        Grid.SetRow(header, 0);
+
+        root.Children.Add(scroll);
+        Grid.SetRow(scroll, 1);
+
+        return new ContentPage
+        {
+            Title = "Menú",
+            BackgroundColor = Colors.White,
+            Content = root
+        };
+    }
+
+    private View CreateMenuButton(string text, Action action)
+    {
+        return new Button
+        {
+            Text = text,
+            BackgroundColor = Colors.Transparent,
+            TextColor = Color.FromArgb("#1F2937"),
+            HorizontalOptions = LayoutOptions.Fill,
+            FontSize = 16,
+            Padding = new Thickness(14, 14),
+            CornerRadius = 10,
+            BorderColor = Color.FromArgb("#E5E7EB"),
+            BorderWidth = 1,
+            Command = new Command(action)
+        };
+    }
+
     private static NavigationPage CreateNavigationPage(Page root)
     {
-        var navPage = new NavigationPage(root)
+        return new NavigationPage(root)
         {
             BarBackgroundColor = Color.FromArgb("#4357E8"),
             BarTextColor = Colors.White
         };
-
-        return navPage;
-    }
-
-    private sealed class MainMenuFlyout : ContentPage
-    {
-        public MainMenuFlyout(MainMenuPage owner)
-        {
-            BackgroundColor = Colors.White;
-
-            var menuLayout = new VerticalStackLayout
-            {
-                Spacing = 0,
-                Padding = new Thickness(0, 8)
-            };
-
-            menuLayout.Children.Add(CreateMenuItem("Colocación de Sellos [Etiquetas]", true, owner.NavigateToSealPlacement));
-            menuLayout.Children.Add(CreateMenuItem("Cambio de Sellos [Etiquetas] por Inspección", false, owner.NavigateToSealInspectionChange));
-            menuLayout.Children.Add(CreateMenuItem("Change Language", false, async () => await owner.ChangeLanguageAsync()));
-            menuLayout.Children.Add(CreateMenuItem("Cerrar Sesión", false, owner.Logout));
-
-            Content = new ScrollView { Content = menuLayout };
-        }
-
-        private static View CreateMenuItem(string text, bool bold, Action action)
-        {
-            var label = new Label
-            {
-                Text = text,
-                FontAttributes = bold ? FontAttributes.Bold : FontAttributes.None,
-                TextColor = Color.FromArgb("#222B3A"),
-                VerticalTextAlignment = TextAlignment.Center,
-                Margin = new Thickness(16, 0)
-            };
-
-            var row = new Grid { HeightRequest = 46, BackgroundColor = Colors.White };
-            row.Children.Add(label);
-            row.GestureRecognizers.Add(new TapGestureRecognizer { Command = new Command(action) });
-
-            return new Border
-            {
-                Stroke = Color.FromArgb("#E2E2E2"),
-                StrokeThickness = 0.5,
-                Content = row
-            };
-        }
     }
 }

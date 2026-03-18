@@ -7,10 +7,12 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+
 		<ApplicationTitle>OpsT360</ApplicationTitle>
 		<ApplicationId>com.opst360.prototype</ApplicationId>
 		<AndroidManifest>Platforms\Android\AndroidManifest.xml</AndroidManifest>
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -24,16 +26,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Defensive excludes to avoid stale/local files causing MainMenuPage partial class conflicts -->
 		<MauiXaml Remove="Views\MainMenuPage.xaml" />
 		<Compile Remove="Views\MainMenuPage.xaml.cs" />
-		<!-- Defensive excludes for invalid MAUI image naming from src/assets explicit includes -->
-		<MauiImage Remove="src\assets\images\logo-360.png" />
-		<MauiImage Remove="src\assets\images\iconoT360.png" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<MauiXaml Update="Views/*.xaml">
+		<MauiXaml Update="Views\*.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="App.xaml">
@@ -41,6 +39,10 @@
 		</MauiXaml>
 	</ItemGroup>
 
+	<ItemGroup>
+		<MauiImage Include="src\assets\images\logo.png" />
+		<MauiImage Include="src\assets\images\background.jpg" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
