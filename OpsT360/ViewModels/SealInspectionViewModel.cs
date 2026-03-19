@@ -312,22 +312,39 @@ public partial class SealInspectionViewModel : ObservableObject
         OnPropertyChanged(nameof(CanSend));
     }
 
-    private static async Task<FileResult?> CapturePhotoAsync(string title)
+    private async Task<FileResult?> CapturePhotoAsync(string title)
     {
-        var picked = await FilePicker.PickAsync(new PickOptions
-        {
-            PickerTitle = $"{title} (galería)",
-            FileTypes = FilePickerFileType.Images
-        });
+        var mainPage = Application.Current?.MainPage;
+        if (mainPage is null)
+            return null;
 
-        if (picked is not null)
-            return picked;
+        var action = await mainPage.DisplayActionSheet(
+            title,
+            "Cancelar",
+            null,
+            "Tomar foto",
+            "Elegir de archivos");
 
-        if (MediaPicker.Default.IsCaptureSupported)
+        if (action == "Tomar foto")
         {
+            if (!MediaPicker.Default.IsCaptureSupported)
+            {
+                await mainPage.DisplayAlert("Cámara no disponible", "Este dispositivo no permite captura de cámara. Usa archivos guardados.", "OK");
+                return null;
+            }
+
             return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
             {
                 Title = title
+            });
+        }
+
+        if (action == "Elegir de archivos")
+        {
+            return await FilePicker.PickAsync(new PickOptions
+            {
+                PickerTitle = $"{title} (archivos)",
+                FileTypes = FilePickerFileType.Images
             });
         }
 
@@ -348,12 +365,16 @@ public partial class SealInspectionViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            StatusText = $"No se pudo abrir cámara/archivos: {ex.Message}";
+            await ShowErrorAlertAsync("Error al cargar foto", StatusText);
             return;
         }
 
         if (result is null)
+        {
+            await ShowErrorAlertAsync("Carga cancelada", "No se seleccionó ninguna foto para este panel.");
             return;
+        }
 
         using var stream = await result.OpenReadAsync();
         using var ms = new MemoryStream();
@@ -380,12 +401,16 @@ public partial class SealInspectionViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusText = $"No se pudo abrir la cámara: {ex.Message}";
+            StatusText = $"No se pudo abrir cámara/archivos: {ex.Message}";
+            await ShowErrorAlertAsync("Error al cargar foto", StatusText);
             return;
         }
 
         if (result is null)
+        {
+            await ShowErrorAlertAsync("Carga cancelada", "No se seleccionó foto de contenedor.");
             return;
+        }
 
         using var stream = await result.OpenReadAsync();
         using var ms = new MemoryStream();
@@ -464,6 +489,7 @@ public partial class SealInspectionViewModel : ObservableObject
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
+                await ShowErrorAlertAsync("Foto faltante", $"No hay foto cargada para {panel.Label}.");
                 continue;
             }
 
@@ -486,12 +512,16 @@ public partial class SealInspectionViewModel : ObservableObject
 
                 panel.ValidationStatus = result.IsSuccessful ? "success" : "failed";
                 if (!result.IsSuccessful)
+                {
                     failedPanels.Add(panel.Label);
+                    await ShowErrorAlertAsync("Validación fallida", $"Roboflow reportó fallo en {panel.Label}.");
+                }
             }
-            catch
+            catch (Exception ex)
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
+                await ShowErrorAlertAsync("Error de validación", $"Error validando {panel.Label}: {ex.Message}");
             }
         }
 
@@ -561,6 +591,15 @@ public partial class SealInspectionViewModel : ObservableObject
         var name = Path.GetFileNameWithoutExtension(fileName);
         extension = string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension;
         return $"{name}-validated{extension}";
+    }
+
+    private async Task ShowErrorAlertAsync(string title, string message)
+    {
+        var mainPage = Application.Current?.MainPage;
+        if (mainPage is null)
+            return;
+
+        await MainThread.InvokeOnMainThreadAsync(() => mainPage.DisplayAlert(title, message, "OK"));
     }
 
     private ContainerProfile ResolveProfile() =>
