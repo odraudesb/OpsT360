@@ -70,6 +70,9 @@
                                 CommandParameter="1"
                                 IsEnabled="{Binding CanUploadImages}" />
                         <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="190">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="1" />
+                            </Border.GestureRecognizers>
                             <Image Source="{Binding SealImages[0].PreviewImage}"
                                    Aspect="AspectFill"
                                    IsVisible="{Binding SealImages[0].HasImage}" />
@@ -103,6 +106,9 @@
                                 CommandParameter="2"
                                 IsEnabled="{Binding CanUploadImages}" />
                         <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="190">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="2" />
+                            </Border.GestureRecognizers>
                             <Image Source="{Binding SealImages[1].PreviewImage}"
                                    Aspect="AspectFill"
                                    IsVisible="{Binding SealImages[1].HasImage}" />
@@ -161,6 +167,9 @@
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="End">
                     <VerticalStackLayout Spacing="4">
                         <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="220" WidthRequest="220" HorizontalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnContainerPreviewTapped" />
+                            </Border.GestureRecognizers>
                             <Image Source="{Binding ContainerImage.PreviewImage}"
                                    Aspect="AspectFill"
                                    IsVisible="{Binding ContainerImage.HasImage}" />
