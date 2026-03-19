@@ -74,6 +74,22 @@
                                    Aspect="AspectFill"
                                    IsVisible="{Binding SealImages[0].HasImage}" />
                         </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Validada" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Fallida" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳ Validando..." />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pendiente" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Grid.Column="1" Spacing="8">
@@ -91,6 +107,22 @@
                                    Aspect="AspectFill"
                                    IsVisible="{Binding SealImages[1].HasImage}" />
                         </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Validada" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Fallida" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳ Validando..." />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pendiente" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
                     </VerticalStackLayout>
                 </Grid>
 
@@ -127,11 +159,26 @@
                         IsEnabled="{Binding CanUploadImages}" />
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="End">
-                    <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="220" WidthRequest="220" HorizontalOptions="Center">
-                        <Image Source="{Binding ContainerImage.PreviewImage}"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding ContainerImage.HasImage}" />
-                    </Border>
+                    <VerticalStackLayout Spacing="4">
+                        <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="220" WidthRequest="220" HorizontalOptions="Center">
+                            <Image Source="{Binding ContainerImage.PreviewImage}"
+                                   Aspect="AspectFill"
+                                   IsVisible="{Binding ContainerImage.HasImage}" />
+                        </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Evidencia OK" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Evidencia fallida" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pendiente" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </VerticalStackLayout>
                     <Button Grid.Column="1"
                             Text="OK"
                             HeightRequest="48"
