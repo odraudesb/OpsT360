@@ -314,6 +314,15 @@ public partial class SealInspectionViewModel : ObservableObject
 
     private static async Task<FileResult?> CapturePhotoAsync(string title)
     {
+        var picked = await FilePicker.PickAsync(new PickOptions
+        {
+            PickerTitle = $"{title} (galería)",
+            FileTypes = FilePickerFileType.Images
+        });
+
+        if (picked is not null)
+            return picked;
+
         if (MediaPicker.Default.IsCaptureSupported)
         {
             return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
@@ -322,11 +331,7 @@ public partial class SealInspectionViewModel : ObservableObject
             });
         }
 
-        return await FilePicker.PickAsync(new PickOptions
-        {
-            PickerTitle = title,
-            FileTypes = FilePickerFileType.Images
-        });
+        return null;
     }
 
     [RelayCommand]
@@ -467,9 +472,10 @@ public partial class SealInspectionViewModel : ObservableObject
             {
                 var result = await _transactionsService.ValidatePhotoAsync(panel.Base64, panel.FileName);
 
-                if (!string.IsNullOrWhiteSpace(result.ValidatedImageBase64))
+                var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
+                if (!string.IsNullOrWhiteSpace(validatedSource))
                 {
-                    var validatedBytes = DecodeDataUrlToBytes(result.ValidatedImageBase64) ?? panel.Bytes;
+                    var validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
                     if (validatedBytes is { Length: > 0 })
                     {
                         panel.Bytes = validatedBytes;
@@ -490,6 +496,43 @@ public partial class SealInspectionViewModel : ObservableObject
         }
 
         return failedPanels;
+    }
+
+    private static async Task<byte[]?> ResolveValidatedImageBytesAsync(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (value.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            return DecodeDataUrlToBytes(value);
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            if (uri.Scheme is "http" or "https")
+            {
+                try
+                {
+                    using var client = new HttpClient();
+                    return await client.GetByteArrayAsync(uri);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            if (uri.Scheme == "file")
+            {
+                var localPath = uri.LocalPath;
+                if (File.Exists(localPath))
+                    return await File.ReadAllBytesAsync(localPath);
+            }
+        }
+
+        if (File.Exists(value))
+            return await File.ReadAllBytesAsync(value);
+
+        return DecodeDataUrlToBytes($"data:image/jpeg;base64,{value}");
     }
 
     private static byte[]? DecodeDataUrlToBytes(string value)
