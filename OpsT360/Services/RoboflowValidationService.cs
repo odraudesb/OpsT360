@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using SkiaSharp;
 
 namespace OpsT360.Services;
 
@@ -12,6 +13,7 @@ public sealed record RoboflowValidationResult(
 
 public sealed class RoboflowValidationService
 {
+    private const double BlueRatioThreshold = 0.3;
     private const double AreaSimilarityThreshold = 0.4;
     private const double PanelMin = 0.4;
     private const double PanelMax = 0.6;
@@ -20,17 +22,25 @@ public sealed class RoboflowValidationService
 
     public RoboflowValidationResult AnalyzeValidation(JsonNode? response, string? baseImageBase64)
     {
+        var normalizedBaseImage = NormalizeBaseImage(baseImageBase64);
         var predictions = ExtractPredictions(response);
         var outputImage = ExtractOutputImage(response);
 
-        if (predictions.Count == 0)
+        if (!predictions.Any() || string.IsNullOrWhiteSpace(normalizedBaseImage))
         {
-            return new RoboflowValidationResult(false, outputImage ?? NormalizeBaseImage(baseImageBase64), outputImage, Array.Empty<ValidationBox>());
+            return new RoboflowValidationResult(false, null, outputImage, Array.Empty<ValidationBox>());
+        }
+
+        using var bitmap = DecodeBitmap(normalizedBaseImage) ?? DecodeBitmap(outputImage);
+        if (bitmap is null)
+        {
+            return new RoboflowValidationResult(false, outputImage, outputImage, Array.Empty<ValidationBox>());
         }
 
         var validLabelBoxes = predictions
             .Where(p => string.Equals(p.Class, "stickerOK", StringComparison.OrdinalIgnoreCase))
             .Select(BuildBox)
+            .Where(box => IsBlueLabel(bitmap, box))
             .ToList();
 
         var finalBoxes = ReduceLabelBoxes(validLabelBoxes);
@@ -44,10 +54,11 @@ public sealed class RoboflowValidationService
             ? null
             : accessPanels.OrderByDescending(p => p.Confidence).First();
 
+        var validatedImage = BuildValidatedImage(bitmap, accessPanels.Select(p => p.Box).ToList(), finalBoxes, mainPanel?.Box);
+
         if (mainPanel is null || finalBoxes.Count == 0)
         {
-            var fallbackImage = outputImage ?? NormalizeBaseImage(baseImageBase64);
-            return new RoboflowValidationResult(false, fallbackImage, outputImage, finalBoxes);
+            return new RoboflowValidationResult(false, validatedImage, outputImage, finalBoxes);
         }
 
         var panelBox = ShrinkBox(mainPanel.Box, PanelShrinkPx);
@@ -61,8 +72,162 @@ public sealed class RoboflowValidationService
             return ratio >= lowerBound && ratio <= upperBound;
         });
 
-        var validatedImage = outputImage ?? NormalizeBaseImage(baseImageBase64);
         return new RoboflowValidationResult(success, validatedImage, outputImage, finalBoxes);
+    }
+
+    private static string? BuildValidatedImage(SKBitmap source, List<ValidationBox> accessPanels, List<ValidationBox> labelBoxes, ValidationBox? mainPanel)
+    {
+        using var image = SKImage.FromBitmap(source);
+        using var surface = SKSurface.Create(new SKImageInfo(source.Width, source.Height));
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.White);
+        canvas.DrawImage(image, 0, 0);
+
+        foreach (var panel in accessPanels)
+        {
+            DrawBox(canvas, panel, SKColor.Parse("#2563eb"), "access_panel", panel.X1, panel.Y1);
+        }
+
+        if (mainPanel is not null && labelBoxes.Count > 0)
+        {
+            var panelBox = ShrinkBox(mainPanel, PanelShrinkPx);
+            var lowerBound = PanelMin - PanelOverlapTolerance;
+            var upperBound = PanelMax + PanelOverlapTolerance;
+
+            foreach (var box in labelBoxes)
+            {
+                var overlap = IntersectionArea(box, panelBox);
+                var ratio = box.Area > 0 ? overlap / box.Area : 0;
+                var isValid = ratio >= lowerBound && ratio <= upperBound;
+                var label = $"stickerOK {(isValid ? "OK" : "BAD")} ({Math.Round(ratio * 100)}% panel)";
+                DrawBox(canvas, box, isValid ? SKColor.Parse("#22c55e") : SKColor.Parse("#ef4444"), label, box.X1, box.Y2 + 20);
+            }
+        }
+
+        using var snapshot = surface.Snapshot();
+        using var data = snapshot.Encode(SKEncodedImageFormat.Jpeg, 92);
+        if (data is null)
+            return null;
+
+        return $"data:image/jpeg;base64,{Convert.ToBase64String(data.ToArray())}";
+    }
+
+    private static void DrawBox(SKCanvas canvas, ValidationBox box, SKColor color, string label, float labelX, float labelY)
+    {
+        using var stroke = new SKPaint
+        {
+            Color = color,
+            IsStroke = true,
+            StrokeWidth = 8,
+            IsAntialias = true
+        };
+
+        using var text = new SKPaint
+        {
+            Color = color,
+            TextSize = 24,
+            IsAntialias = true
+        };
+
+        canvas.DrawRect(new SKRect(box.X1, box.Y1, box.X2, box.Y2), stroke);
+        canvas.DrawText(label, labelX, Math.Max(labelY, 24), text);
+    }
+
+    private static bool IsBlueLabel(SKBitmap bitmap, ValidationBox box)
+    {
+        var startX = Math.Max(0, box.X1);
+        var startY = Math.Max(0, box.Y1);
+        var endX = Math.Min(bitmap.Width, box.X2);
+        var endY = Math.Min(bitmap.Height, box.Y2);
+
+        if (endX <= startX || endY <= startY)
+            return false;
+
+        var bluePixels = 0;
+        var total = 0;
+
+        for (var y = startY; y < endY; y++)
+        {
+            for (var x = startX; x < endX; x++)
+            {
+                var color = bitmap.GetPixel(x, y);
+                var (h, s, v) = RgbToHsv(color.Red, color.Green, color.Blue);
+                var hueOpenCv = h / 2.0;
+
+                total++;
+                if (hueOpenCv >= 95 && hueOpenCv <= 140 && s >= 0.235 && v >= 0.196)
+                    bluePixels++;
+            }
+        }
+
+        if (total == 0)
+            return false;
+
+        return (double)bluePixels / total >= BlueRatioThreshold;
+    }
+
+    private static (double H, double S, double V) RgbToHsv(byte r, byte g, byte b)
+    {
+        var rNorm = r / 255d;
+        var gNorm = g / 255d;
+        var bNorm = b / 255d;
+
+        var max = Math.Max(rNorm, Math.Max(gNorm, bNorm));
+        var min = Math.Min(rNorm, Math.Min(gNorm, bNorm));
+        var delta = max - min;
+
+        double h = 0;
+        if (delta != 0)
+        {
+            if (max == rNorm)
+                h = ((gNorm - bNorm) / delta) % 6;
+            else if (max == gNorm)
+                h = (bNorm - rNorm) / delta + 2;
+            else
+                h = (rNorm - gNorm) / delta + 4;
+
+            h *= 60;
+            if (h < 0)
+                h += 360;
+        }
+
+        var s = max == 0 ? 0 : delta / max;
+        var v = max;
+        return (h, s, v);
+    }
+
+    private static SKBitmap? DecodeBitmap(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+            return null;
+
+        try
+        {
+            byte[]? bytes = null;
+            if (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                var comma = source.IndexOf(',');
+                if (comma > -1)
+                    bytes = Convert.FromBase64String(source[(comma + 1)..]);
+            }
+            else if (LooksLikeBase64(source))
+            {
+                bytes = Convert.FromBase64String(source);
+            }
+            else if (File.Exists(source))
+            {
+                bytes = File.ReadAllBytes(source);
+            }
+
+            if (bytes is null || bytes.Length == 0)
+                return null;
+
+            return SKBitmap.Decode(bytes);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static List<Prediction> ExtractPredictions(JsonNode? response)
@@ -86,10 +251,10 @@ public sealed class RoboflowValidationService
                     .ToList();
             }
 
-            var nestedPredictions = predictionsNode?["predictions"] as JsonArray;
-            if (nestedPredictions is not null)
+            var nested = predictionsNode?["predictions"] as JsonArray;
+            if (nested is not null)
             {
-                return nestedPredictions
+                return nested
                     .Select(ParsePrediction)
                     .Where(p => p is not null)
                     .Select(p => p!)

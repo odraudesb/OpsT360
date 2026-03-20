@@ -9,8 +9,34 @@ public sealed class TransactionsService : ITransactionsService
     private readonly RoboflowValidationService _roboflowValidationService;
 
     private const string RegisterWithFilesUrl = "http://38.242.225.119:3000/api/transactions/register-with-files";
-    private const string RoboflowUrl = "https://serverless.roboflow.com/infer/workflows/trace360/seal-validation";
-    private const string RoboflowApiKey = "REPLACE_WITH_ROBOFLOW_KEY";
+
+    private const string ActiveApiEnv = "prod"; // prod | localhost
+    private static readonly Dictionary<string, (string BaseUrl, string Workspace, string Workflow, string ApiKey)> RoboflowConfig = new()
+    {
+        ["prod"] = (
+            "https://serverless.roboflow.com",
+            "mi-workspace-sihjw",
+            "detect-count-and-visualize-4",
+            "8OQBCU7lFbC9ogYMmbB7"
+        ),
+        ["localhost"] = (
+            "http://localhost:9001",
+            "mi-workspace-sihjw",
+            "detect-count-and-visualize-4",
+            "8OQBCU7lFbC9ogYMmbB7"
+        )
+    };
+
+    private static string RoboflowUrl
+    {
+        get
+        {
+            var cfg = RoboflowConfig[ActiveApiEnv];
+            return $"{cfg.BaseUrl.TrimEnd('/')}/{cfg.Workspace}/workflows/{cfg.Workflow}";
+        }
+    }
+
+    private static string RoboflowApiKey => RoboflowConfig[ActiveApiEnv].ApiKey;
 
     public TransactionsService(HttpClient httpClient, RoboflowValidationService roboflowValidationService)
     {
