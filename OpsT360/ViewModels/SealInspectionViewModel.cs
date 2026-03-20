@@ -35,6 +35,8 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
+    private const int RfidPlacedFollowingProcedureEventId = 301;
+    private const string RfidPlacedFollowingProcedureEventName = "Colocación Sello RFID posterior Inspección";
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
@@ -440,19 +442,21 @@ public partial class SealInspectionViewModel : ObservableObject
 
             var profile = ResolveProfile();
             var xml = BuildXml(profile);
+            var now = DateTime.UtcNow.ToString("O");
+            var containerId = ContainerId.Trim().ToUpperInvariant();
 
             var fields = new Dictionary<string, string>
             {
-                ["eventId"] = "301",
-                ["entityType"] = ContainerId.Trim().ToUpperInvariant(),
+                ["eventId"] = RfidPlacedFollowingProcedureEventId.ToString(),
+                ["entityType"] = containerId,
                 ["entityId"] = profile.EntityId.ToString(),
                 ["status"] = "1",
                 ["isReefer"] = "false",
                 ["details"] = $"RFID validated evidence - {SelectedActivationPoint}",
                 ["document"] = "APP-MOBILE",
                 ["xmlDetails"] = xml,
-                ["recordDate"] = DateTime.UtcNow.ToString("O"),
-                ["eventDate"] = DateTime.UtcNow.ToString("O")
+                ["recordDate"] = now,
+                ["eventDate"] = now
             };
 
             var files = SealImages
@@ -465,9 +469,25 @@ public partial class SealInspectionViewModel : ObservableObject
 
             var sent = await _transactionsService.RegisterWithFilesAsync(fields, files);
             var hasFailures = failedPanels.Count > 0;
+            var sentFailureEvent = false;
+            var sentFailureMail = false;
+
+            if (sent && hasFailures)
+            {
+                var failureXml = BuildValidationFailureXml(profile, failedPanels, now);
+                var failurePayload = BuildValidationFailurePayload(profile, containerId, failureXml, now);
+                sentFailureEvent = await _transactionsService.RegisterTransactionAsync(failurePayload);
+                sentFailureMail = await _transactionsService.SendAlertMailAsync(
+                    failureXml,
+                    containerId,
+                    RfidPlacedFollowingProcedureEventName,
+                    "APP-MOBILE");
+            }
+
             var message = sent
                 ? hasFailures
-                    ? $"Transacción enviada con alertas de validación en: {string.Join(", ", failedPanels)}"
+                    ? $"Transacción enviada con alertas de validación en: {string.Join(", ", failedPanels)}. " +
+                      $"Histórico alerta: {(sentFailureEvent ? "OK" : "ERROR")} | Correo alerta: {(sentFailureMail ? "OK" : "ERROR")}."
                     : "Transacción enviada con validación exitosa."
                 : "No se pudo enviar.";
 
@@ -660,5 +680,57 @@ public partial class SealInspectionViewModel : ObservableObject
         sb.Append($"<fecha_registro>{now}</fecha_registro>");
         sb.Append("</Contenedor>");
         return sb.ToString();
+    }
+
+    private string BuildValidationFailureXml(ContainerProfile profile, IReadOnlyCollection<string> failedPanels, string now)
+    {
+        var seals = Seals
+            .Select((s, i) => string.IsNullOrWhiteSpace(s.Code) ? $"SLL{i + 1}X" : s.Code.Trim().ToUpperInvariant())
+            .ToArray();
+        var container = ContainerId.Trim().ToUpperInvariant();
+        var failedPhotoNames = string.Join("; ", failedPanels.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        var sb = new StringBuilder();
+        sb.Append("<Contenedor>");
+        sb.Append($"<event_id>{RfidPlacedFollowingProcedureEventId}</event_id>");
+        sb.Append($"<event_name>{RfidPlacedFollowingProcedureEventName}</event_name>");
+        sb.Append("<document>APP-MOBILE</document>");
+        sb.Append($"<entity_id>{profile.EntityId}</entity_id><contenedor>{container}</contenedor>");
+        sb.Append($"<activation_point>{SelectedActivationPoint}</activation_point>");
+        sb.Append($"<tamaño>{profile.Size}</tamaño><naviera>{profile.ShippingLine}</naviera>");
+        sb.Append($"<puerto_origen>{profile.OriginPort}</puerto_origen><puerto_carga>{profile.LoadingPort}</puerto_carga>");
+        sb.Append($"<puerto_descarga>{profile.DischargePort}</puerto_descarga><puerto_destino>{profile.DestinationPort}</puerto_destino>");
+        sb.Append($"<mercancía>{profile.Goods}</mercancía><booking>{profile.Booking}</booking><peso_origen>{profile.OriginWeight}</peso_origen>");
+        sb.Append($"<fecha_ingreso_terminal>{profile.TerminalEntryDate}</fecha_ingreso_terminal><fecha_preaviso>{profile.PreNoticeDate}</fecha_preaviso>");
+        sb.Append($"<transportista>{profile.Carrier}</transportista><placa>{profile.Plate}</placa><conductor>{profile.Driver}</conductor>");
+        sb.Append($"<sello-1>{seals[0]}</sello-1><sello-2>{seals[1]}</sello-2><sello-3>{seals[2]}</sello-3><sello-4>{seals[3]}</sello-4>");
+        sb.Append($"<sello_aduana>{profile.CustomsSeal}</sello_aduana>");
+        sb.Append($"<failed_photos>{failedPanels.Count}</failed_photos>");
+        sb.Append($"<failed_photo_names>{(string.IsNullOrWhiteSpace(failedPhotoNames) ? "Sin detalle" : failedPhotoNames)}</failed_photo_names>");
+        sb.Append("<failure_type>NO LEYERON LAS FOTOS DE VALIDACION</failure_type>");
+        sb.Append($"<fecha_registro>{now}</fecha_registro>");
+        sb.Append("</Contenedor>");
+        return sb.ToString();
+    }
+
+    private static Dictionary<string, object> BuildValidationFailurePayload(ContainerProfile profile, string containerId, string failureXml, string now)
+    {
+        return new Dictionary<string, object>
+        {
+            ["eventId"] = RfidPlacedFollowingProcedureEventId,
+            ["entityType"] = containerId,
+            ["entityId"] = profile.EntityId,
+            ["recordDate"] = now,
+            ["eventDate"] = now,
+            ["xmlDetails"] = failureXml,
+            ["details"] = $"Fallo de validación de fotos para {containerId}",
+            ["document"] = "APP-MOBILE",
+            ["status"] = 1,
+            ["eta"] = now,
+            ["ship"] = "RFID Simulator",
+            ["categoryId"] = 1,
+            ["locationStatus"] = "Validated",
+            ["isReefer"] = false
+        };
     }
 }
