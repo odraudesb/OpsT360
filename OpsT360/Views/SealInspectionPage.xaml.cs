@@ -104,7 +104,7 @@ public partial class SealInspectionPage : ContentPage
         var closeButton = new Button
         {
             Text = "Cerrar",
-            BackgroundColor = "#3E5AF1",
+            BackgroundColor = Color.FromArgb("#3E5AF1"),
             TextColor = Colors.White,
             CornerRadius = 20,
             HorizontalOptions = LayoutOptions.End,
@@ -122,7 +122,7 @@ public partial class SealInspectionPage : ContentPage
                     new Border
                     {
                         BackgroundColor = Colors.White,
-                        StrokeShape = new RoundRectangle { CornerRadius = 14 },
+                        StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(14) },
                         Padding = 12,
                         Content = new VerticalStackLayout
                         {
