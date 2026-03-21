@@ -1,5 +1,8 @@
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace OpsT360.Services;
@@ -8,6 +11,7 @@ public sealed class TransactionsService : ITransactionsService
 {
     private readonly HttpClient _httpClient;
     private readonly RoboflowValidationService _roboflowValidationService;
+    private readonly IAuthState _authState;
 
     private const string RegisterWithFilesUrl = "http://38.242.225.119:3000/api/transactions/register-with-files";
     private const string RegisterUrl = "http://38.242.225.119:3000/api/transactions/register";
@@ -43,10 +47,11 @@ public sealed class TransactionsService : ITransactionsService
 
     private static string RoboflowApiKey => RoboflowConfig[ActiveApiEnv].ApiKey;
 
-    public TransactionsService(HttpClient httpClient, RoboflowValidationService roboflowValidationService)
+    public TransactionsService(HttpClient httpClient, RoboflowValidationService roboflowValidationService, IAuthState authState)
     {
         _httpClient = httpClient;
         _roboflowValidationService = roboflowValidationService;
+        _authState = authState;
     }
 
     public async Task<RoboflowValidationResult> ValidatePhotoAsync(string imageBase64, string fileName, CancellationToken cancellationToken = default)
@@ -91,12 +96,23 @@ public sealed class TransactionsService : ITransactionsService
 
     public async Task<bool> RegisterWithFilesAsync(Dictionary<string, string> fields, IEnumerable<(string FileName, byte[] Content)> files, CancellationToken cancellationToken = default)
     {
+        ApplyAuthorizationHeader();
         using var form = new MultipartFormDataContent();
+        var authContext = ResolveAuthContext();
 
         foreach (var field in fields)
         {
             form.Add(new StringContent(field.Value), field.Key);
         }
+
+        if (!fields.ContainsKey("companyId"))
+            form.Add(new StringContent(authContext.CompanyId), "companyId");
+        if (!fields.ContainsKey("userId"))
+            form.Add(new StringContent(authContext.UserId), "userId");
+        if (!fields.ContainsKey("ip"))
+            form.Add(new StringContent(authContext.Ip), "ip");
+        if (!fields.ContainsKey("device"))
+            form.Add(new StringContent(authContext.Device), "device");
 
         foreach (var file in files)
         {
@@ -109,12 +125,20 @@ public sealed class TransactionsService : ITransactionsService
 
     public async Task<bool> RegisterTransactionAsync(Dictionary<string, object> payload, CancellationToken cancellationToken = default)
     {
+        ApplyAuthorizationHeader();
+        var authContext = ResolveAuthContext();
+        payload["companyId"] = authContext.CompanyId;
+        payload["userId"] = authContext.UserId;
+        payload["ip"] = authContext.Ip;
+        payload["device"] = authContext.Device;
+
         var response = await _httpClient.PostAsJsonAsync(RegisterUrl, payload, cancellationToken);
         return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> SendAlertMailAsync(string xmlDetails, string containerId, string eventName, string stepLabel, CancellationToken cancellationToken = default)
     {
+        ApplyAuthorizationHeader();
         var encodedXml = HtmlEncoder.Default.Encode(FormatXmlForHtml(xmlDetails));
         var payload = new
         {
@@ -128,6 +152,72 @@ public sealed class TransactionsService : ITransactionsService
 
         var response = await _httpClient.PostAsJsonAsync(AlertMailUrl, payload, cancellationToken);
         return response.IsSuccessStatusCode;
+    }
+
+    private void ApplyAuthorizationHeader()
+    {
+        if (string.IsNullOrWhiteSpace(_authState.Token))
+            return;
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authState.Token);
+    }
+
+    private (string CompanyId, string UserId, string Ip, string Device) ResolveAuthContext()
+    {
+        const string fallbackCompanyId = "1";
+        const string fallbackUserId = "1";
+        const string fallbackIp = "127.0.0.1";
+        const string fallbackDevice = "android";
+
+        if (string.IsNullOrWhiteSpace(_authState.Token))
+            return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+
+        try
+        {
+            var tokenParts = _authState.Token.Split('.');
+            if (tokenParts.Length < 2)
+                return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+
+            var payloadPart = tokenParts[1].Replace('-', '+').Replace('_', '/');
+            payloadPart = payloadPart.PadRight(payloadPart.Length + ((4 - payloadPart.Length % 4) % 4), '=');
+            var json = Encoding.UTF8.GetString(Convert.FromBase64String(payloadPart));
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            var companyId = TryGetClaim(root, "companyId", "companyID", "company") ?? fallbackCompanyId;
+            var userId = TryGetClaim(root, "userId", "userID", "sub") ?? fallbackUserId;
+            var ip = TryGetClaim(root, "ip") ?? fallbackIp;
+            var device = TryGetClaim(root, "device") ?? fallbackDevice;
+
+            return (companyId, userId, ip, device);
+        }
+        catch
+        {
+            return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+        }
+    }
+
+    private static string? TryGetClaim(JsonElement root, params string[] claimNames)
+    {
+        foreach (var claimName in claimNames)
+        {
+            if (!root.TryGetProperty(claimName, out var property))
+                continue;
+
+            if (property.ValueKind == JsonValueKind.String)
+            {
+                var value = property.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+            else if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number))
+            {
+                return number.ToString();
+            }
+        }
+
+        return null;
     }
 
     private static string FormatXmlForHtml(string xml)
