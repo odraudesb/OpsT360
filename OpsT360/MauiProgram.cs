@@ -25,6 +25,8 @@ public static class MauiProgram
 
         builder.Services.AddHttpClient<ILoginService, LoginService>();
 
+        builder.Services.AddSingleton<RoboflowValidationService>();
+
         builder.Services.AddHttpClient<ITransactionsService, TransactionsService>()
             .AddHttpMessageHandler<AuthHeaderHandler>();
 
