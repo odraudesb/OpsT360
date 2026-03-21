@@ -52,10 +52,10 @@ public sealed class MainMenuPage : FlyoutPage
         if (page is null)
             return;
 
-        var selected = await page.DisplayActionSheet("Change language", "Cancel", null, "Español", "English");
+        var selected = await page.DisplayActionSheet("Change language", "Cancel", null, "English");
 
-        if (selected is "Español" or "English")
-            await page.DisplayAlert("Language", $"Selected language: {selected}", "OK");
+        if (selected == "English")
+            await page.DisplayAlert("Language", "Language switched to English.", "OK");
 
         IsPresented = false;
     }
@@ -180,10 +180,10 @@ public sealed class MainMenuPage : FlyoutPage
             Padding = new Thickness(16, 18)
         };
 
-        menuLayout.Children.Add(CreateMenuButton("Colocación de Sellos [Etiquetas]", NavigateToSealPlacement));
-        menuLayout.Children.Add(CreateMenuButton("Cambio de Sellos [Etiquetas] por Inspección", NavigateToSealInspectionChange));
+        menuLayout.Children.Add(CreateMenuButton("RFID Seal Placement", NavigateToSealPlacement));
+        menuLayout.Children.Add(CreateMenuButton("RFID Seal Inspection Change", NavigateToSealInspectionChange));
         menuLayout.Children.Add(CreateMenuButton("Change Language", async () => await ChangeLanguageAsync()));
-        menuLayout.Children.Add(CreateMenuButton("Cerrar Sesión", Logout));
+        menuLayout.Children.Add(CreateMenuButton("Sign Out", Logout));
 
         var scroll = new ScrollView
         {
@@ -206,7 +206,7 @@ public sealed class MainMenuPage : FlyoutPage
 
         return new ContentPage
         {
-            Title = "Menú",
+            Title = "Menu",
             BackgroundColor = Colors.White,
             Content = root
         };
@@ -220,6 +220,7 @@ public sealed class MainMenuPage : FlyoutPage
             BackgroundColor = Colors.Transparent,
             TextColor = Color.FromArgb("#1F2937"),
             HorizontalOptions = LayoutOptions.Fill,
+            LineBreakMode = LineBreakMode.WordWrap,
             FontSize = 16,
             Padding = new Thickness(14, 14),
             CornerRadius = 10,
