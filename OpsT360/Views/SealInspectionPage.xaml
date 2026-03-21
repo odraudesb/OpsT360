@@ -3,157 +3,213 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="OpsT360.Views.SealInspectionPage"
              Title="iT360° Application"
-             BackgroundColor="#F3F5FB">
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="#F6F7FB">
     <ScrollView>
-        <VerticalStackLayout Padding="16,18,16,28" Spacing="14">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                <Border BackgroundColor="#24379E" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="10">
-                    <Label Text="RFID" TextColor="White" FontAttributes="Bold" FontSize="12" />
-                </Border>
-                <VerticalStackLayout Grid.Column="1" Spacing="2">
-                    <Label Text="OPS T360" FontSize="12" TextColor="#6E7891" FontAttributes="Bold" />
-                    <Label Text="{Binding OperationTitle}" FontSize="24" FontAttributes="Bold" TextColor="#1C2537" />
-                </VerticalStackLayout>
+        <VerticalStackLayout Spacing="16" Padding="0,0,0,24">
+
+            <Grid HeightRequest="84" Padding="14,26,14,12" ColumnDefinitions="Auto,*,Auto" BackgroundColor="#3E5AF1">
+                <Label Text="☰"
+                       VerticalTextAlignment="Center"
+                       TextColor="White"
+                       FontSize="22">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMenuTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
+                <Label Grid.Column="1"
+                       Text="{Binding OperationTitle}"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       FontSize="20"
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       Margin="8,0" />
+                <Image Grid.Column="2"
+                       Source="logo.png"
+                       HeightRequest="42"
+                       WidthRequest="42"
+                       Aspect="AspectFit"
+                       HorizontalOptions="End"
+                       VerticalOptions="Center" />
             </Grid>
 
-            <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Container information" FontAttributes="Bold" TextColor="#8A93A6" />
+            <VerticalStackLayout Spacing="14" Padding="16,0,16,0">
+
+                <Border BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="14,2">
+                    <Entry Placeholder="Container Number"
+                           Text="{Binding ContainerId}"
+                           BackgroundColor="Transparent"
+                           TextColor="#3B4352"
+                           PlaceholderColor="#A1A8B4"
+                           HeightRequest="44" />
+                </Border>
+
+                <CollectionView ItemsSource="{Binding ContainerSuggestions}"
+                                HeightRequest="90"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,6" BackgroundColor="#EEF3FF" Stroke="#D7E2FF" StrokeShape="RoundRectangle 10" Padding="10,8">
+                                <Label Text="{Binding .}" TextColor="#24379E" FontAttributes="Bold">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectContainerCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+                    <VerticalStackLayout Spacing="8">
+                        <Button Text="Panel Photo 1"
+                                FontAttributes="Bold"
+                                HeightRequest="42"
+                                CornerRadius="21"
+                                BackgroundColor="#3E5AF1"
+                                TextColor="White"
+                                Command="{Binding LoadSealImageCommand}"
+                                CommandParameter="1"
+                                IsEnabled="{Binding CanUploadImages}" />
+                        <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="190">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="1" />
+                            </Border.GestureRecognizers>
+                            <Image Source="{Binding SealImages[0].PreviewImage}"
+                                   Aspect="AspectFill"
+                                   IsVisible="{Binding SealImages[0].HasImage}" />
+                        </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Validated" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Failed" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳ Validating..." />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pending" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1" Spacing="8">
+                        <Button Text="Panel Photo 2"
+                                FontAttributes="Bold"
+                                HeightRequest="42"
+                                CornerRadius="21"
+                                BackgroundColor="#3E5AF1"
+                                TextColor="White"
+                                Command="{Binding LoadSealImageCommand}"
+                                CommandParameter="2"
+                                IsEnabled="{Binding CanUploadImages}" />
+                        <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="190">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="2" />
+                            </Border.GestureRecognizers>
+                            <Image Source="{Binding SealImages[1].PreviewImage}"
+                                   Aspect="AspectFill"
+                                   IsVisible="{Binding SealImages[1].HasImage}" />
+                        </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Validated" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Failed" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳ Validating..." />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pending" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Button Text="Read Seals"
+                        HeightRequest="44"
+                        CornerRadius="22"
+                        FontAttributes="Bold"
+                        BackgroundColor="#3E5AF1"
+                        TextColor="White"
+                        Clicked="OnReadNextSealClicked" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="14" RowDefinitions="Auto,Auto" RowSpacing="10">
+                    <Border BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
+                        <Entry x:Name="SealEntry1" Placeholder="Seal #1" Text="{Binding Seals[0].Code}" IsReadOnly="{Binding Seals[0].IsLocked}" Completed="OnSealCompleted" ClassId="1" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
+                        <Entry x:Name="SealEntry2" Placeholder="Seal #2" Text="{Binding Seals[1].Code}" IsReadOnly="{Binding Seals[1].IsLocked}" Completed="OnSealCompleted" ClassId="2" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                    </Border>
+                    <Border Grid.Row="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
+                        <Entry x:Name="SealEntry3" Placeholder="Seal #3" Text="{Binding Seals[2].Code}" IsReadOnly="{Binding Seals[2].IsLocked}" Completed="OnSealCompleted" ClassId="3" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
+                        <Entry x:Name="SealEntry4" Placeholder="Seal #4" Text="{Binding Seals[3].Code}" IsReadOnly="{Binding Seals[3].IsLocked}" Completed="OnSealCompleted" ClassId="4" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                    </Border>
+                </Grid>
+
+                <Button Text="Container Photo"
+                        FontAttributes="Bold"
+                        HeightRequest="44"
+                        CornerRadius="22"
+                        BackgroundColor="#3E5AF1"
+                        TextColor="White"
+                        Command="{Binding LoadContainerImageCommand}"
+                        IsEnabled="{Binding CanUploadImages}" />
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="End">
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Container Id" TextColor="#8A93A6" FontSize="12" />
-                        <Entry Placeholder="Ej: HSU3523430"
-                               Text="{Binding ContainerId}"
-                               BackgroundColor="#F1F4FA"
-                               TextColor="#243048"
-                               HeightRequest="46" />
+                        <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="220" WidthRequest="220" HorizontalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnContainerPreviewTapped" />
+                            </Border.GestureRecognizers>
+                            <Image Source="{Binding ContainerImage.PreviewImage}"
+                                   Aspect="AspectFill"
+                                   IsVisible="{Binding ContainerImage.HasImage}" />
+                        </Border>
+                        <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✅ Evidence OK" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="❌ Evidence failed" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="idle">
+                                    <Setter Property="Text" Value="○ Pending" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
                     </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="OK"
+                            HeightRequest="48"
+                            WidthRequest="84"
+                            CornerRadius="24"
+                            FontAttributes="Bold"
+                            BackgroundColor="#3E5AF1"
+                            TextColor="White"
+                            VerticalOptions="End"
+                            Command="{Binding SendCommand}"
+                            IsEnabled="{Binding CanSend}" />
+                </Grid>
 
-                    <CollectionView ItemsSource="{Binding ContainerSuggestions}"
-                                    HeightRequest="120"
-                                    SelectionMode="None">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,0,0,6" BackgroundColor="#EEF3FF" Stroke="#D7E2FF" StrokeShape="RoundRectangle 10" Padding="10,8">
-                                    <Label Text="{Binding .}" TextColor="#24379E" FontAttributes="Bold">
-                                        <Label.GestureRecognizers>
-                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectContainerCommand}"
-                                                                  CommandParameter="{Binding .}" />
-                                        </Label.GestureRecognizers>
-                                    </Label>
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-                </VerticalStackLayout>
-            </Border>
+                <Label Text="{Binding StatusText}"
+                       FontSize="12"
+                       TextColor="#6E7891" />
 
-            <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="RFID seal registry" FontAttributes="Bold" TextColor="#8A93A6" />
-                    <Label Text="Pulsa Read seal para activar antena y leer por RFID remoto (sin gatillo) en ST-E100."
-                           FontSize="12"
-                           TextColor="#6E7891" />
-
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Seal #1" TextColor="#8A93A6" FontSize="12" />
-                        <Entry x:Name="SealEntry1" Placeholder="Capture seal #1" Text="{Binding Seals[0].Code}" IsReadOnly="{Binding Seals[0].IsLocked}" Completed="OnSealCompleted" ClassId="1" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Button Text="Read seal" ClassId="1" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="1" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
-                        </Grid>
-                        <Label Text="{Binding SealImages[0].FileName, StringFormat='Foto: {0}'}"
-                               FontSize="11"
-                               TextColor="#6E7891" />
-                        <Image Source="{Binding SealImages[0].PreviewImage}"
-                               HeightRequest="120"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding SealImages[0].HasImage}" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Seal #2" TextColor="#8A93A6" FontSize="12" />
-                        <Entry x:Name="SealEntry2" Placeholder="Capture seal #2" Text="{Binding Seals[1].Code}" IsReadOnly="{Binding Seals[1].IsLocked}" Completed="OnSealCompleted" ClassId="2" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Button Text="Read seal" ClassId="2" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="2" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
-                        </Grid>
-                        <Label Text="{Binding SealImages[1].FileName, StringFormat='Foto: {0}'}"
-                               FontSize="11"
-                               TextColor="#6E7891" />
-                        <Image Source="{Binding SealImages[1].PreviewImage}"
-                               HeightRequest="120"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding SealImages[1].HasImage}" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Seal #3" TextColor="#8A93A6" FontSize="12" />
-                        <Entry x:Name="SealEntry3" Placeholder="Capture seal #3" Text="{Binding Seals[2].Code}" IsReadOnly="{Binding Seals[2].IsLocked}" Completed="OnSealCompleted" ClassId="3" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Button Text="Read seal" ClassId="3" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="3" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
-                        </Grid>
-                        <Label Text="{Binding SealImages[2].FileName, StringFormat='Foto: {0}'}"
-                               FontSize="11"
-                               TextColor="#6E7891" />
-                        <Image Source="{Binding SealImages[2].PreviewImage}"
-                               HeightRequest="120"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding SealImages[2].HasImage}" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Seal #4" TextColor="#8A93A6" FontSize="12" />
-                        <Entry x:Name="SealEntry4" Placeholder="Capture seal #4" Text="{Binding Seals[3].Code}" IsReadOnly="{Binding Seals[3].IsLocked}" Completed="OnSealCompleted" ClassId="4" BackgroundColor="#F1F4FA" HeightRequest="46" TextColor="#243048" Focused="OnSealEntryFocused"/>
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Button Text="Read seal" ClassId="4" Clicked="OnReadSealClicked" BackgroundColor="#4357E8" />
-                            <Button Grid.Column="1" Text="Image" Command="{Binding LoadSealImageCommand}" CommandParameter="4" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" />
-                        </Grid>
-                        <Label Text="{Binding SealImages[3].FileName, StringFormat='Foto: {0}'}"
-                               FontSize="11"
-                               TextColor="#6E7891" />
-                        <Image Source="{Binding SealImages[3].PreviewImage}"
-                               HeightRequest="120"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding SealImages[3].HasImage}" />
-                    </VerticalStackLayout>
-
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,6,0,0">
-                        <Label Text="Container image" VerticalTextAlignment="Center" TextColor="#8A93A6" FontAttributes="Bold"/>
-                        <Button Grid.Column="1" Text="Upload" Command="{Binding LoadContainerImageCommand}" IsEnabled="{Binding CanUploadImages}" BackgroundColor="#24379E" WidthRequest="90" />
-                    </Grid>
-                    <Label Text="{Binding ContainerImage.FileName, StringFormat='Foto contenedor: {0}'}"
-                           FontSize="11"
-                           TextColor="#6E7891" />
-                    <Image Source="{Binding ContainerImage.PreviewImage}"
-                           HeightRequest="150"
-                           Aspect="AspectFill"
-                           IsVisible="{Binding ContainerImage.HasImage}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Border BackgroundColor="White" Stroke="#E2E8F3" StrokeShape="RoundRectangle 16" Padding="14">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Status" FontAttributes="Bold" TextColor="#8A93A6" />
-                    <Label Text="{Binding StatusText}" TextColor="#4C5B76" />
-
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Button Text="Editar / Reemplazar"
-                                BackgroundColor="#6D7A92"
-                                Command="{Binding ToggleEditModeCommand}" />
-                        <Button Grid.Column="1"
-                                Text="Send"
-                                BackgroundColor="#11192C"
-                                IsEnabled="{Binding CanSend}"
-                                Command="{Binding SendCommand}" />
-                    </Grid>
-
-                    <Button Text="Cancel"
-                            BackgroundColor="#EBEEF5"
-                            TextColor="#22304A"
-                            Command="{Binding CancelCommand}" />
-                </VerticalStackLayout>
-            </Border>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
