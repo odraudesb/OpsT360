@@ -13,6 +13,7 @@ public partial class SealInspectionViewModel : ObservableObject
 {
     private readonly ITransactionsService _transactionsService;
     private readonly IRfidScannerService _rfidScannerService;
+    private readonly IAppLanguageState _languageState;
 
     private readonly Dictionary<string, ContainerProfile> _profiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -54,6 +55,15 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string statusText = "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
     [ObservableProperty] private bool isInspectionChangeMode;
     [ObservableProperty] private string operationTitle = "RFID Seal Placement";
+    [ObservableProperty] private string containerPlaceholder = "Container Number";
+    [ObservableProperty] private string panel1ButtonText = "Panel Photo 1";
+    [ObservableProperty] private string panel2ButtonText = "Panel Photo 2";
+    [ObservableProperty] private string readSealsButtonText = "Read Seals";
+    [ObservableProperty] private string seal1Placeholder = "Seal #1";
+    [ObservableProperty] private string seal2Placeholder = "Seal #2";
+    [ObservableProperty] private string seal3Placeholder = "Seal #3";
+    [ObservableProperty] private string seal4Placeholder = "Seal #4";
+    [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -61,22 +71,59 @@ public partial class SealInspectionViewModel : ObservableObject
                            && SealImages.Take(2).All(i => i.Bytes is { Length: > 0 })
                            && ContainerImage.Bytes is { Length: > 0 };
 
-    public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService)
+    public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService, IAppLanguageState languageState)
     {
         _transactionsService = transactionsService;
         _rfidScannerService = rfidScannerService;
+        _languageState = languageState;
+        _languageState.LanguageChanged += OnLanguageChanged;
+        ApplyLanguageResources(_languageState.IsEnglish);
     }
 
     public void ConfigureOperationMode(bool isInspectionChange)
     {
         IsInspectionChangeMode = isInspectionChange;
-        OperationTitle = isInspectionChange
-            ? "RFID Seal Inspection Change"
-            : "RFID Seal Placement";
+        ApplyLanguageResources(_languageState.IsEnglish);
+    }
 
-        StatusText = isInspectionChange
-            ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
-            : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+    private void OnLanguageChanged(bool isEnglish)
+    {
+        ApplyLanguageResources(isEnglish);
+    }
+
+    private void ApplyLanguageResources(bool isEnglish)
+    {
+        if (isEnglish)
+        {
+            ContainerPlaceholder = "Container Number";
+            Panel1ButtonText = "Panel Photo 1";
+            Panel2ButtonText = "Panel Photo 2";
+            ReadSealsButtonText = "Read Seals";
+            Seal1Placeholder = "Seal #1";
+            Seal2Placeholder = "Seal #2";
+            Seal3Placeholder = "Seal #3";
+            Seal4Placeholder = "Seal #4";
+            ContainerPhotoButtonText = "Container Photo";
+            OperationTitle = IsInspectionChangeMode ? "RFID Seal Inspection Change" : "RFID Seal Placement";
+            StatusText = IsInspectionChangeMode
+                ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
+                : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+            return;
+        }
+
+        ContainerPlaceholder = "Número de Contenedor";
+        Panel1ButtonText = "Foto Panel 1";
+        Panel2ButtonText = "Foto Panel 2";
+        ReadSealsButtonText = "Leer Sellos";
+        Seal1Placeholder = "Sello #1";
+        Seal2Placeholder = "Sello #2";
+        Seal3Placeholder = "Sello #3";
+        Seal4Placeholder = "Sello #4";
+        ContainerPhotoButtonText = "Foto Contenedor";
+        OperationTitle = IsInspectionChangeMode ? "Cambio de Sellos por Inspección" : "Colocación de Sellos RFID";
+        StatusText = IsInspectionChangeMode
+            ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
+            : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
     }
 
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)

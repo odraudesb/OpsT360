@@ -21,6 +21,7 @@ public static class MauiProgram
             });
 
         builder.Services.AddSingleton<IAuthState, AuthState>();
+        builder.Services.AddSingleton<IAppLanguageState, AppLanguageState>();
         builder.Services.AddTransient<AuthHeaderHandler>();
 
         builder.Services.AddHttpClient<ILoginService, LoginService>();

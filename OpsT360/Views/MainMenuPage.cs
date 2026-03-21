@@ -13,6 +13,7 @@ public sealed class MainMenuPage : FlyoutPage
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly NavigationPage _homeNavigation;
+    private readonly IAppLanguageState _languageState;
 
     private NavigationPage? _sealNavigation;
     private SealInspectionViewModel? _sealInspectionViewModel;
@@ -21,6 +22,8 @@ public sealed class MainMenuPage : FlyoutPage
     public MainMenuPage(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _languageState = _serviceProvider.GetRequiredService<IAppLanguageState>();
+        _isEnglish = _languageState.IsEnglish;
 
         FlyoutLayoutBehavior = FlyoutLayoutBehavior.Popover;
         Flyout = CreateFlyoutPage();
@@ -65,7 +68,8 @@ public sealed class MainMenuPage : FlyoutPage
             return;
         }
 
-        _isEnglish = !_isEnglish;
+        _languageState.SetIsEnglish(!_isEnglish);
+        _isEnglish = _languageState.IsEnglish;
         Flyout = CreateFlyoutPage();
 
         if (_sealInspectionViewModel is not null)
