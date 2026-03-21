@@ -33,7 +33,7 @@
             <VerticalStackLayout Spacing="14" Padding="16,0,16,0">
 
                 <Border BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="14,2">
-                    <Entry Placeholder="Número Contenedor"
+                    <Entry Placeholder="Container Number"
                            Text="{Binding ContainerId}"
                            BackgroundColor="Transparent"
                            TextColor="#3B4352"
@@ -60,7 +60,7 @@
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
                     <VerticalStackLayout Spacing="8">
-                        <Button Text="Foto Panel 1"
+                        <Button Text="Panel Photo 1"
                                 FontAttributes="Bold"
                                 HeightRequest="42"
                                 CornerRadius="21"
@@ -80,23 +80,23 @@
                         <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
-                                    <Setter Property="Text" Value="✅ Validada" />
+                                    <Setter Property="Text" Value="✅ Validated" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
-                                    <Setter Property="Text" Value="❌ Fallida" />
+                                    <Setter Property="Text" Value="❌ Failed" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
-                                    <Setter Property="Text" Value="⏳ Validando..." />
+                                    <Setter Property="Text" Value="⏳ Validating..." />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="idle">
-                                    <Setter Property="Text" Value="○ Pendiente" />
+                                    <Setter Property="Text" Value="○ Pending" />
                                 </DataTrigger>
                             </Label.Triggers>
                         </Label>
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Grid.Column="1" Spacing="8">
-                        <Button Text="Foto Panel 2"
+                        <Button Text="Panel Photo 2"
                                 FontAttributes="Bold"
                                 HeightRequest="42"
                                 CornerRadius="21"
@@ -116,23 +116,23 @@
                         <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
-                                    <Setter Property="Text" Value="✅ Validada" />
+                                    <Setter Property="Text" Value="✅ Validated" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
-                                    <Setter Property="Text" Value="❌ Fallida" />
+                                    <Setter Property="Text" Value="❌ Failed" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
-                                    <Setter Property="Text" Value="⏳ Validando..." />
+                                    <Setter Property="Text" Value="⏳ Validating..." />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="idle">
-                                    <Setter Property="Text" Value="○ Pendiente" />
+                                    <Setter Property="Text" Value="○ Pending" />
                                 </DataTrigger>
                             </Label.Triggers>
                         </Label>
                     </VerticalStackLayout>
                 </Grid>
 
-                <Button Text="Leer Sellos"
+                <Button Text="Read Seals"
                         HeightRequest="44"
                         CornerRadius="22"
                         FontAttributes="Bold"
@@ -142,20 +142,20 @@
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="14" RowDefinitions="Auto,Auto" RowSpacing="10">
                     <Border BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
-                        <Entry x:Name="SealEntry1" Placeholder="Sello #1" Text="{Binding Seals[0].Code}" IsReadOnly="{Binding Seals[0].IsLocked}" Completed="OnSealCompleted" ClassId="1" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                        <Entry x:Name="SealEntry1" Placeholder="Seal #1" Text="{Binding Seals[0].Code}" IsReadOnly="{Binding Seals[0].IsLocked}" Completed="OnSealCompleted" ClassId="1" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
                     </Border>
                     <Border Grid.Column="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
-                        <Entry x:Name="SealEntry2" Placeholder="Sello #2" Text="{Binding Seals[1].Code}" IsReadOnly="{Binding Seals[1].IsLocked}" Completed="OnSealCompleted" ClassId="2" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                        <Entry x:Name="SealEntry2" Placeholder="Seal #2" Text="{Binding Seals[1].Code}" IsReadOnly="{Binding Seals[1].IsLocked}" Completed="OnSealCompleted" ClassId="2" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
                     </Border>
                     <Border Grid.Row="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
-                        <Entry x:Name="SealEntry3" Placeholder="Sello #3" Text="{Binding Seals[2].Code}" IsReadOnly="{Binding Seals[2].IsLocked}" Completed="OnSealCompleted" ClassId="3" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                        <Entry x:Name="SealEntry3" Placeholder="Seal #3" Text="{Binding Seals[2].Code}" IsReadOnly="{Binding Seals[2].IsLocked}" Completed="OnSealCompleted" ClassId="3" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
                     </Border>
                     <Border Grid.Row="1" Grid.Column="1" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 20" Padding="12,2">
-                        <Entry x:Name="SealEntry4" Placeholder="Sello #4" Text="{Binding Seals[3].Code}" IsReadOnly="{Binding Seals[3].IsLocked}" Completed="OnSealCompleted" ClassId="4" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
+                        <Entry x:Name="SealEntry4" Placeholder="Seal #4" Text="{Binding Seals[3].Code}" IsReadOnly="{Binding Seals[3].IsLocked}" Completed="OnSealCompleted" ClassId="4" BackgroundColor="Transparent" HeightRequest="42" TextColor="#3B4352" Focused="OnSealEntryFocused" />
                     </Border>
                 </Grid>
 
-                <Button Text="Foto Contenedor"
+                <Button Text="Container Photo"
                         FontAttributes="Bold"
                         HeightRequest="44"
                         CornerRadius="22"
@@ -177,13 +177,13 @@
                         <Label FontSize="12" TextColor="#6E7891" HorizontalTextAlignment="Center">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="success">
-                                    <Setter Property="Text" Value="✅ Evidencia OK" />
+                                    <Setter Property="Text" Value="✅ Evidence OK" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="failed">
-                                    <Setter Property="Text" Value="❌ Evidencia fallida" />
+                                    <Setter Property="Text" Value="❌ Evidence failed" />
                                 </DataTrigger>
                                 <DataTrigger TargetType="Label" Binding="{Binding ContainerImage.ValidationStatus}" Value="idle">
-                                    <Setter Property="Text" Value="○ Pendiente" />
+                                    <Setter Property="Text" Value="○ Pending" />
                                 </DataTrigger>
                             </Label.Triggers>
                         </Label>

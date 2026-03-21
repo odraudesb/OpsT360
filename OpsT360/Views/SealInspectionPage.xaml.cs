@@ -40,11 +40,11 @@ public partial class SealInspectionPage : ContentPage
             }
 
             if (string.IsNullOrWhiteSpace(_vm.StatusText))
-                _vm.StatusText = "No se obtuvo EPC por SDK RFID. Verifica que el handheld esté en modo UHF y no en escáner de código de barras.";
+                _vm.StatusText = "No EPC received from RFID SDK. Verify the handheld is in UHF mode and not barcode mode.";
         }
         catch (Exception ex)
         {
-            _vm.StatusText = $"Error en botón Read seal: {ex.Message}";
+            _vm.StatusText = $"Read seal button error: {ex.Message}";
         }
         finally
         {
@@ -60,7 +60,7 @@ public partial class SealInspectionPage : ContentPage
         }
         catch (Exception ex)
         {
-            _vm.StatusText = $"Error en botón Leer Sellos: {ex.Message}";
+            _vm.StatusText = $"Read seals button error: {ex.Message}";
         }
     }
 
@@ -77,7 +77,7 @@ public partial class SealInspectionPage : ContentPage
         var panel = _vm.SealImages[index];
         if (!panel.HasImage)
         {
-            await DisplayAlert("Sin imagen", $"{panel.Label} aún no tiene evidencia cargada.", "OK");
+            await DisplayAlert("No image", $"{panel.Label} has no uploaded evidence yet.", "OK");
             return;
         }
 
@@ -90,7 +90,7 @@ public partial class SealInspectionPage : ContentPage
     {
         if (!_vm.ContainerImage.HasImage)
         {
-            await DisplayAlert("Sin imagen", "Aún no hay foto del contenedor.", "OK");
+            await DisplayAlert("No image", "There is no container photo yet.", "OK");
             return;
         }
 
@@ -103,7 +103,7 @@ public partial class SealInspectionPage : ContentPage
     {
         var closeButton = new Button
         {
-            Text = "Cerrar",
+            Text = "Close",
             BackgroundColor = Color.FromArgb("#3E5AF1"),
             TextColor = Colors.White,
             CornerRadius = 20,
@@ -162,6 +162,6 @@ public partial class SealInspectionPage : ContentPage
         if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
             return;
 
-        _vm.StatusText = $"Sello #{sealNumber} listo. Pulsa Read seal para activar antena y capturar EPC.";
+        _vm.StatusText = $"Seal #{sealNumber} ready. Tap Read seal to activate the antenna and capture EPC.";
     }
 }

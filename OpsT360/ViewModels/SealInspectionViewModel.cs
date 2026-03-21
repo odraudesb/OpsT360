@@ -51,9 +51,9 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
+    [ObservableProperty] private string statusText = "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
     [ObservableProperty] private bool isInspectionChangeMode;
-    [ObservableProperty] private string operationTitle = "Colocación de Sellos [Etiquetas]";
+    [ObservableProperty] private string operationTitle = "RFID Seal Placement";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -71,12 +71,12 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         IsInspectionChangeMode = isInspectionChange;
         OperationTitle = isInspectionChange
-            ? "Cambio de Sellos [Etiquetas] por Inspección"
-            : "Colocación de Sellos [Etiquetas]";
+            ? "RFID Seal Inspection Change"
+            : "RFID Seal Placement";
 
         StatusText = isInspectionChange
-            ? "Modo inspección activo: los sellos previos deben quedar Deactivated (Reason: Inspection) antes de registrar los nuevos."
-            : "Pulsa Read Seal #1 para activar antena y capturar EPC remoto (ST-E100).";
+            ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
+            : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
     }
 
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
@@ -87,7 +87,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
         if (IsBusy)
         {
-            StatusText = "Lectura RFID en curso. Espera un momento...";
+            StatusText = "RFID read in progress. Please wait...";
             return false;
         }
 
@@ -106,26 +106,26 @@ public partial class SealInspectionViewModel : ObservableObject
             var normalizedEpc = NormalizeEpc(read.Epc);
             if (string.IsNullOrWhiteSpace(normalizedEpc))
             {
-                StatusText = $"El lector devolvió un valor no EPC ({read.Epc}). Revisa configuración RFID/UHF en el handheld.";
+                StatusText = $"Reader returned a non-EPC value ({read.Epc}). Check RFID/UHF configuration on the handheld.";
                 return false;
             }
 
             Seals[index].Code = normalizedEpc;
           //  Seals[index].Tid = NormalizeHex(read.Tid) ?? string.Empty;
 
-            StatusText = $"EPC capturado desde SDK: {Seals[index].Code}";
+            StatusText = $"EPC captured from SDK: {Seals[index].Code}";
             OnPropertyChanged(nameof(CanUploadImages));
             OnPropertyChanged(nameof(CanSend));
             return true;
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Timeout RFID: no se detectó tag en 8s. Acerca el sello y reintenta.";
+            StatusText = "RFID timeout: no tag detected within 8s. Move the seal closer and retry.";
             return false;
         }
         catch (Exception ex)
         {
-            StatusText = $"Error inesperado en lectura RFID: {ex.Message}";
+            StatusText = $"Unexpected RFID read error: {ex.Message}";
             return false;
         }
         finally
@@ -138,7 +138,7 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         if (IsBusy)
         {
-            StatusText = "Lectura RFID en curso. Espera un momento...";
+            StatusText = "RFID read in progress. Please wait...";
             return 0;
         }
 
@@ -150,7 +150,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
         if (pendingIndexes.Count == 0)
         {
-            StatusText = "Todos los sellos ya fueron leídos.";
+            StatusText = "All seals were already read.";
             return 0;
         }
 
@@ -188,14 +188,14 @@ public partial class SealInspectionViewModel : ObservableObject
 
             if (loaded == 0)
             {
-                StatusText = "Se detectaron tags RFID, pero ninguno era EPC nuevo para los sellos pendientes.";
+                StatusText = "RFID tags were detected, but none were new EPC values for pending seals.";
                 return 0;
             }
 
             var remaining = Seals.Count(s => !s.IsLocked);
             StatusText = remaining == 0
-                ? "4 sellos capturados automáticamente con EPC distintos." 
-                : $"Se capturaron {loaded} EPC(s) nuevos. Faltan {remaining} sello(s).";
+                ? "4 seals captured automatically with distinct EPC values."
+                : $"{loaded} new EPC(s) captured. {remaining} seal(s) remaining.";
 
             OnPropertyChanged(nameof(CanUploadImages));
             OnPropertyChanged(nameof(CanSend));
@@ -203,12 +203,12 @@ public partial class SealInspectionViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Timeout RFID: no se completó la lectura múltiple de sellos.";
+            StatusText = "RFID timeout: multi-seal read did not complete.";
             return 0;
         }
         catch (Exception ex)
         {
-            StatusText = $"Error inesperado en lectura múltiple RFID: {ex.Message}";
+            StatusText = $"Unexpected RFID multi-read error: {ex.Message}";
             return 0;
         }
         finally
@@ -249,7 +249,7 @@ public partial class SealInspectionViewModel : ObservableObject
         var code = NormalizeEpc(Seals[index].Code);
         if (string.IsNullOrWhiteSpace(code))
         {
-            StatusText = $"El sello #{sealNumber} no contiene un EPC RFID válido (hexadecimal). Usa Read seal (RFID), no código de barras.";
+            StatusText = $"Seal #{sealNumber} does not contain a valid RFID EPC (hex). Use Read seal (RFID), not barcode mode.";
             return;
         }
 
@@ -261,12 +261,12 @@ public partial class SealInspectionViewModel : ObservableObject
         if (AreAllSealsCaptured)
         {
             SealEntryLocked = true;
-            StatusText = "4 sellos cargados. Ya puedes subir fotos.";
+            StatusText = "4 seals loaded. You can upload photos now.";
         }
         else
         {
             var next = Seals.FirstOrDefault(s => !s.IsLocked)?.Number ?? 4;
-            StatusText = $"Sello #{sealNumber} leído. Continúa con #{next}.";
+            StatusText = $"Seal #{sealNumber} captured. Continue with #{next}.";
         }
 
         OnPropertyChanged(nameof(CanUploadImages));
@@ -280,7 +280,7 @@ public partial class SealInspectionViewModel : ObservableObject
         foreach (var seal in Seals)
             seal.IsLocked = SealEntryLocked;
 
-        StatusText = SealEntryLocked ? "Sellos bloqueados" : "Modo reemplazo activo";
+        StatusText = SealEntryLocked ? "Seals locked" : "Replacement mode active";
     }
 
     [RelayCommand]
@@ -310,7 +310,7 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Bytes = null;
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
-        StatusText = "Esperando lectura de sello #1";
+        StatusText = "Waiting for seal #1 read.";
 
         OnPropertyChanged(nameof(CanUploadImages));
         OnPropertyChanged(nameof(CanSend));
@@ -324,16 +324,16 @@ public partial class SealInspectionViewModel : ObservableObject
 
         var action = await mainPage.DisplayActionSheet(
             title,
-            "Cancelar",
+            "Cancel",
             null,
-            "Tomar foto",
-            "Elegir de archivos");
+            "Take photo",
+            "Pick file");
 
-        if (action == "Tomar foto")
+        if (action == "Take photo")
         {
             if (!MediaPicker.Default.IsCaptureSupported)
             {
-                await mainPage.DisplayAlert("Cámara no disponible", "Este dispositivo no permite captura de cámara. Usa archivos guardados.", "OK");
+                await mainPage.DisplayAlert("Camera unavailable", "This device cannot capture from camera. Use saved files.", "OK");
                 return null;
             }
 
@@ -343,11 +343,11 @@ public partial class SealInspectionViewModel : ObservableObject
             });
         }
 
-        if (action == "Elegir de archivos")
+        if (action == "Pick file")
         {
             return await FilePicker.PickAsync(new PickOptions
             {
-                PickerTitle = $"{title} (archivos)",
+                PickerTitle = $"{title} (files)",
                 FileTypes = FilePickerFileType.Images
             });
         }
@@ -365,18 +365,18 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Toma foto del sello");
+            result = await CapturePhotoAsync("Take seal photo");
         }
         catch (Exception ex)
         {
-            StatusText = $"No se pudo abrir cámara/archivos: {ex.Message}";
-            await ShowErrorAlertAsync("Error al cargar foto", StatusText);
+            StatusText = $"Could not open camera/files: {ex.Message}";
+            await ShowErrorAlertAsync("Photo load error", StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Carga cancelada", "No se seleccionó ninguna foto para este panel.");
+            await ShowErrorAlertAsync("Upload canceled", "No photo selected for this panel.");
             return;
         }
 
@@ -391,7 +391,7 @@ public partial class SealInspectionViewModel : ObservableObject
         image.Base64 = Convert.ToBase64String(bytes);
         image.ValidationStatus = "idle";
 
-        StatusText = $"{image.Label} cargada. Se validará al presionar OK.";
+        StatusText = $"{image.Label} loaded. It will be validated when you press OK.";
         OnPropertyChanged(nameof(CanSend));
     }
 
@@ -401,18 +401,18 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Toma foto del contenedor");
+            result = await CapturePhotoAsync("Take container photo");
         }
         catch (Exception ex)
         {
-            StatusText = $"No se pudo abrir cámara/archivos: {ex.Message}";
-            await ShowErrorAlertAsync("Error al cargar foto", StatusText);
+            StatusText = $"Could not open camera/files: {ex.Message}";
+            await ShowErrorAlertAsync("Photo load error", StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Carga cancelada", "No se seleccionó foto de contenedor.");
+            await ShowErrorAlertAsync("Upload canceled", "No container photo selected.");
             return;
         }
 
@@ -433,7 +433,7 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         if (!CanSend || string.IsNullOrWhiteSpace(ContainerId))
         {
-            await Application.Current!.MainPage!.DisplayAlert("Faltan datos", "Debes cargar sellos, fotos de paneles/contenedor y container ID.", "OK");
+            await Application.Current!.MainPage!.DisplayAlert("Missing data", "You must load seals, panel/container photos, and container ID.", "OK");
             return;
         }
 
@@ -498,12 +498,16 @@ public partial class SealInspectionViewModel : ObservableObject
 
             var message = sent
                 ? hasFailures
-                    ? $"Transacción enviada con alertas de validación en: {string.Join(", ", failedPanels)}. " +
-                      $"Histórico alerta: {(sentFailureEvent ? "OK" : "ERROR")} | Correo alerta: {(sentFailureMail ? "OK" : "ERROR")}."
-                    : "Transacción enviada con validación exitosa."
-                : "No se pudo enviar.";
+                    ? $"Transaction sent. Validation alerts: {string.Join(", ", failedPanels)}. " +
+                      $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(sentFailureMail ? "OK" : "ERROR")}."
+                    : "Transaction sent successfully."
+                : "Could not send transaction.";
 
-            await Application.Current!.MainPage!.DisplayAlert(sent ? "Enviado" : "Error", message, "OK");
+            await Application.Current!.MainPage!.DisplayAlert(sent ? "Sent" : "Error", message, "OK");
+        }
+        catch (Exception ex)
+        {
+            await Application.Current!.MainPage!.DisplayAlert("Error", $"Error sending transaction: {ex.Message}", "OK");
         }
         finally
         {
@@ -521,7 +525,6 @@ public partial class SealInspectionViewModel : ObservableObject
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
-                await ShowErrorAlertAsync("Foto faltante", $"No hay foto cargada para {panel.Label}.");
                 continue;
             }
 
@@ -546,14 +549,13 @@ public partial class SealInspectionViewModel : ObservableObject
                 if (!result.IsSuccessful)
                 {
                     failedPanels.Add(panel.Label);
-                    await ShowErrorAlertAsync("Validación fallida", $"Roboflow reportó fallo en {panel.Label}.");
                 }
             }
             catch (Exception ex)
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
-                await ShowErrorAlertAsync("Error de validación", $"Error validando {panel.Label}: {ex.Message}");
+                StatusText = $"Validation error on {panel.Label}: {ex.Message}";
             }
         }
 
