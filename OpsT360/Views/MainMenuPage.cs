@@ -220,7 +220,6 @@ public sealed class MainMenuPage : FlyoutPage
             BackgroundColor = Colors.Transparent,
             TextColor = Color.FromArgb("#1F2937"),
             HorizontalOptions = LayoutOptions.Fill,
-            HorizontalTextAlignment = TextAlignment.Start,
             LineBreakMode = LineBreakMode.WordWrap,
             FontSize = 16,
             Padding = new Thickness(14, 14),
