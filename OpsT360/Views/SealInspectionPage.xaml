@@ -12,7 +12,11 @@
                 <Label Text="☰"
                        VerticalTextAlignment="Center"
                        TextColor="White"
-                       FontSize="22" />
+                       FontSize="22">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMenuTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
                 <Label Grid.Column="1"
                        Text="{Binding OperationTitle}"
                        TextColor="White"

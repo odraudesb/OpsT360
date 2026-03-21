@@ -164,4 +164,14 @@ public partial class SealInspectionPage : ContentPage
 
         _vm.StatusText = $"Seal #{sealNumber} ready. Tap Read seal to activate the antenna and capture EPC.";
     }
+
+    private void OnMenuTapped(object? sender, TappedEventArgs e)
+    {
+        Element? current = this;
+        while (current is not null && current is not MainMenuPage)
+            current = current.Parent;
+
+        if (current is MainMenuPage menu)
+            menu.OpenMenu();
+    }
 }

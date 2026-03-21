@@ -139,6 +139,7 @@ public sealed class TransactionsService : ITransactionsService
     public async Task<bool> SendAlertMailAsync(string xmlDetails, string containerId, string eventName, string stepLabel, CancellationToken cancellationToken = default)
     {
         ApplyAuthorizationHeader();
+        var authContext = ResolveAuthContext();
         var encodedXml = HtmlEncoder.Default.Encode(FormatXmlForHtml(xmlDetails));
         var payload = new
         {
@@ -147,7 +148,11 @@ public sealed class TransactionsService : ITransactionsService
             body = $"<pre style=\"font-family: monospace; white-space: pre-wrap;\">{encodedXml}</pre>",
             format = "HTML",
             cc = AlertMailCc,
-            bcc = string.Empty
+            bcc = string.Empty,
+            companyId = authContext.CompanyId,
+            userId = authContext.UserId,
+            ip = authContext.Ip,
+            device = authContext.Device
         };
 
         var response = await _httpClient.PostAsJsonAsync(AlertMailUrl, payload, cancellationToken);
