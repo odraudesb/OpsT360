@@ -516,12 +516,21 @@ public partial class SealInspectionViewModel : ObservableObject
 
             files.Add((ContainerImage.FileName ?? "container.jpg", ContainerImage.Bytes!));
 
-            var sent = await _transactionsService.RegisterWithFilesAsync(fields, files);
+            var sent = false;
+            Exception? sendException = null;
+            try
+            {
+                sent = await _transactionsService.RegisterWithFilesAsync(fields, files);
+            }
+            catch (Exception ex)
+            {
+                sendException = ex;
+            }
             var hasFailures = failedPanels.Count > 0;
             var sentFailureEvent = false;
             var sentFailureMail = false;
 
-            if (sent && hasFailures)
+            if (hasFailures)
             {
                 var failureXml = BuildValidationFailureXml(profile, failedPanels, now);
                 var failedPhotoFiles = SealImages
@@ -548,7 +557,7 @@ public partial class SealInspectionViewModel : ObservableObject
                     ? $"Transaction sent. Validation alerts: {string.Join(", ", failedPanels)}. " +
                       $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(sentFailureMail ? "OK" : "ERROR")}."
                     : "Transaction sent successfully."
-                : "Could not send transaction.";
+                : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
 
             await Application.Current!.MainPage!.DisplayAlert(sent ? "Sent" : "Error", message, "OK");
         }
