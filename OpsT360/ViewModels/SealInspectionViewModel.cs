@@ -40,6 +40,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
     private const string RfidSealPlacementFailureEventName = "Fallo en colocación de Etiqueta RFID";
+    private const bool EnableFailureAlertEmail = false; // Temporal para demo APK.
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
@@ -530,32 +531,45 @@ public partial class SealInspectionViewModel : ObservableObject
             var sentFailureEvent = false;
             var sentFailureMail = false;
 
-            if (hasFailures)
+            if (hasFailures && sent)
             {
-                var failureXml = BuildValidationFailureXml(profile, failedPanels, now);
-                var failedPhotoFiles = SealImages
-                    .Take(2)
-                    .Where(panel => failedPanels.Contains(panel.Label, StringComparer.OrdinalIgnoreCase))
-                    .Select(panel => (panel.FileName ?? $"seal-{panel.Label}.jpg", panel.Bytes))
-                    .Where(x => x.Bytes is { Length: > 0 })
-                    .Select(x => (x.Item1, x.Bytes!))
-                    .ToList();
+                try
+                {
+                    var failureXml = BuildValidationFailureXml(profile, failedPanels, now);
+                    var failedPhotoFiles = SealImages
+                        .Take(2)
+                        .Where(panel => failedPanels.Contains(panel.Label, StringComparer.OrdinalIgnoreCase))
+                        .Select(panel => (panel.FileName ?? $"seal-{panel.Label}.jpg", panel.Bytes))
+                        .Where(x => x.Bytes is { Length: > 0 })
+                        .Select(x => (x.Item1, x.Bytes!))
+                        .ToList();
 
-                var failureFields = BuildValidationFailureFields(profile, containerId, failureXml, now);
-                sentFailureEvent = failedPhotoFiles.Count > 0
-                    ? await _transactionsService.RegisterWithFilesAsync(failureFields, failedPhotoFiles)
-                    : await _transactionsService.RegisterTransactionAsync(BuildValidationFailurePayload(profile, containerId, failureXml, now));
-                sentFailureMail = await _transactionsService.SendAlertMailAsync(
-                    failureXml,
-                    containerId,
-                    RfidSealPlacementFailureEventName,
-                    "PRE-GATE");
+                    var failureFields = BuildValidationFailureFields(profile, containerId, failureXml, now);
+                    sentFailureEvent = failedPhotoFiles.Count > 0
+                        ? await _transactionsService.RegisterWithFilesAsync(failureFields, failedPhotoFiles)
+                        : await _transactionsService.RegisterTransactionAsync(BuildValidationFailurePayload(profile, containerId, failureXml, now));
+
+                    if (EnableFailureAlertEmail)
+                    {
+                        sentFailureMail = await _transactionsService.SendAlertMailAsync(
+                            failureXml,
+                            containerId,
+                            RfidSealPlacementFailureEventName,
+                            "PRE-GATE");
+                    }
+                }
+                catch (Exception alertEx)
+                {
+                    sentFailureEvent = false;
+                    sentFailureMail = false;
+                    System.Diagnostics.Debug.WriteLine($"ALERT FLOW ERROR: {alertEx}");
+                }
             }
 
             var message = sent
                 ? hasFailures
                     ? $"Transaction sent. Validation alerts: {string.Join(", ", failedPanels)}. " +
-                      $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(sentFailureMail ? "OK" : "ERROR")}."
+                      $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "SKIPPED")}."
                     : "Transaction sent successfully."
                 : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
 

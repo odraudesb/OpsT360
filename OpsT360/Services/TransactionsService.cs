@@ -15,7 +15,12 @@ public sealed class TransactionsService : ITransactionsService
 
     private const string RegisterWithFilesUrl = "http://38.242.225.119:3000/api/transactions/register-with-files";
     private const string RegisterUrl = "http://38.242.225.119:3000/api/transactions/register";
-    private const string AlertMailUrl = "http://38.242.225.119:3000/api/emails";
+    private static readonly string[] AlertMailUrls =
+    {
+        "http://38.242.225.119:3000/api/emails",
+        "http://38.242.225.119:3000/api/emails/send",
+        "http://38.242.225.119:3000/api/emails/send-email"
+    };
     private const string AlertMailTo = "rmurillo@infraportus.com";
     private const string AlertMailCc = "edu1991e@gmail.com";
 
@@ -139,24 +144,52 @@ public sealed class TransactionsService : ITransactionsService
     public async Task<bool> SendAlertMailAsync(string xmlDetails, string containerId, string eventName, string stepLabel, CancellationToken cancellationToken = default)
     {
         ApplyAuthorizationHeader();
-        var authContext = ResolveAuthContext();
         var encodedXml = HtmlEncoder.Default.Encode(FormatXmlForHtml(xmlDetails));
-        var payload = new
+        var payload = new Dictionary<string, object?>
         {
-            to = AlertMailTo,
-            subject = $"Alerta RFID {stepLabel} - {containerId} - {eventName}",
-            body = $"<pre style=\"font-family: monospace; white-space: pre-wrap;\">{encodedXml}</pre>",
-            format = "HTML",
-            cc = AlertMailCc,
-            bcc = string.Empty,
-            companyId = authContext.CompanyId,
-            userId = authContext.UserId,
-            ip = authContext.Ip,
-            device = authContext.Device
+            ["to"] = AlertMailTo,
+            ["subject"] = $"Alerta RFID {stepLabel} - {containerId} - {eventName}",
+            ["body"] = $"<pre style=\"font-family: monospace; white-space: pre-wrap;\">{encodedXml}</pre>",
+            ["format"] = "HTML",
+            ["cc"] = AlertMailCc,
+            ["bcc"] = string.Empty
         };
 
-        var response = await _httpClient.PostAsJsonAsync(AlertMailUrl, payload, cancellationToken);
-        return response.IsSuccessStatusCode;
+        try
+        {
+            var authContext = ResolveAuthContext();
+            payload["companyId"] = authContext.CompanyId;
+            payload["userId"] = authContext.UserId;
+            payload["ip"] = authContext.Ip;
+            payload["device"] = authContext.Device;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"MAIL ALERT: contexto auth no disponible, se envía payload base. {ex.Message}");
+        }
+
+        foreach (var url in AlertMailUrls)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync(url, payload, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                    return true;
+
+                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                    System.Diagnostics.Debug.WriteLine($"MAIL ALERT: {url} respondió {(int)response.StatusCode}. Body: {body}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MAIL ALERT: error llamando {url}. {ex.Message}");
+            }
+        }
+
+        return false;
     }
 
     private void ApplyAuthorizationHeader()
