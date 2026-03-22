@@ -199,6 +199,76 @@ namespace OpsT360.Services
             }
         }
 
+        private partial async Task<RfidBatchReadResult> TryReadDistinctEpcsPlatformAsync(int maxCount, CancellationToken cancellationToken)
+        {
+            if (maxCount <= 0)
+                return RfidBatchReadResult.Fail($"[{RfidImplVersion}] maxCount debe ser mayor a cero.");
+
+            await _rfidOpLock.WaitAsync(cancellationToken);
+            try
+            {
+                string openMsg;
+                lock (_readerSync)
+                {
+                    openMsg = PlatformEnsureReaderOpened();
+                }
+
+                LogStep(openMsg);
+
+                if (_managerClass == IntPtr.Zero || _manager == IntPtr.Zero)
+                    return RfidBatchReadResult.Fail(openMsg);
+
+                var uniqueEpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var maxAttempts = Math.Max(10, maxCount * 6);
+
+                for (var attempt = 1; attempt <= maxAttempts && uniqueEpcs.Count < maxCount; attempt++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    lock (_readerSync)
+                    {
+                        var powerDetail = TrySetPower(_managerClass, _manager, 30, 30);
+                        LogStep($"batch/setPower[{attempt}]={powerDetail}");
+
+                        var tags = TryInventoryWithTidPreferred(_managerClass, _manager);
+                        if (tags != IntPtr.Zero)
+                        {
+                            foreach (var epc in TryExtractUniqueEpcs(tags, maxCount))
+                            {
+                                if (!string.IsNullOrWhiteSpace(epc))
+                                    uniqueEpcs.Add(epc.Trim().ToUpperInvariant());
+
+                                if (uniqueEpcs.Count >= maxCount)
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (uniqueEpcs.Count < maxCount)
+                        await Task.Delay(120, cancellationToken);
+                }
+
+                if (uniqueEpcs.Count == 0)
+                    return RfidBatchReadResult.Fail($"[{RfidImplVersion}] No se detectaron tags RFID en inventario.");
+
+                var collected = uniqueEpcs.Take(maxCount).ToList();
+                LogStep($"TryReadDistinctEpcs ok -> {string.Join(",", collected)}");
+                return RfidBatchReadResult.Ok(collected, $"[{RfidImplVersion}] EPCs detectados: {collected.Count}/{maxCount}");
+            }
+            catch (OperationCanceledException)
+            {
+                return RfidBatchReadResult.Fail($"[{RfidImplVersion}] Lectura múltiple RFID cancelada por timeout.");
+            }
+            catch (Exception ex)
+            {
+                return RfidBatchReadResult.Fail($"[{RfidImplVersion}] Error leyendo múltiples EPC: {ex.Message}");
+            }
+            finally
+            {
+                _rfidOpLock.Release();
+            }
+        }
+
         private static bool TryLoadManagerClass(out string javaClassName, out IntPtr classHandle, out string detail)
         {
             javaClassName = string.Empty;
@@ -333,6 +403,38 @@ namespace OpsT360.Services
 
             return (null, null);
         }
+
+        private static IReadOnlyList<string> TryExtractUniqueEpcs(IntPtr listHandle, int maxCount)
+        {
+            var epcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var listClass = JNIEnv.FindClass("java/util/List");
+            if (listClass == IntPtr.Zero)
+                return epcs.ToList();
+
+            var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
+            var getMethod = JNIEnv.GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
+            if (sizeMethod == IntPtr.Zero || getMethod == IntPtr.Zero)
+                return epcs.ToList();
+
+            var size = JNIEnv.CallIntMethod(listHandle, sizeMethod);
+            for (var i = 0; i < size && epcs.Count < maxCount; i++)
+            {
+                var getArgs = new JValue[] { new JValue(i) };
+                var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
+                if (tagInfo == IntPtr.Zero)
+                    continue;
+
+                var tag = TryExtractEpcAndTidFromTag(tagInfo);
+                if (string.IsNullOrWhiteSpace(tag.Epc))
+                    continue;
+
+                epcs.Add(tag.Epc.Trim().ToUpperInvariant());
+            }
+
+            return epcs.ToList();
+        }
+
 
         private static (string? Epc, string? Tid) TryExtractEpcAndTidFromTag(IntPtr tagInfo)
         {

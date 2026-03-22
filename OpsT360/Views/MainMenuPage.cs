@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
 using OpsT360.Services;
 using OpsT360.ViewModels;
@@ -13,13 +14,17 @@ public sealed class MainMenuPage : FlyoutPage
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly NavigationPage _homeNavigation;
+    private readonly IAppLanguageState _languageState;
 
     private NavigationPage? _sealNavigation;
     private SealInspectionViewModel? _sealInspectionViewModel;
+    private bool _isEnglish = true;
 
     public MainMenuPage(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _languageState = _serviceProvider.GetRequiredService<IAppLanguageState>();
+        _isEnglish = _languageState.IsEnglish;
 
         FlyoutLayoutBehavior = FlyoutLayoutBehavior.Popover;
         Flyout = CreateFlyoutPage();
@@ -52,10 +57,24 @@ public sealed class MainMenuPage : FlyoutPage
         if (page is null)
             return;
 
-        var selected = await page.DisplayActionSheet("Change language", "Cancel", null, "Español", "English");
+        var selected = await page.DisplayActionSheet(
+            _isEnglish ? "Change language" : "Cambiar idioma",
+            _isEnglish ? "Cancel" : "Cancelar",
+            null,
+            _isEnglish ? "Español" : "English");
 
-        if (selected is "Español" or "English")
-            await page.DisplayAlert("Language", $"Selected language: {selected}", "OK");
+        if (selected is null || selected == (_isEnglish ? "Cancel" : "Cancelar"))
+        {
+            IsPresented = false;
+            return;
+        }
+
+        _languageState.SetIsEnglish(!_isEnglish);
+        _isEnglish = _languageState.IsEnglish;
+        Flyout = CreateFlyoutPage();
+
+        if (_sealInspectionViewModel is not null)
+            _sealInspectionViewModel.ConfigureOperationMode(_sealInspectionViewModel.IsInspectionChangeMode);
 
         IsPresented = false;
     }
@@ -115,16 +134,6 @@ public sealed class MainMenuPage : FlyoutPage
             HorizontalOptions = LayoutOptions.Center
         });
 
-        layout.Children.Add(new Label
-        {
-            Text = "iT360°",
-            TextColor = Colors.White,
-            FontSize = 34,
-            FontAttributes = FontAttributes.Bold,
-            HorizontalTextAlignment = TextAlignment.Center,
-            HorizontalOptions = LayoutOptions.Center
-        });
-
         return new ContentPage
         {
             Title = "iT360° Application",
@@ -161,7 +170,7 @@ public sealed class MainMenuPage : FlyoutPage
 
         var title = new Label
         {
-            Text = "iT360° Application",
+            Text = _isEnglish ? "Menu" : "Menú",
             TextColor = Colors.White,
             FontSize = 22,
             FontAttributes = FontAttributes.Bold,
@@ -180,10 +189,10 @@ public sealed class MainMenuPage : FlyoutPage
             Padding = new Thickness(16, 18)
         };
 
-        menuLayout.Children.Add(CreateMenuButton("Colocación de Sellos [Etiquetas]", NavigateToSealPlacement));
-        menuLayout.Children.Add(CreateMenuButton("Cambio de Sellos [Etiquetas] por Inspección", NavigateToSealInspectionChange));
-        menuLayout.Children.Add(CreateMenuButton("Change Language", async () => await ChangeLanguageAsync()));
-        menuLayout.Children.Add(CreateMenuButton("Cerrar Sesión", Logout));
+        menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "RFID Seal Placement" : "Colocación de Sellos RFID", NavigateToSealPlacement));
+        menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "RFID Seal Inspection Change" : "Cambio de Sellos por Inspección", NavigateToSealInspectionChange));
+        menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "Change Language" : "Cambiar Idioma", async () => await ChangeLanguageAsync()));
+        menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "Sign Out" : "Cerrar Sesión", Logout));
 
         var scroll = new ScrollView
         {
@@ -206,7 +215,7 @@ public sealed class MainMenuPage : FlyoutPage
 
         return new ContentPage
         {
-            Title = "Menú",
+            Title = "Menu",
             BackgroundColor = Colors.White,
             Content = root
         };
@@ -214,19 +223,38 @@ public sealed class MainMenuPage : FlyoutPage
 
     private View CreateMenuButton(string text, Action action)
     {
-        return new Button
+        var label = new Label
         {
             Text = text,
-            BackgroundColor = Colors.Transparent,
             TextColor = Color.FromArgb("#1F2937"),
-            HorizontalOptions = LayoutOptions.Fill,
-            FontSize = 16,
-            Padding = new Thickness(14, 14),
-            CornerRadius = 10,
-            BorderColor = Color.FromArgb("#E5E7EB"),
-            BorderWidth = 1,
-            Command = new Command(action)
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+            LineBreakMode = LineBreakMode.WordWrap,
+            MaxLines = 3,
+            HorizontalTextAlignment = TextAlignment.Start,
+            VerticalTextAlignment = TextAlignment.Center,
+            FontSize = 15,
+            FontAttributes = FontAttributes.SemiBold
         };
+
+        var container = new Border
+        {
+            Padding = new Thickness(14, 12),
+            BackgroundColor = Colors.Transparent,
+            Stroke = Color.FromArgb("#E5E7EB"),
+            StrokeThickness = 1,
+            StrokeShape = new RoundRectangle
+            {
+                CornerRadius = new CornerRadius(10)
+            },
+            Content = label
+        };
+
+        container.GestureRecognizers.Add(new TapGestureRecognizer
+        {
+            Command = new Command(action)
+        });
+
+        return container;
     }
 
     private static NavigationPage CreateNavigationPage(Page root)
