@@ -227,13 +227,13 @@ public sealed class MainMenuPage : FlyoutPage
         {
             Text = text,
             TextColor = Color.FromArgb("#1F2937"),
-            HorizontalOptions = LayoutOptions.FillAndExpand,
+            HorizontalOptions = LayoutOptions.Fill,
             LineBreakMode = LineBreakMode.WordWrap,
             MaxLines = 3,
             HorizontalTextAlignment = TextAlignment.Start,
             VerticalTextAlignment = TextAlignment.Center,
             FontSize = 15,
-            FontAttributes = FontAttributes.SemiBold
+            FontAttributes = FontAttributes.Bold
         };
 
         var container = new Border

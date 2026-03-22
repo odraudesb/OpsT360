@@ -40,7 +40,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
     private const string RfidSealPlacementFailureEventName = "Fallo en colocación de Etiqueta RFID";
-    private const bool EnableFailureAlertEmail = false; // Temporal para demo APK.
+    private static readonly bool EnableFailureAlertEmail = false; // Temporal para demo APK.
 
     public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
