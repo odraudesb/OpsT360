@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
@@ -22,7 +24,7 @@ public class LoginViewModel : INotifyPropertyChanged
 
     private string _username = string.Empty;
     private string _password = string.Empty;
-    private string _ip = "127.0.0.1";
+    private string _ip = GetPreferredLocalIpAddress();
     private string _device = "android";
     private bool _isBusy;
     private bool _isPasswordHidden = true;
@@ -150,7 +152,7 @@ public class LoginViewModel : INotifyPropertyChanged
             }
 
             System.Diagnostics.Debug.WriteLine("LOGIN VM: antes de guardar token");
-            _authState.SetToken(token);
+            _authState.SetSession(token, Ip, Device);
             System.Diagnostics.Debug.WriteLine("LOGIN VM: después de guardar token");
 
             System.Diagnostics.Debug.WriteLine("LOGIN VM: antes de navegar");
@@ -209,5 +211,24 @@ public class LoginViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private static string GetPreferredLocalIpAddress()
+    {
+        try
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var address in host.AddressList)
+            {
+                if (address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(address))
+                    return address.ToString();
+            }
+        }
+        catch
+        {
+            // Ignorar y usar fallback.
+        }
+
+        return "127.0.0.1";
     }
 }
