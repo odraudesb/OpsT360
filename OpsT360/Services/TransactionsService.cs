@@ -169,19 +169,14 @@ public sealed class TransactionsService : ITransactionsService
 
     private (string CompanyId, string UserId, string Ip, string Device) ResolveAuthContext()
     {
-        const string fallbackCompanyId = "1";
-        const string fallbackUserId = "1";
-        const string fallbackIp = "127.0.0.1";
-        const string fallbackDevice = "android";
-
         if (string.IsNullOrWhiteSpace(_authState.Token))
-            return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+            throw new InvalidOperationException("No hay token de sesión para resolver companyId/userId.");
 
         try
         {
             var tokenParts = _authState.Token.Split('.');
             if (tokenParts.Length < 2)
-                return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+                throw new InvalidOperationException("Token JWT inválido: no contiene payload.");
 
             var payloadPart = tokenParts[1].Replace('-', '+').Replace('_', '/');
             payloadPart = payloadPart.PadRight(payloadPart.Length + ((4 - payloadPart.Length % 4) % 4), '=');
@@ -190,16 +185,26 @@ public sealed class TransactionsService : ITransactionsService
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            var companyId = TryGetClaim(root, "companyId", "companyID", "company") ?? fallbackCompanyId;
-            var userId = TryGetClaim(root, "userId", "userID", "sub") ?? fallbackUserId;
-            var ip = TryGetClaim(root, "ip") ?? fallbackIp;
-            var device = TryGetClaim(root, "device") ?? fallbackDevice;
+            var companyId = TryGetClaim(root, "companyId", "companyID", "company");
+            var userId = TryGetClaim(root, "userId", "userID", "sub");
+            var ip = TryGetClaim(root, "ip") ?? _authState.Ip;
+            var device = TryGetClaim(root, "device") ?? _authState.Device;
 
-            return (companyId, userId, ip, device);
+            if (string.IsNullOrWhiteSpace(companyId) || string.IsNullOrWhiteSpace(userId))
+                throw new InvalidOperationException("El JWT no contiene claims obligatorios companyId y/o userId.");
+
+            if (string.IsNullOrWhiteSpace(ip))
+                throw new InvalidOperationException("No se pudo resolver la IP del dispositivo para el payload.");
+
+            return (companyId, userId, ip, string.IsNullOrWhiteSpace(device) ? "android" : device);
         }
-        catch
+        catch (InvalidOperationException)
         {
-            return (fallbackCompanyId, fallbackUserId, fallbackIp, fallbackDevice);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("No se pudo resolver el contexto de autenticación desde el JWT.", ex);
         }
     }
 
