@@ -36,7 +36,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
-    private const int RfidSealPlacementEventId = 3;
+    private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
     private const string RfidSealPlacementFailureEventName = "Fallo en colocación de Etiqueta RFID";
@@ -779,7 +779,7 @@ public partial class SealInspectionViewModel : ObservableObject
         sb.Append($"<sello_aduana>{profile.CustomsSeal}</sello_aduana>");
         sb.Append($"<failed_photos>{failedPanels.Count}</failed_photos>");
         sb.Append($"<failed_photo_names>{(string.IsNullOrWhiteSpace(failedPhotoNames) ? "Sin detalle" : failedPhotoNames)}</failed_photo_names>");
-        sb.Append("<failure_type>FALLO EN LA COLOCACION DE SELLO RFID</failure_type>");
+        sb.Append("<failure_type>NO LEYERON LAS FOTOS DE VALIDACION</failure_type>");
         sb.Append($"<fecha_registro>{now}</fecha_registro>");
         sb.Append("</Contenedor>");
         return sb.ToString();
