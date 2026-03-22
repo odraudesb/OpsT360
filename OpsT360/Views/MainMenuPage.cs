@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
 using OpsT360.Services;
 using OpsT360.ViewModels;
@@ -222,20 +223,38 @@ public sealed class MainMenuPage : FlyoutPage
 
     private View CreateMenuButton(string text, Action action)
     {
-        return new Button
+        var label = new Label
         {
             Text = text,
-            BackgroundColor = Colors.Transparent,
             TextColor = Color.FromArgb("#1F2937"),
-            HorizontalOptions = LayoutOptions.Fill,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
             LineBreakMode = LineBreakMode.WordWrap,
+            MaxLines = 3,
+            HorizontalTextAlignment = TextAlignment.Start,
+            VerticalTextAlignment = TextAlignment.Center,
             FontSize = 15,
-            Padding = new Thickness(14, 14),
-            CornerRadius = 10,
-            BorderColor = Color.FromArgb("#E5E7EB"),
-            BorderWidth = 1,
-            Command = new Command(action)
+            FontAttributes = FontAttributes.SemiBold
         };
+
+        var container = new Border
+        {
+            Padding = new Thickness(14, 12),
+            BackgroundColor = Colors.Transparent,
+            Stroke = Color.FromArgb("#E5E7EB"),
+            StrokeThickness = 1,
+            StrokeShape = new RoundRectangle
+            {
+                CornerRadius = new CornerRadius(10)
+            },
+            Content = label
+        };
+
+        container.GestureRecognizers.Add(new TapGestureRecognizer
+        {
+            Command = new Command(action)
+        });
+
+        return container;
     }
 
     private static NavigationPage CreateNavigationPage(Page root)
