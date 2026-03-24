@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
 	<PropertyGroup>
 		<TargetFramework>net8.0-android</TargetFramework>
 		<OutputType>Exe</OutputType>
@@ -10,13 +11,13 @@
 
 		<ApplicationTitle>IT360</ApplicationTitle>
 		<ApplicationId>com.opst360.prototype</ApplicationId>
-		<AndroidManifest>Platforms\Android\AndroidManifest.xml</AndroidManifest>
-		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+		<AndroidManifest>AndroidManifest.xml</AndroidManifest>
 		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<DefaultItemExcludes>$(DefaultItemExcludes);src\**;**\*.ts;**\*.html;**\*.css;**\*.json</DefaultItemExcludes>
+		<DefaultItemExcludes>$(DefaultItemExcludes);src\**\*.ts;src\**\*.html;src\**\*.css;src\**\*.json;Resources\AppIcon\**</DefaultItemExcludes>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -40,7 +41,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<MauiIcon Include="src\assets\images\iconoT360.png" Link="iconot360appa.png" />
+		<MauiIcon Include="src\assets\images\iconot360app.png" BaseSize="1024,1024" />
 		<MauiImage Include="src\assets\images\logo.png" />
 		<MauiImage Include="src\assets\images\background.jpg" />
 	</ItemGroup>
@@ -62,4 +63,5 @@
 		<AndroidLibrary Include="Platforms\Android\libs\ModuleAPI_J.jar" Bind="false" />
 		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\*.so" />
 	</ItemGroup>
+
 </Project>
