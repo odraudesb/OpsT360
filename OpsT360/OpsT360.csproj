@@ -40,7 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<MauiIcon Include="src\assets\images\iconot360app.png" />
+		<MauiIcon Include="src\assets\images\iconoT360.png" Link="iconot360appa.png" />
 		<MauiImage Include="src\assets\images\logo.png" />
 		<MauiImage Include="src\assets\images\background.jpg" />
 	</ItemGroup>
