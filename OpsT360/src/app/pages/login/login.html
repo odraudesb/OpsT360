@@ -45,19 +45,25 @@
               [attr.aria-label]="'LOGIN.PASSWORD' | translate" autocomplete="current-password" />
 
             <button type="button" (click)="togglePassword()"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors hover:text-slate-500"
               [attr.aria-label]="'LOGIN.TOGGLE_PASSWORD' | translate">
-              <svg *ngIf="!showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none"
-                stroke="currentColor" stroke-width="1.5">
+              <svg *ngIf="!showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8" fill="none"
+                stroke="currentColor" stroke-width="1.8">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  d="M3 3l18 18" />
                 <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  d="M10.6 10.6a3 3 0 004.24 4.24" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9.36 5.37A9.95 9.95 0 0112 5c4.48 0 8.27 2.94 9.54 7a10.64 10.64 0 01-2.67 4.36" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M6.17 7.18C4.66 8.46 3.5 10.08 2.46 12c1.27 4.06 5.06 7 9.54 7 1.79 0 3.47-.47 4.92-1.28" />
               </svg>
-              <svg *ngIf="showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none"
-                stroke="currentColor" stroke-width="1.5">
+              <svg *ngIf="showPassword" aria-hidden="true" viewBox="0 0 24 24" class="h-8 w-8" fill="none"
+                stroke="currentColor" stroke-width="1.8">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M3 3l18 18M10.477 10.48a3 3 0 004.243 4.243M6.228 6.228C4.645 7.511 3.449 9.22 2.458 12c1.274 4.057 5.065 7 9.542 7 1.57 0 3.06-.322 4.41-.897M9.88 4.24A9.96 9.96 0 0112 5c4.477 0 8.268 2.943 9.542 7a10.034 10.034 0 01-4.1 5.289" />
+                  d="M2.46 12C3.73 7.94 7.52 5 12 5s8.27 2.94 9.54 7c-1.27 4.06-5.06 7-9.54 7s-8.27-2.94-9.54-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9a3 3 0 100 6 3 3 0 000-6z" />
               </svg>
             </button>
           </div>
