@@ -101,14 +101,13 @@ public partial class SealInspectionPage : ContentPage
 
     private async Task ShowPreviewModalAsync(string title, ImageSource source)
     {
-        var closeButton = new Button
+        var closeButton = new Label
         {
-            Text = "Close",
-            BackgroundColor = Color.FromArgb("#3E5AF1"),
-            TextColor = Colors.White,
-            CornerRadius = 20,
+            Text = "✕",
+            FontSize = 20,
+            TextColor = Color.FromArgb("#5B6475"),
             HorizontalOptions = LayoutOptions.End,
-            WidthRequest = 100
+            VerticalOptions = LayoutOptions.Start
         };
 
         var modal = new ContentPage
@@ -129,23 +128,31 @@ public partial class SealInspectionPage : ContentPage
                             Spacing = 10,
                             Children =
                             {
-                                new Label
+                                new Grid
                                 {
-                                    Text = title,
-                                    FontAttributes = FontAttributes.Bold,
-                                    TextColor = Color.FromArgb("#22304A")
-                                },
-                                new ScrollView
-                                {
-                                    Orientation = ScrollOrientation.Both,
-                                    Content = new Image
+                                    ColumnDefinitions = new ColumnDefinitionCollection
                                     {
-                                        Source = source,
-                                        Aspect = Aspect.AspectFit,
-                                        HeightRequest = 520
+                                        new ColumnDefinition{ Width = GridLength.Star },
+                                        new ColumnDefinition{ Width = GridLength.Auto }
+                                    },
+                                    Children =
+                                    {
+                                        new Label
+                                        {
+                                            Text = title,
+                                            FontAttributes = FontAttributes.Bold,
+                                            TextColor = Color.FromArgb("#22304A"),
+                                            VerticalTextAlignment = TextAlignment.Center
+                                        },
+                                        closeButton
                                     }
                                 },
-                                closeButton
+                                new Image
+                                {
+                                    Source = source,
+                                    Aspect = Aspect.AspectFit,
+                                    HeightRequest = 560
+                                }
                             }
                         }
                     }
@@ -153,16 +160,11 @@ public partial class SealInspectionPage : ContentPage
             }
         };
 
-        closeButton.Clicked += async (_, _) => await Navigation.PopModalAsync();
+        closeButton.GestureRecognizers.Add(new TapGestureRecognizer
+        {
+            Command = new Command(async () => await Navigation.PopModalAsync())
+        });
         await Navigation.PushModalAsync(modal);
-    }
-
-    private void OnSealEntryFocused(object? sender, FocusEventArgs e)
-    {
-        if (sender is not Entry entry || !int.TryParse(entry.ClassId, out var sealNumber))
-            return;
-
-        _vm.StatusText = $"Seal #{sealNumber} ready. Tap Read seal to activate the antenna and capture EPC.";
     }
 
     private void OnMenuTapped(object? sender, TappedEventArgs e)

@@ -55,10 +55,10 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string statusText = "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
     [ObservableProperty] private bool isInspectionChangeMode;
-    [ObservableProperty] private string operationTitle = "RFID Seal Placement";
+    [ObservableProperty] private string operationTitle = "RFID Seal [Label] Placement";
     [ObservableProperty] private string containerPlaceholder = "Container Number";
-    [ObservableProperty] private string panel1ButtonText = "Panel Photo 1";
-    [ObservableProperty] private string panel2ButtonText = "Panel Photo 2";
+    [ObservableProperty] private string panel1ButtonText = "Photo Panel # 1";
+    [ObservableProperty] private string panel2ButtonText = "Photo Panel # 2";
     [ObservableProperty] private string readSealsButtonText = "Read Seals";
     [ObservableProperty] private string seal1Placeholder = "Seal #1";
     [ObservableProperty] private string seal2Placeholder = "Seal #2";
@@ -97,15 +97,15 @@ public partial class SealInspectionViewModel : ObservableObject
         if (isEnglish)
         {
             ContainerPlaceholder = "Container Number";
-            Panel1ButtonText = "Panel Photo 1";
-            Panel2ButtonText = "Panel Photo 2";
+            Panel1ButtonText = "Photo Panel # 1";
+            Panel2ButtonText = "Photo Panel # 2";
             ReadSealsButtonText = "Read Seals";
             Seal1Placeholder = "Seal #1";
             Seal2Placeholder = "Seal #2";
             Seal3Placeholder = "Seal #3";
             Seal4Placeholder = "Seal #4";
             ContainerPhotoButtonText = "Container Photo";
-            OperationTitle = IsInspectionChangeMode ? "RFID Seal Inspection Change" : "RFID Seal Placement";
+            OperationTitle = IsInspectionChangeMode ? "RFID Seal Inspection Change" : "RFID Seal [Label] Placement";
             StatusText = IsInspectionChangeMode
                 ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
                 : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
@@ -113,15 +113,15 @@ public partial class SealInspectionViewModel : ObservableObject
         }
 
         ContainerPlaceholder = "Número de Contenedor";
-        Panel1ButtonText = "Foto Panel 1";
-        Panel2ButtonText = "Foto Panel 2";
+        Panel1ButtonText = "Foto panel # 1";
+        Panel2ButtonText = "Foto Panel # 2";
         ReadSealsButtonText = "Leer Sellos";
         Seal1Placeholder = "Sello #1";
         Seal2Placeholder = "Sello #2";
         Seal3Placeholder = "Sello #3";
         Seal4Placeholder = "Sello #4";
         ContainerPhotoButtonText = "Foto Contenedor";
-        OperationTitle = IsInspectionChangeMode ? "Cambio de Sellos por Inspección" : "Colocación de Sellos RFID";
+        OperationTitle = IsInspectionChangeMode ? "Cambio de Sellos por Inspección" : "RFID Seal [Label] Placement";
         StatusText = IsInspectionChangeMode
             ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
             : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
@@ -369,38 +369,17 @@ public partial class SealInspectionViewModel : ObservableObject
         var mainPage = Application.Current?.MainPage;
         if (mainPage is null)
             return null;
-
-        var action = await mainPage.DisplayActionSheet(
-            title,
-            "Cancel",
-            null,
-            "Take photo",
-            "Pick file");
-
-        if (action == "Take photo")
+        
+        if (!MediaPicker.Default.IsCaptureSupported)
         {
-            if (!MediaPicker.Default.IsCaptureSupported)
-            {
-                await mainPage.DisplayAlert("Camera unavailable", "This device cannot capture from camera. Use saved files.", "OK");
-                return null;
-            }
-
-            return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
-            {
-                Title = title
-            });
+            await mainPage.DisplayAlert("Camera unavailable", "This device cannot capture from camera.", "OK");
+            return null;
         }
 
-        if (action == "Pick file")
+        return await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
         {
-            return await FilePicker.PickAsync(new PickOptions
-            {
-                PickerTitle = $"{title} (files)",
-                FileTypes = FilePickerFileType.Images
-            });
-        }
-
-        return null;
+            Title = title
+        });
     }
 
     [RelayCommand]
@@ -439,7 +418,6 @@ public partial class SealInspectionViewModel : ObservableObject
         image.Base64 = Convert.ToBase64String(bytes);
         image.ValidationStatus = "idle";
 
-        StatusText = $"{image.Label} loaded. It will be validated when you press OK.";
         OnPropertyChanged(nameof(CanSend));
     }
 
@@ -479,9 +457,23 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task SendAsync()
     {
-        if (!CanSend || string.IsNullOrWhiteSpace(ContainerId))
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(ContainerId))
+            missing.Add(_languageState.IsEnglish ? "container number" : "número de contenedor");
+        if (!AreAllSealsCaptured)
+            missing.Add(_languageState.IsEnglish ? "4 seal EPCs" : "4 EPC de sellos");
+        if (SealImages.Take(2).Any(i => i.Bytes is not { Length: > 0 }))
+            missing.Add(_languageState.IsEnglish ? "2 panel photos" : "2 fotos de panel");
+        if (ContainerImage.Bytes is not { Length: > 0 })
+            missing.Add(_languageState.IsEnglish ? "container photo" : "foto del contenedor");
+
+        if (missing.Count > 0)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Missing data", "You must load seals, panel/container photos, and container ID.", "OK");
+            var title = _languageState.IsEnglish ? "Missing data" : "Datos incompletos";
+            var msg = _languageState.IsEnglish
+                ? $"Complete: {string.Join(", ", missing)}."
+                : $"Complete: {string.Join(", ", missing)}.";
+            await Application.Current!.MainPage!.DisplayAlert(title, msg, "OK");
             return;
         }
 

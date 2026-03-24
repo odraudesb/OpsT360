@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using OpsT360.Services;
 using OpsT360.ViewModels;
 using OpsT360.Views;
+#if ANDROID
+using Microsoft.Maui.Handlers;
+#endif
 
 namespace OpsT360;
 
@@ -19,6 +22,14 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
+
+#if ANDROID
+        EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+        {
+            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
+            handler.PlatformView.SetSelectAllOnFocus(false);
+        });
+#endif
 
         builder.Services.AddSingleton<IAuthState, AuthState>();
         builder.Services.AddSingleton<IAppLanguageState, AppLanguageState>();

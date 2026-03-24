@@ -189,7 +189,7 @@ public sealed class MainMenuPage : FlyoutPage
             Padding = new Thickness(16, 18)
         };
 
-        menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "RFID Seal Placement" : "Colocación de Sellos RFID", NavigateToSealPlacement));
+        menuLayout.Children.Add(CreateMenuButton("RFID Seal [Label] Placement", NavigateToSealPlacement));
         menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "RFID Seal Inspection Change" : "Cambio de Sellos por Inspección", NavigateToSealInspectionChange));
         menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "Change Language" : "Cambiar Idioma", async () => await ChangeLanguageAsync()));
         menuLayout.Children.Add(CreateMenuButton(_isEnglish ? "Sign Out" : "Cerrar Sesión", Logout));
