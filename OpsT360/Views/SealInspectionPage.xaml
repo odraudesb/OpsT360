@@ -33,7 +33,7 @@
                    VerticalOptions="Center" />
         </Grid>
 
-        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="8">
+        <Grid Grid.Row="1" Padding="14,12,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
 
             <Border Grid.Row="0" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 18" Padding="12,2">
                 <Entry Placeholder="{Binding ContainerPlaceholder}"
@@ -46,25 +46,7 @@
                        IsSpellCheckEnabled="False" />
             </Border>
 
-            <CollectionView Grid.Row="1"
-                            ItemsSource="{Binding ContainerSuggestions}"
-                            HeightRequest="44"
-                            SelectionMode="None">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Margin="0,0,0,4" BackgroundColor="#EEF3FF" Stroke="#D7E2FF" StrokeShape="RoundRectangle 10" Padding="10,6">
-                            <Label Text="{Binding .}" TextColor="#24379E" FontAttributes="Bold">
-                                <Label.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectContainerCommand}"
-                                                          CommandParameter="{Binding .}" />
-                                </Label.GestureRecognizers>
-                            </Label>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-
-            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
                 <Button Text="{Binding Panel1ButtonText}"
                         FontAttributes="Bold"
                         HeightRequest="40"
@@ -86,8 +68,8 @@
                         FontSize="14" />
             </Grid>
 
-            <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="112">
+            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="135">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="1" />
                     </Border.GestureRecognizers>
@@ -95,7 +77,7 @@
                            Aspect="AspectFill"
                            IsVisible="{Binding SealImages[0].HasImage}" />
                 </Border>
-                <Border Grid.Column="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="112">
+                <Border Grid.Column="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="135">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="2" />
                     </Border.GestureRecognizers>
@@ -105,7 +87,7 @@
                 </Border>
             </Grid>
 
-            <Button Grid.Row="4"
+            <Button Grid.Row="3"
                     Text="{Binding ReadSealsButtonText}"
                     HeightRequest="40"
                     CornerRadius="20"
@@ -114,7 +96,7 @@
                     TextColor="White"
                     Clicked="OnReadNextSealClicked" />
 
-            <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="8">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
                     <Entry x:Name="SealEntry1" Placeholder="{Binding Seal1Placeholder}" Text="{Binding Seals[0].Code}" IsReadOnly="True" IsEnabled="False" BackgroundColor="Transparent" HeightRequest="38" TextColor="#596274" />
                 </Border>
@@ -129,7 +111,7 @@
                 </Border>
             </Grid>
 
-            <Grid Grid.Row="6" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+            <Grid Grid.Row="5" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
                 <Button Grid.Row="0"
                         Text="{Binding ContainerPhotoButtonText}"
                         FontAttributes="Bold"
@@ -139,7 +121,7 @@
                         TextColor="White"
                         Command="{Binding LoadContainerImageCommand}" />
 
-                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="120" WidthRequest="150" HorizontalOptions="Center">
+                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="130" WidthRequest="165" HorizontalOptions="Center">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnContainerPreviewTapped" />
                     </Border.GestureRecognizers>

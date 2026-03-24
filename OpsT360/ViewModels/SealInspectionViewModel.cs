@@ -42,7 +42,6 @@ public partial class SealInspectionViewModel : ObservableObject
     private const string RfidSealPlacementFailureEventName = "Fallo en colocación de Etiqueta RFID";
     private static readonly bool EnableFailureAlertEmail = false; // Temporal para demo APK.
 
-    public ObservableCollection<string> ContainerSuggestions { get; } = new();
     public ObservableCollection<SealItem> Seals { get; } = new(Enumerable.Range(1, 4).Select(i => new SealItem(i)));
     public ObservableCollection<EvidenceImage> SealImages { get; } = new(Enumerable.Range(1, 4).Select(i => new EvidenceImage { Label = $"Seal Image #{i}" }));
     public ObservableCollection<string> ActivationPoints { get; } = new() { "Pre-Gate / Insp", "Gate Out", "Yard" };
@@ -267,19 +266,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
     partial void OnContainerIdChanged(string value)
     {
-        ContainerSuggestions.Clear();
-        if (string.IsNullOrWhiteSpace(value))
-            return;
-
-        foreach (var item in _profiles.Keys.Where(k => k.Contains(value, StringComparison.OrdinalIgnoreCase)).Take(6))
-            ContainerSuggestions.Add(item);
-    }
-
-    [RelayCommand]
-    private void SelectContainer(string id)
-    {
-        ContainerId = id;
-        ContainerSuggestions.Clear();
+        // Autocomplete de contenedor deshabilitado por requerimiento de UX.
     }
 
     [RelayCommand]
