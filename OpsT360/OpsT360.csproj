@@ -8,7 +8,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<ApplicationTitle>OpsT360</ApplicationTitle>
+		<ApplicationTitle>IT360</ApplicationTitle>
 		<ApplicationId>com.opst360.prototype</ApplicationId>
 		<AndroidManifest>Platforms\Android\AndroidManifest.xml</AndroidManifest>
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
@@ -40,6 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<MauiIcon Include="src\assets\images\iconoT360.png" />
 		<MauiImage Include="src\assets\images\logo.png" />
 		<MauiImage Include="src\assets\images\background.jpg" />
 	</ItemGroup>
