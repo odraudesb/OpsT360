@@ -655,6 +655,12 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         // Importante: no revalidar en OK. Solo usar estado ya calculado en background.
         var failedPanels = new List<string>();
+        var panelTasks = new List<Task<PanelValidationOutcome>>();
+        var pendingLabels = new List<string>();
+
+        var runningTasks = _panelValidationTasks.Values.Where(t => !t.IsCompleted).ToList();
+        if (runningTasks.Count > 0)
+            await Task.WhenAll(runningTasks);
 
         foreach (var panel in SealImages.Take(2))
         {
@@ -678,7 +684,66 @@ public partial class SealInspectionViewModel : ObservableObject
                     ? $"Panel {panel.Label} is still validating. Send uses current status without re-validating."
                     : $"El panel {panel.Label} aún está validando. El envío usa el estado actual sin revalidar.";
             }
+
+            var totalElapsed = outcomes.MaxBy(o => o.Elapsed)?.Elapsed ?? 0d;
+            StatusText = failedPanels.Count == 0
+                ? $"Validación de fotos completada en {totalElapsed:0.0}s."
+                : $"Validación completada en {totalElapsed:0.0}s. Fallaron: {string.Join(", ", failedPanels)}.";
+
+            UpdatePanelValidationSummaryFromStatuses();
         }
+        else
+        {
+            UpdatePanelValidationSummaryFromStatuses();
+        }
+
+        UpdatePanelValidationSummaryFromStatuses();
+
+        return Task.FromResult(failedPanels);
+    }
+
+    private void QueuePanelValidation(EvidenceImage panel)
+    {
+        if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
+            return;
+
+        var token = Guid.NewGuid().ToString("N");
+        _panelValidationTokens[panel.Label] = token;
+        var panelLabel = panel.Label;
+        var base64Snapshot = panel.Base64;
+        var fileNameSnapshot = panel.FileName;
+
+        var task = ValidatePanelInBackgroundAsync(panelLabel, base64Snapshot!, fileNameSnapshot!, token);
+        _panelValidationTasks[panelLabel] = task;
+    }
+
+    private async Task ValidatePanelInBackgroundAsync(string panelLabel, string base64, string fileName, string token)
+    {
+        var outcome = await ValidatePanelAsync(panelLabel, base64, fileName);
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            if (!_panelValidationTokens.TryGetValue(panelLabel, out var currentToken) || currentToken != token)
+                return;
+
+            var panel = SealImages.FirstOrDefault(p => p.Label == panelLabel);
+            if (panel is null)
+                return;
+
+            ApplyValidationOutcome(panel, outcome);
+            UpdatePanelValidationSummaryFromStatuses();
+        });
+    }
+
+    private void ApplyValidationOutcome(EvidenceImage panel, PanelValidationOutcome outcome)
+    {
+        panel.ValidationStatus = outcome.IsSuccessful ? "success" : "failed";
+        if (outcome.ValidatedBytes is { Length: > 0 })
+        {
+            panel.Bytes = outcome.ValidatedBytes;
+            panel.Base64 = Convert.ToBase64String(outcome.ValidatedBytes);
+            panel.FileName = AppendValidatedSuffix(panel.FileName ?? $"{panel.Label}.jpg");
+        }
+    }
 
         UpdatePanelValidationSummaryFromStatuses();
 
