@@ -78,10 +78,34 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
     [ObservableProperty] private string panelValidationSummary = "Pendiente de validación de fotos.";
     [ObservableProperty] private string panelValidationSummaryColor = "#5E6678";
-    [ObservableProperty] private string panel1StatusText = "Foto 1 pendiente";
-    [ObservableProperty] private string panel1StatusColor = "#5E6678";
-    [ObservableProperty] private string panel2StatusText = "Foto 2 pendiente";
-    [ObservableProperty] private string panel2StatusColor = "#5E6678";
+
+    private string panel1StatusText = "Foto 1 pendiente";
+    public string Panel1StatusText
+    {
+        get => panel1StatusText;
+        set => SetProperty(ref panel1StatusText, value);
+    }
+
+    private string panel1StatusColor = "#5E6678";
+    public string Panel1StatusColor
+    {
+        get => panel1StatusColor;
+        set => SetProperty(ref panel1StatusColor, value);
+    }
+
+    private string panel2StatusText = "Foto 2 pendiente";
+    public string Panel2StatusText
+    {
+        get => panel2StatusText;
+        set => SetProperty(ref panel2StatusText, value);
+    }
+
+    private string panel2StatusColor = "#5E6678";
+    public string Panel2StatusColor
+    {
+        get => panel2StatusColor;
+        set => SetProperty(ref panel2StatusColor, value);
+    }
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
