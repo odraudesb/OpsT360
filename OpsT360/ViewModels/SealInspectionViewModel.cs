@@ -74,6 +74,8 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string seal3Placeholder = "Seal #3";
     [ObservableProperty] private string seal4Placeholder = "Seal #4";
     [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
+    [ObservableProperty] private string panelValidationSummary = "Pendiente de validación de fotos.";
+    [ObservableProperty] private string panelValidationSummaryColor = "#5E6678";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -399,6 +401,8 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
         StatusText = "Waiting for seal #1 read.";
+        PanelValidationSummary = "Pendiente de validación de fotos.";
+        PanelValidationSummaryColor = "#5E6678";
 
         OnPropertyChanged(nameof(CanUploadImages));
         OnPropertyChanged(nameof(CanSend));
@@ -672,6 +676,24 @@ public partial class SealInspectionViewModel : ObservableObject
             StatusText = failedPanels.Count == 0
                 ? $"Validación de fotos completada en {totalElapsed:0.0}s."
                 : $"Validación completada en {totalElapsed:0.0}s. Fallaron: {string.Join(", ", failedPanels)}.";
+
+            var firstPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[0].Label);
+            var secondPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[1].Label);
+            var firstStatus = firstPanel is null ? "⏸" : firstPanel.IsSuccessful ? "✅" : "❌";
+            var secondStatus = secondPanel is null ? "⏸" : secondPanel.IsSuccessful ? "✅" : "❌";
+            var successCount = outcomes.Count(o => o.IsSuccessful);
+            PanelValidationSummary = $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
+            PanelValidationSummaryColor = successCount switch
+            {
+                2 => "#166534",
+                0 => "#991B1B",
+                _ => "#1D4ED8"
+            };
+        }
+        else
+        {
+            PanelValidationSummary = "No hay fotos para validar.";
+            PanelValidationSummaryColor = "#991B1B";
         }
 
         return failedPanels;

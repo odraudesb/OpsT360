@@ -33,7 +33,7 @@
                    VerticalOptions="Center" />
         </Grid>
 
-        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
+        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
 
             <Border Grid.Row="0" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 18" Padding="12,2">
                 <Entry Placeholder="{Binding ContainerPlaceholder}"
@@ -163,7 +163,15 @@
                 </Border>
             </Grid>
 
-            <Button Grid.Row="4"
+            <Border Grid.Row="4" Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
+                <Label Text="{Binding PanelValidationSummary}"
+                       TextColor="{Binding PanelValidationSummaryColor}"
+                       FontSize="12"
+                       HorizontalTextAlignment="Center"
+                       LineBreakMode="TailTruncation" />
+            </Border>
+
+            <Button Grid.Row="5"
                     Text="{Binding ReadSealsButtonText}"
                     HeightRequest="38"
                     CornerRadius="20"
@@ -172,7 +180,7 @@
                     TextColor="White"
                     Clicked="OnReadNextSealClicked" />
 
-            <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
+            <Grid Grid.Row="6" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
                     <Entry x:Name="SealEntry1" Placeholder="{Binding Seal1Placeholder}" Text="{Binding Seals[0].Code}" IsReadOnly="True" IsEnabled="False" BackgroundColor="Transparent" HeightRequest="38" TextColor="#596274" />
                 </Border>
@@ -187,7 +195,7 @@
                 </Border>
             </Grid>
 
-            <Grid Grid.Row="6" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+            <Grid Grid.Row="7" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                 <Button Grid.Row="0"
                         Text="{Binding ContainerPhotoButtonText}"
                         FontAttributes="Bold"
