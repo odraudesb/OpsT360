@@ -655,16 +655,12 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         // Importante: no revalidar en OK. Solo usar estado ya calculado en background.
         var failedPanels = new List<string>();
-        var panelTasks = new List<Task<PanelValidationOutcome>>();
-        var pendingLabels = new List<string>();
+        var panels = SealImages.Take(2).ToList();
 
-        var runningTasks = _panelValidationTasks.Values.Where(t => !t.IsCompleted).ToList();
-        if (runningTasks.Count > 0)
-            await Task.WhenAll(runningTasks);
-
-        foreach (var panel in SealImages.Take(2))
+        foreach (var panel in panels)
         {
-            if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
+            var missingImage = string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName);
+            if (missingImage)
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
@@ -677,24 +673,13 @@ public partial class SealInspectionViewModel : ObservableObject
                 continue;
             }
 
-            if (panel.ValidationStatus == "pending")
-            {
-                failedPanels.Add(panel.Label);
-                StatusText = _languageState.IsEnglish
-                    ? $"Panel {panel.Label} is still validating. Send uses current status without re-validating."
-                    : $"El panel {panel.Label} aún está validando. El envío usa el estado actual sin revalidar.";
-            }
+            if (panel.ValidationStatus != "pending")
+                continue;
 
-            var totalElapsed = outcomes.MaxBy(o => o.Elapsed)?.Elapsed ?? 0d;
-            StatusText = failedPanels.Count == 0
-                ? $"Validación de fotos completada en {totalElapsed:0.0}s."
-                : $"Validación completada en {totalElapsed:0.0}s. Fallaron: {string.Join(", ", failedPanels)}.";
-
-            UpdatePanelValidationSummaryFromStatuses();
-        }
-        else
-        {
-            UpdatePanelValidationSummaryFromStatuses();
+            failedPanels.Add(panel.Label);
+            StatusText = _languageState.IsEnglish
+                ? $"Panel {panel.Label} is still validating. Send uses current status without re-validating."
+                : $"El panel {panel.Label} aún está validando. El envío usa el estado actual sin revalidar.";
         }
 
         UpdatePanelValidationSummaryFromStatuses();
