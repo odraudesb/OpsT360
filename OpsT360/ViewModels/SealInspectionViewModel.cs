@@ -438,18 +438,22 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Take seal photo");
+            result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take seal photo" : "Tomar foto del panel");
         }
         catch (Exception ex)
         {
             StatusText = $"Could not open camera/files: {ex.Message}";
-            await ShowErrorAlertAsync("Photo load error", StatusText);
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
+                StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Upload canceled", "No photo selected for this panel.");
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Upload canceled" : "Carga cancelada",
+                _languageState.IsEnglish ? "No photo selected for this panel." : "No se seleccionó foto para este panel.");
             return;
         }
 
@@ -476,18 +480,22 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Take container photo");
+            result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take container photo" : "Tomar foto del contenedor");
         }
         catch (Exception ex)
         {
             StatusText = $"Could not open camera/files: {ex.Message}";
-            await ShowErrorAlertAsync("Photo load error", StatusText);
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
+                StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Upload canceled", "No container photo selected.");
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Upload canceled" : "Carga cancelada",
+                _languageState.IsEnglish ? "No container photo selected." : "No se seleccionó foto del contenedor.");
             return;
         }
 
@@ -614,11 +622,28 @@ public partial class SealInspectionViewModel : ObservableObject
                     : "Transaction sent successfully."
                 : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
 
-            await Application.Current!.MainPage!.DisplayAlert(sent ? "Sent" : "Error", message, "OK");
+            if (!_languageState.IsEnglish)
+            {
+                message = sent
+                    ? hasFailures
+                        ? $"Transacción enviada. Alertas de validación: {string.Join(", ", failedPanels)}. " +
+                          $"Alerta historial: {(sentFailureEvent ? "OK" : "ERROR")} | Alerta correo: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "OMITIDO")}."
+                        : "Transacción enviada correctamente."
+                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
+            }
+
+            await Application.Current!.MainPage!.DisplayAlert(
+                sent ? (_languageState.IsEnglish ? "Sent" : "Enviado") : (_languageState.IsEnglish ? "Error" : "Error"),
+                message,
+                "OK");
         }
         catch (Exception ex)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Error", $"Error sending transaction: {ex.Message}", "OK");
+            var title = _languageState.IsEnglish ? "Error" : "Error";
+            var body = _languageState.IsEnglish
+                ? $"Error sending transaction: {ex.Message}"
+                : $"Error al enviar transacción: {ex.Message}";
+            await Application.Current!.MainPage!.DisplayAlert(title, body, "OK");
         }
         finally
         {
@@ -626,7 +651,7 @@ public partial class SealInspectionViewModel : ObservableObject
         }
     }
 
-    private async Task<List<string>> ValidateAccessPanelsAsync()
+    private Task<List<string>> ValidateAccessPanelsAsync()
     {
         var failedPanels = new List<string>();
         var panelTasks = new List<Task<PanelValidationOutcome>>();
@@ -645,45 +670,18 @@ public partial class SealInspectionViewModel : ObservableObject
                 continue;
             }
 
-            if (panel.ValidationStatus is "success" or "failed")
+            if (panel.ValidationStatus == "failed")
             {
-                if (panel.ValidationStatus == "failed")
-                {
-                    panel.ValidationStatus = "pending";
-                    pendingLabels.Add(panel.Label);
-                    panelTasks.Add(ValidatePanelAsync(panel.Label, panel.Base64!, panel.FileName!));
-                }
+                failedPanels.Add(panel.Label);
                 continue;
             }
 
-            panel.ValidationStatus = "pending";
-            pendingLabels.Add(panel.Label);
-            panelTasks.Add(ValidatePanelAsync(panel.Label, panel.Base64!, panel.FileName!));
-        }
-
-        if (panelTasks.Count > 0)
-        {
-            var validationTask = Task.WhenAll(panelTasks);
-            var elapsedSeconds = 0;
-            while (!validationTask.IsCompleted)
+            if (panel.ValidationStatus == "pending")
             {
-                var panelsText = string.Join(" y ", pendingLabels);
-                StatusText = $"Validando {panelsText}... ⏱️ {elapsedSeconds}s / {PhotoValidationSoftTimeout.TotalSeconds:0}s";
-                await Task.WhenAny(validationTask, Task.Delay(1000));
-                elapsedSeconds++;
-            }
-
-            var outcomes = await validationTask;
-            foreach (var outcome in outcomes)
-            {
-                var targetPanel = SealImages.FirstOrDefault(p => p.Label == outcome.PanelLabel);
-                if (targetPanel is null)
-                    continue;
-
-                ApplyValidationOutcome(targetPanel, outcome);
-
-                if (!outcome.IsSuccessful)
-                    failedPanels.Add(outcome.PanelLabel);
+                failedPanels.Add(panel.Label);
+                StatusText = _languageState.IsEnglish
+                    ? $"Panel {panel.Label} is still validating. Send uses current status without re-validating."
+                    : $"El panel {panel.Label} aún está validando. El envío usa el estado actual sin revalidar.";
             }
 
             var totalElapsed = outcomes.MaxBy(o => o.Elapsed)?.Elapsed ?? 0d;
@@ -698,7 +696,9 @@ public partial class SealInspectionViewModel : ObservableObject
             UpdatePanelValidationSummaryFromStatuses();
         }
 
-        return failedPanels;
+        UpdatePanelValidationSummaryFromStatuses();
+
+        return Task.FromResult(failedPanels);
     }
 
     private void QueuePanelValidation(EvidenceImage panel)

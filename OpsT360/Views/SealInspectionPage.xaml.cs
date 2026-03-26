@@ -101,6 +101,94 @@ public partial class SealInspectionPage : ContentPage
 
     private async Task ShowPreviewModalAsync(string title, ImageSource source)
     {
+        var previewImage = new Image
+        {
+            Source = source,
+            Aspect = Aspect.AspectFit,
+            HeightRequest = 560
+        };
+
+        var currentScale = 1d;
+        var startScale = 1d;
+        var xOffset = 0d;
+        var yOffset = 0d;
+        var panStartX = 0d;
+        var panStartY = 0d;
+
+        var pinchGesture = new PinchGestureRecognizer();
+        pinchGesture.PinchUpdated += (_, e) =>
+        {
+            if (e.Status == GestureStatus.Started)
+            {
+                startScale = previewImage.Scale;
+                previewImage.AnchorX = 0;
+                previewImage.AnchorY = 0;
+                return;
+            }
+
+            if (e.Status != GestureStatus.Running)
+                return;
+
+            currentScale = Math.Max(1, startScale * e.Scale);
+            var renderedX = previewImage.X + xOffset;
+            var deltaX = renderedX / Width;
+            var deltaWidth = Width / (previewImage.Width * startScale);
+            var originX = (e.ScaleOrigin.X - deltaX) * deltaWidth;
+
+            var renderedY = previewImage.Y + yOffset;
+            var deltaY = renderedY / Height;
+            var deltaHeight = Height / (previewImage.Height * startScale);
+            var originY = (e.ScaleOrigin.Y - deltaY) * deltaHeight;
+
+            var targetX = xOffset - (originX * previewImage.Width) * (currentScale - startScale);
+            var targetY = yOffset - (originY * previewImage.Height) * (currentScale - startScale);
+
+            previewImage.TranslationX = Math.Clamp(targetX, -previewImage.Width * (currentScale - 1), 0);
+            previewImage.TranslationY = Math.Clamp(targetY, -previewImage.Height * (currentScale - 1), 0);
+            previewImage.Scale = currentScale;
+        };
+        previewImage.GestureRecognizers.Add(pinchGesture);
+
+        var panGesture = new PanGestureRecognizer();
+        panGesture.PanUpdated += (_, e) =>
+        {
+            if (previewImage.Scale <= 1)
+                return;
+
+            if (e.StatusType == GestureStatus.Started)
+            {
+                panStartX = previewImage.TranslationX;
+                panStartY = previewImage.TranslationY;
+                return;
+            }
+
+            if (e.StatusType != GestureStatus.Running)
+                return;
+
+            var maxX = 0d;
+            var minX = -previewImage.Width * (previewImage.Scale - 1);
+            var maxY = 0d;
+            var minY = -previewImage.Height * (previewImage.Scale - 1);
+
+            previewImage.TranslationX = Math.Clamp(panStartX + e.TotalX, minX, maxX);
+            previewImage.TranslationY = Math.Clamp(panStartY + e.TotalY, minY, maxY);
+            xOffset = previewImage.TranslationX;
+            yOffset = previewImage.TranslationY;
+        };
+        previewImage.GestureRecognizers.Add(panGesture);
+
+        var resetGesture = new TapGestureRecognizer { NumberOfTapsRequired = 2 };
+        resetGesture.Tapped += (_, _) =>
+        {
+            currentScale = 1;
+            startScale = 1;
+            xOffset = 0;
+            yOffset = 0;
+            previewImage.ScaleTo(1, 120);
+            previewImage.TranslateTo(0, 0, 120);
+        };
+        previewImage.GestureRecognizers.Add(resetGesture);
+
         var closeButton = new Label
         {
             Text = "✕",
@@ -147,12 +235,7 @@ public partial class SealInspectionPage : ContentPage
                                         closeButton
                                     }
                                 },
-                                new Image
-                                {
-                                    Source = source,
-                                    Aspect = Aspect.AspectFit,
-                                    HeightRequest = 560
-                                }
+                                previewImage
                             }
                         }
                     }
