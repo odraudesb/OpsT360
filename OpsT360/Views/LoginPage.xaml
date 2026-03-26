@@ -58,14 +58,13 @@
                            IsTextPredictionEnabled="False"
                            IsSpellCheckEnabled="False" />
 
-                    <Button Grid.Column="1"
-                            Text="{Binding PasswordToggleGlyph}"
-                            Command="{Binding TogglePasswordVisibilityCommand}"
-                            BackgroundColor="Transparent"
-                            TextColor="#6D7785"
-                            WidthRequest="44"
-                            HeightRequest="36"
-                            Padding="0" />
+                    <ImageButton Grid.Column="1"
+                                 Source="{Binding PasswordToggleIcon}"
+                                 Command="{Binding TogglePasswordVisibilityCommand}"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="44"
+                                 HeightRequest="36"
+                                 Padding="0" />
                 </Grid>
             </Border>
 
