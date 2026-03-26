@@ -684,6 +684,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
     private Task<List<string>> ValidateAccessPanelsAsync()
     {
+        // Importante: no revalidar en OK. Solo usar estado ya calculado en background.
         var failedPanels = new List<string>();
         var panels = SealImages.Take(2).ToList();
 
