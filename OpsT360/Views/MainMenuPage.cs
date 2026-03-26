@@ -257,8 +257,8 @@ public sealed class MainMenuPage : FlyoutPage
                 }
             }
         };
-        Grid.SetRow(label, 0);
-        Grid.SetRow(row.Children[1], 1);
+        row.SetRow(label, 0);
+        row.SetRow(row.Children[1], 1);
 
         row.GestureRecognizers.Add(new TapGestureRecognizer
         {
