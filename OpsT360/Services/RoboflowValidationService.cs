@@ -31,10 +31,10 @@ public sealed class RoboflowValidationService
             return new RoboflowValidationResult(false, null, outputImage, Array.Empty<ValidationBox>());
         }
 
-        using var bitmap = DecodeBitmap(normalizedBaseImage) ?? DecodeBitmap(outputImage);
+        using var bitmap = DecodeBitmap(normalizedBaseImage);
         if (bitmap is null)
         {
-            return new RoboflowValidationResult(false, outputImage, outputImage, Array.Empty<ValidationBox>());
+            return new RoboflowValidationResult(false, null, outputImage, Array.Empty<ValidationBox>());
         }
 
         var validLabelBoxes = predictions
@@ -235,11 +235,7 @@ public sealed class RoboflowValidationService
         if (response is null)
             return new List<Prediction>();
 
-        var outputs = response["outputs"] as JsonArray;
-        if (outputs is null)
-            outputs = new JsonArray(response);
-
-        foreach (var output in outputs)
+        foreach (var output in EnumerateOutputs(response))
         {
             var predictionsNode = output?["predictions"];
             if (predictionsNode is JsonArray directArray)
@@ -270,11 +266,7 @@ public sealed class RoboflowValidationService
         if (response is null)
             return null;
 
-        var outputs = response["outputs"] as JsonArray;
-        if (outputs is null)
-            outputs = new JsonArray(response);
-
-        foreach (var output in outputs)
+        foreach (var output in EnumerateOutputs(response))
         {
             var imageObj = output?["output_image"];
             var value = imageObj?["value"]?.GetValue<string>();
@@ -286,6 +278,27 @@ public sealed class RoboflowValidationService
         }
 
         return null;
+    }
+
+    private static IEnumerable<JsonNode?> EnumerateOutputs(JsonNode response)
+    {
+        if (response["outputs"] is JsonArray outputsArray)
+        {
+            foreach (var item in outputsArray)
+                yield return item;
+
+            yield break;
+        }
+
+        if (response is JsonArray rootArray)
+        {
+            foreach (var item in rootArray)
+                yield return item;
+
+            yield break;
+        }
+
+        yield return response;
     }
 
     private static string? NormalizeOutputImage(string value, string? type)
