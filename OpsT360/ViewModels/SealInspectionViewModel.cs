@@ -173,6 +173,23 @@ public partial class SealInspectionViewModel : ObservableObject
         if (index < 0 || index >= Seals.Count)
             return false;
 
+        if (ForceMockSealsForMobileDemo)
+        {
+            await Task.Delay(250);
+            var mockEpc = ResolveMockSealEpc(index);
+            if (string.IsNullOrWhiteSpace(mockEpc))
+            {
+                StatusText = $"No se pudo generar sello demo para #{sealNumber}.";
+                return false;
+            }
+
+            Seals[index].Code = mockEpc;
+            StatusText = $"[DEMO] EPC simulado cargado en sello #{sealNumber}: {mockEpc}";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return true;
+        }
+
         if (IsBusy)
         {
             StatusText = "RFID read in progress. Please wait...";
@@ -224,6 +241,32 @@ public partial class SealInspectionViewModel : ObservableObject
 
     public async Task<int> TryCaptureRemainingSealsFromSdkAsync()
     {
+        if (ForceMockSealsForMobileDemo)
+        {
+            await Task.Delay(350);
+            var loaded = 0;
+            for (var i = 0; i < Seals.Count; i++)
+            {
+                if (Seals[i].IsLocked)
+                    continue;
+
+                var mockEpc = ResolveMockSealEpc(i);
+                if (string.IsNullOrWhiteSpace(mockEpc))
+                    continue;
+
+                Seals[i].Code = mockEpc;
+                ReadSeal((i + 1).ToString());
+                loaded++;
+            }
+
+            StatusText = loaded == 0
+                ? "[DEMO] No había sellos pendientes para simular."
+                : $"[DEMO] {loaded} sello(s) simulados cargados correctamente.";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return loaded;
+        }
+
         if (IsBusy)
         {
             StatusText = "RFID read in progress. Please wait...";
@@ -637,6 +680,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
     private Task<List<string>> ValidateAccessPanelsAsync()
     {
+        // Importante: no revalidar en OK. Solo usar estado ya calculado en background.
         var failedPanels = new List<string>();
         var panels = SealImages.Take(2).ToList();
 
