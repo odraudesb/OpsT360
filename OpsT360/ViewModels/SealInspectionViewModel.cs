@@ -38,7 +38,6 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
     private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan PhotoValidationHardTimeout = TimeSpan.FromSeconds(10);
     private static readonly bool ForceMockSealsForMobileDemo = true; // Temporal para pruebas sin handheld.
     private static readonly string[] MockSealEpcs =
     {
@@ -461,7 +460,9 @@ public partial class SealInspectionViewModel : ObservableObject
         image.FileName = result.FileName;
         image.Bytes = bytes;
         image.Base64 = Convert.ToBase64String(bytes);
-        image.ValidationStatus = "idle";
+        image.ValidationStatus = "pending";
+
+        await ValidateAndApplyPanelAsync(image);
 
         OnPropertyChanged(nameof(CanSend));
     }
@@ -627,7 +628,6 @@ public partial class SealInspectionViewModel : ObservableObject
         var failedPanels = new List<string>();
         var panelTasks = new List<Task<PanelValidationOutcome>>();
         var pendingLabels = new List<string>();
-        using var validationTimeoutCts = new CancellationTokenSource(PhotoValidationHardTimeout);
 
         foreach (var panel in SealImages.Take(2))
         {
@@ -638,9 +638,16 @@ public partial class SealInspectionViewModel : ObservableObject
                 continue;
             }
 
+            if (panel.ValidationStatus is "success" or "failed")
+            {
+                if (panel.ValidationStatus == "failed")
+                    failedPanels.Add(panel.Label);
+                continue;
+            }
+
             panel.ValidationStatus = "pending";
             pendingLabels.Add(panel.Label);
-            panelTasks.Add(ValidatePanelAsync(panel, validationTimeoutCts.Token));
+            panelTasks.Add(ValidatePanelAsync(panel));
         }
 
         if (panelTasks.Count > 0)
@@ -662,13 +669,7 @@ public partial class SealInspectionViewModel : ObservableObject
                 if (targetPanel is null)
                     continue;
 
-                targetPanel.ValidationStatus = outcome.IsSuccessful ? "success" : "failed";
-                if (outcome.ValidatedBytes is { Length: > 0 })
-                {
-                    targetPanel.Bytes = outcome.ValidatedBytes;
-                    targetPanel.Base64 = Convert.ToBase64String(outcome.ValidatedBytes);
-                    targetPanel.FileName = AppendValidatedSuffix(targetPanel.FileName ?? $"{targetPanel.Label}.jpg");
-                }
+                ApplyValidationOutcome(targetPanel, outcome);
 
                 if (!outcome.IsSuccessful)
                     failedPanels.Add(outcome.PanelLabel);
@@ -679,42 +680,64 @@ public partial class SealInspectionViewModel : ObservableObject
                 ? $"Validación de fotos completada en {totalElapsed:0.0}s."
                 : $"Validación completada en {totalElapsed:0.0}s. Fallaron: {string.Join(", ", failedPanels)}.";
 
-            var firstPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[0].Label);
-            var secondPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[1].Label);
-            var firstStatus = firstPanel is null ? "⏸" : firstPanel.IsSuccessful ? "✅" : "❌";
-            var secondStatus = secondPanel is null ? "⏸" : secondPanel.IsSuccessful ? "✅" : "❌";
-            var successCount = outcomes.Count(o => o.IsSuccessful);
-            PanelValidationSummary = $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
-            PanelValidationSummaryColor = successCount switch
-            {
-                2 => "#166534",
-                0 => "#991B1B",
-                _ => "#1D4ED8"
-            };
+            UpdatePanelValidationSummaryFromStatuses();
         }
         else
         {
-            PanelValidationSummary = "No hay fotos para validar.";
-            PanelValidationSummaryColor = "#991B1B";
+            UpdatePanelValidationSummaryFromStatuses();
         }
 
         return failedPanels;
     }
 
-    private async Task<PanelValidationOutcome> ValidatePanelAsync(EvidenceImage panel, CancellationToken cancellationToken)
+    private async Task ValidateAndApplyPanelAsync(EvidenceImage panel)
+    {
+        var outcome = await ValidatePanelAsync(panel);
+        ApplyValidationOutcome(panel, outcome);
+        UpdatePanelValidationSummaryFromStatuses();
+    }
+
+    private void ApplyValidationOutcome(EvidenceImage panel, PanelValidationOutcome outcome)
+    {
+        panel.ValidationStatus = outcome.IsSuccessful ? "success" : "failed";
+        if (outcome.ValidatedBytes is { Length: > 0 })
+        {
+            panel.Bytes = outcome.ValidatedBytes;
+            panel.Base64 = Convert.ToBase64String(outcome.ValidatedBytes);
+            panel.FileName = AppendValidatedSuffix(panel.FileName ?? $"{panel.Label}.jpg");
+        }
+    }
+
+    private void UpdatePanelValidationSummaryFromStatuses()
+    {
+        var panel1Status = SealImages[0].ValidationStatus;
+        var panel2Status = SealImages[1].ValidationStatus;
+        var firstStatus = panel1Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
+        var secondStatus = panel2Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
+        var successCount = (panel1Status == "success" ? 1 : 0) + (panel2Status == "success" ? 1 : 0);
+        PanelValidationSummary = $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
+        PanelValidationSummaryColor = successCount switch
+        {
+            2 => "#166534",
+            0 when panel1Status == "failed" && panel2Status == "failed" => "#991B1B",
+            _ => "#1D4ED8"
+        };
+    }
+
+    private async Task<PanelValidationOutcome> ValidatePanelAsync(EvidenceImage panel)
     {
         var sw = Stopwatch.StartNew();
         try
         {
-            var validationTask = _transactionsService.ValidatePhotoAsync(panel.Base64!, panel.FileName!, cancellationToken);
-            var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout, cancellationToken);
+            var validationTask = _transactionsService.ValidatePhotoAsync(panel.Base64!, panel.FileName!);
+            var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout);
             var firstCompleted = await Task.WhenAny(validationTask, softTimeoutTask);
             if (firstCompleted != validationTask)
             {
                 StatusText = $"La validación de {panel.Label} sigue procesando en servidor, esperando respuesta final...";
             }
 
-            var result = await validationTask.WaitAsync(PhotoValidationHardTimeout, cancellationToken);
+            var result = await validationTask;
 
             byte[]? validatedBytes = null;
             var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
@@ -722,16 +745,6 @@ public partial class SealInspectionViewModel : ObservableObject
                 validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
 
             return new PanelValidationOutcome(panel.Label, result.IsSuccessful, sw.Elapsed.TotalSeconds, validatedBytes);
-        }
-        catch (OperationCanceledException)
-        {
-            StatusText = $"Tiempo máximo alcanzado validando {panel.Label} ({PhotoValidationHardTimeout.TotalSeconds:0}s).";
-            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
-        }
-        catch (TimeoutException)
-        {
-            StatusText = $"Timeout final validando {panel.Label} ({PhotoValidationHardTimeout.TotalSeconds:0}s).";
-            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
         }
         catch (Exception ex)
         {
