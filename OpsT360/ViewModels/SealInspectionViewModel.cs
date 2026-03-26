@@ -37,7 +37,8 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
-    private static readonly TimeSpan PhotoValidationTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PhotoValidationHardTimeout = TimeSpan.FromSeconds(20);
     private static readonly bool ForceMockSealsForMobileDemo = true; // Temporal para pruebas sin handheld.
     private static readonly string[] MockSealEpcs =
     {
@@ -648,7 +649,7 @@ public partial class SealInspectionViewModel : ObservableObject
             while (!validationTask.IsCompleted)
             {
                 var panelsText = string.Join(" y ", pendingLabels);
-                StatusText = $"Validando {panelsText}... ⏱️ {elapsedSeconds}s / {PhotoValidationTimeout.TotalSeconds:0}s";
+                StatusText = $"Validando {panelsText}... ⏱️ {elapsedSeconds}s / {PhotoValidationSoftTimeout.TotalSeconds:0}s";
                 await Task.WhenAny(validationTask, Task.Delay(1000));
                 elapsedSeconds++;
             }
@@ -704,9 +705,15 @@ public partial class SealInspectionViewModel : ObservableObject
         var sw = Stopwatch.StartNew();
         try
         {
-            var result = await _transactionsService
-                .ValidatePhotoAsync(panel.Base64!, panel.FileName!)
-                .WaitAsync(PhotoValidationTimeout);
+            var validationTask = _transactionsService.ValidatePhotoAsync(panel.Base64!, panel.FileName!);
+            var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout);
+            var firstCompleted = await Task.WhenAny(validationTask, softTimeoutTask);
+            if (firstCompleted != validationTask)
+            {
+                StatusText = $"La validación de {panel.Label} sigue procesando en servidor, esperando respuesta final...";
+            }
+
+            var result = await validationTask.WaitAsync(PhotoValidationHardTimeout);
 
             byte[]? validatedBytes = null;
             var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
@@ -717,6 +724,7 @@ public partial class SealInspectionViewModel : ObservableObject
         }
         catch (TimeoutException)
         {
+            StatusText = $"Timeout final validando {panel.Label} ({PhotoValidationHardTimeout.TotalSeconds:0}s).";
             return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
         }
         catch (Exception ex)
