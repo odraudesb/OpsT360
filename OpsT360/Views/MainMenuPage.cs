@@ -234,12 +234,13 @@ public sealed class MainMenuPage : FlyoutPage
             VerticalTextAlignment = TextAlignment.Center,
             FontSize = 15,
             FontAttributes = FontAttributes.Bold,
-            Padding = new Thickness(4, 0)
+            Padding = new Thickness(0),
+            Margin = new Thickness(14, 12, 14, 10)
         };
 
         var row = new Grid
         {
-            Padding = new Thickness(14, 12, 14, 10),
+            Padding = new Thickness(0),
             BackgroundColor = Colors.Transparent,
             RowDefinitions =
             {
