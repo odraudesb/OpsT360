@@ -83,7 +83,7 @@ public class LoginViewModel : INotifyPropertyChanged
         set
         {
             if (SetProperty(ref _isPasswordHidden, value))
-                OnPropertyChanged(nameof(PasswordToggleGlyph));
+                OnPropertyChanged(nameof(PasswordToggleIcon));
         }
     }
 
@@ -101,8 +101,8 @@ public class LoginViewModel : INotifyPropertyChanged
     public Color SignInButtonColor =>
         CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
 
-    public string PasswordToggleGlyph =>
-        IsPasswordHidden ? "👁" : "🙈";
+    public string PasswordToggleIcon =>
+        IsPasswordHidden ? "eye-off-gray.svg" : "eye-gray.svg";
 
     public LoginViewModel(
         ILoginService loginService,
