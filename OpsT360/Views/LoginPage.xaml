@@ -35,7 +35,7 @@
                     WidthRequest="300">
                 <Entry Placeholder="Email"
                        Text="{Binding Username}"
-                       BackgroundColor="Transparent"
+                       BackgroundColor="#E8E8E8"
                        TextColor="#30343B"
                        PlaceholderColor="#9AA4B1"
                        IsTextPredictionEnabled="False"
@@ -52,7 +52,7 @@
                     <Entry Placeholder="Password"
                            IsPassword="{Binding IsPasswordHidden}"
                            Text="{Binding Password}"
-                           BackgroundColor="Transparent"
+                           BackgroundColor="#E8E8E8"
                            TextColor="#30343B"
                            PlaceholderColor="#9AA4B1"
                            IsTextPredictionEnabled="False"
@@ -62,8 +62,9 @@
                                  Source="{Binding PasswordToggleIcon}"
                                  Command="{Binding TogglePasswordVisibilityCommand}"
                                  BackgroundColor="Transparent"
-                                 WidthRequest="44"
-                                 HeightRequest="36"
+                                 WidthRequest="22"
+                                 HeightRequest="18"
+                                 Aspect="AspectFit"
                                  Padding="0" />
                 </Grid>
             </Border>
