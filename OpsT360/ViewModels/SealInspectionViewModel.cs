@@ -15,6 +15,8 @@ public partial class SealInspectionViewModel : ObservableObject
     private readonly ITransactionsService _transactionsService;
     private readonly IRfidScannerService _rfidScannerService;
     private readonly IAppLanguageState _languageState;
+    private readonly Dictionary<string, Task> _panelValidationTasks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _panelValidationTokens = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly Dictionary<string, ContainerProfile> _profiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -462,7 +464,8 @@ public partial class SealInspectionViewModel : ObservableObject
         image.Base64 = Convert.ToBase64String(bytes);
         image.ValidationStatus = "pending";
 
-        await ValidateAndApplyPanelAsync(image);
+        QueuePanelValidation(image);
+        UpdatePanelValidationSummaryFromStatuses();
 
         OnPropertyChanged(nameof(CanSend));
     }
@@ -629,6 +632,10 @@ public partial class SealInspectionViewModel : ObservableObject
         var panelTasks = new List<Task<PanelValidationOutcome>>();
         var pendingLabels = new List<string>();
 
+        var runningTasks = _panelValidationTasks.Values.Where(t => !t.IsCompleted).ToList();
+        if (runningTasks.Count > 0)
+            await Task.WhenAll(runningTasks);
+
         foreach (var panel in SealImages.Take(2))
         {
             if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
@@ -641,13 +648,17 @@ public partial class SealInspectionViewModel : ObservableObject
             if (panel.ValidationStatus is "success" or "failed")
             {
                 if (panel.ValidationStatus == "failed")
-                    failedPanels.Add(panel.Label);
+                {
+                    panel.ValidationStatus = "pending";
+                    pendingLabels.Add(panel.Label);
+                    panelTasks.Add(ValidatePanelAsync(panel.Label, panel.Base64!, panel.FileName!));
+                }
                 continue;
             }
 
             panel.ValidationStatus = "pending";
             pendingLabels.Add(panel.Label);
-            panelTasks.Add(ValidatePanelAsync(panel));
+            panelTasks.Add(ValidatePanelAsync(panel.Label, panel.Base64!, panel.FileName!));
         }
 
         if (panelTasks.Count > 0)
@@ -690,11 +701,36 @@ public partial class SealInspectionViewModel : ObservableObject
         return failedPanels;
     }
 
-    private async Task ValidateAndApplyPanelAsync(EvidenceImage panel)
+    private void QueuePanelValidation(EvidenceImage panel)
     {
-        var outcome = await ValidatePanelAsync(panel);
-        ApplyValidationOutcome(panel, outcome);
-        UpdatePanelValidationSummaryFromStatuses();
+        if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
+            return;
+
+        var token = Guid.NewGuid().ToString("N");
+        _panelValidationTokens[panel.Label] = token;
+        var panelLabel = panel.Label;
+        var base64Snapshot = panel.Base64;
+        var fileNameSnapshot = panel.FileName;
+
+        var task = ValidatePanelInBackgroundAsync(panelLabel, base64Snapshot!, fileNameSnapshot!, token);
+        _panelValidationTasks[panelLabel] = task;
+    }
+
+    private async Task ValidatePanelInBackgroundAsync(string panelLabel, string base64, string fileName, string token)
+    {
+        var outcome = await ValidatePanelAsync(panelLabel, base64, fileName);
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            if (!_panelValidationTokens.TryGetValue(panelLabel, out var currentToken) || currentToken != token)
+                return;
+
+            var panel = SealImages.FirstOrDefault(p => p.Label == panelLabel);
+            if (panel is null)
+                return;
+
+            ApplyValidationOutcome(panel, outcome);
+            UpdatePanelValidationSummaryFromStatuses();
+        });
     }
 
     private void ApplyValidationOutcome(EvidenceImage panel, PanelValidationOutcome outcome)
@@ -724,17 +760,17 @@ public partial class SealInspectionViewModel : ObservableObject
         };
     }
 
-    private async Task<PanelValidationOutcome> ValidatePanelAsync(EvidenceImage panel)
+    private async Task<PanelValidationOutcome> ValidatePanelAsync(string panelLabel, string base64, string fileName)
     {
         var sw = Stopwatch.StartNew();
         try
         {
-            var validationTask = _transactionsService.ValidatePhotoAsync(panel.Base64!, panel.FileName!);
+            var validationTask = _transactionsService.ValidatePhotoAsync(base64, fileName);
             var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout);
             var firstCompleted = await Task.WhenAny(validationTask, softTimeoutTask);
             if (firstCompleted != validationTask)
             {
-                StatusText = $"La validación de {panel.Label} sigue procesando en servidor, esperando respuesta final...";
+                StatusText = $"La validación de {panelLabel} sigue procesando en servidor, esperando respuesta final...";
             }
 
             var result = await validationTask;
@@ -744,12 +780,12 @@ public partial class SealInspectionViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(validatedSource))
                 validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
 
-            return new PanelValidationOutcome(panel.Label, result.IsSuccessful, sw.Elapsed.TotalSeconds, validatedBytes);
+            return new PanelValidationOutcome(panelLabel, result.IsSuccessful, sw.Elapsed.TotalSeconds, validatedBytes);
         }
         catch (Exception ex)
         {
-            StatusText = $"Validation error on {panel.Label}: {ex.Message}";
-            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
+            StatusText = $"Validation error on {panelLabel}: {ex.Message}";
+            return new PanelValidationOutcome(panelLabel, false, sw.Elapsed.TotalSeconds, null);
         }
     }
 
@@ -816,6 +852,8 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         var extension = Path.GetExtension(fileName);
         var name = Path.GetFileNameWithoutExtension(fileName);
+        if (name.EndsWith("-validated", StringComparison.OrdinalIgnoreCase))
+            return $"{name}{(string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension)}";
         extension = string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension;
         return $"{name}-validated{extension}";
     }
