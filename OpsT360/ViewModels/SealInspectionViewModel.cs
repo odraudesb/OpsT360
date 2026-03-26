@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -36,6 +37,16 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
+    private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PhotoValidationHardTimeout = TimeSpan.FromSeconds(10);
+    private static readonly bool ForceMockSealsForMobileDemo = true; // Temporal para pruebas sin handheld.
+    private static readonly string[] MockSealEpcs =
+    {
+        "E2000017221101441890AA01",
+        "E2000017221101441890AA02",
+        "E2000017221101441890AA03",
+        "E2000017221101441890AA04"
+    };
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
@@ -64,6 +75,8 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string seal3Placeholder = "Seal #3";
     [ObservableProperty] private string seal4Placeholder = "Seal #4";
     [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
+    [ObservableProperty] private string panelValidationSummary = "Pendiente de validación de fotos.";
+    [ObservableProperty] private string panelValidationSummaryColor = "#5E6678";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -132,6 +145,23 @@ public partial class SealInspectionViewModel : ObservableObject
         if (index < 0 || index >= Seals.Count)
             return false;
 
+        if (ForceMockSealsForMobileDemo)
+        {
+            await Task.Delay(250);
+            var mockEpc = ResolveMockSealEpc(index);
+            if (string.IsNullOrWhiteSpace(mockEpc))
+            {
+                StatusText = $"No se pudo generar sello demo para #{sealNumber}.";
+                return false;
+            }
+
+            Seals[index].Code = mockEpc;
+            StatusText = $"[DEMO] EPC simulado cargado en sello #{sealNumber}: {mockEpc}";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return true;
+        }
+
         if (IsBusy)
         {
             StatusText = "RFID read in progress. Please wait...";
@@ -183,6 +213,32 @@ public partial class SealInspectionViewModel : ObservableObject
 
     public async Task<int> TryCaptureRemainingSealsFromSdkAsync()
     {
+        if (ForceMockSealsForMobileDemo)
+        {
+            await Task.Delay(350);
+            var loaded = 0;
+            for (var i = 0; i < Seals.Count; i++)
+            {
+                if (Seals[i].IsLocked)
+                    continue;
+
+                var mockEpc = ResolveMockSealEpc(i);
+                if (string.IsNullOrWhiteSpace(mockEpc))
+                    continue;
+
+                Seals[i].Code = mockEpc;
+                ReadSeal((i + 1).ToString());
+                loaded++;
+            }
+
+            StatusText = loaded == 0
+                ? "[DEMO] No había sellos pendientes para simular."
+                : $"[DEMO] {loaded} sello(s) simulados cargados correctamente.";
+            OnPropertyChanged(nameof(CanUploadImages));
+            OnPropertyChanged(nameof(CanSend));
+            return loaded;
+        }
+
         if (IsBusy)
         {
             StatusText = "RFID read in progress. Please wait...";
@@ -346,6 +402,8 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
         StatusText = "Waiting for seal #1 read.";
+        PanelValidationSummary = "Pendiente de validación de fotos.";
+        PanelValidationSummaryColor = "#5E6678";
 
         OnPropertyChanged(nameof(CanUploadImages));
         OnPropertyChanged(nameof(CanSend));
@@ -567,6 +625,9 @@ public partial class SealInspectionViewModel : ObservableObject
     private async Task<List<string>> ValidateAccessPanelsAsync()
     {
         var failedPanels = new List<string>();
+        var panelTasks = new List<Task<PanelValidationOutcome>>();
+        var pendingLabels = new List<string>();
+        using var validationTimeoutCts = new CancellationTokenSource(PhotoValidationHardTimeout);
 
         foreach (var panel in SealImages.Take(2))
         {
@@ -578,38 +639,108 @@ public partial class SealInspectionViewModel : ObservableObject
             }
 
             panel.ValidationStatus = "pending";
-            try
-            {
-                var result = await _transactionsService.ValidatePhotoAsync(panel.Base64, panel.FileName);
+            pendingLabels.Add(panel.Label);
+            panelTasks.Add(ValidatePanelAsync(panel, validationTimeoutCts.Token));
+        }
 
-                var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
-                if (!string.IsNullOrWhiteSpace(validatedSource))
+        if (panelTasks.Count > 0)
+        {
+            var validationTask = Task.WhenAll(panelTasks);
+            var elapsedSeconds = 0;
+            while (!validationTask.IsCompleted)
+            {
+                var panelsText = string.Join(" y ", pendingLabels);
+                StatusText = $"Validando {panelsText}... ⏱️ {elapsedSeconds}s / {PhotoValidationSoftTimeout.TotalSeconds:0}s";
+                await Task.WhenAny(validationTask, Task.Delay(1000));
+                elapsedSeconds++;
+            }
+
+            var outcomes = await validationTask;
+            foreach (var outcome in outcomes)
+            {
+                var targetPanel = SealImages.FirstOrDefault(p => p.Label == outcome.PanelLabel);
+                if (targetPanel is null)
+                    continue;
+
+                targetPanel.ValidationStatus = outcome.IsSuccessful ? "success" : "failed";
+                if (outcome.ValidatedBytes is { Length: > 0 })
                 {
-                    var validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
-                    if (validatedBytes is { Length: > 0 })
-                    {
-                        panel.Bytes = validatedBytes;
-                        panel.Base64 = Convert.ToBase64String(validatedBytes);
-                        panel.FileName = AppendValidatedSuffix(panel.FileName);
-                    }
+                    targetPanel.Bytes = outcome.ValidatedBytes;
+                    targetPanel.Base64 = Convert.ToBase64String(outcome.ValidatedBytes);
+                    targetPanel.FileName = AppendValidatedSuffix(targetPanel.FileName ?? $"{targetPanel.Label}.jpg");
                 }
 
-                panel.ValidationStatus = result.IsSuccessful ? "success" : "failed";
-                if (!result.IsSuccessful)
-                {
-                    failedPanels.Add(panel.Label);
-                }
+                if (!outcome.IsSuccessful)
+                    failedPanels.Add(outcome.PanelLabel);
             }
-            catch (Exception ex)
+
+            var totalElapsed = outcomes.MaxBy(o => o.Elapsed)?.Elapsed ?? 0d;
+            StatusText = failedPanels.Count == 0
+                ? $"Validación de fotos completada en {totalElapsed:0.0}s."
+                : $"Validación completada en {totalElapsed:0.0}s. Fallaron: {string.Join(", ", failedPanels)}.";
+
+            var firstPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[0].Label);
+            var secondPanel = outcomes.FirstOrDefault(o => o.PanelLabel == SealImages[1].Label);
+            var firstStatus = firstPanel is null ? "⏸" : firstPanel.IsSuccessful ? "✅" : "❌";
+            var secondStatus = secondPanel is null ? "⏸" : secondPanel.IsSuccessful ? "✅" : "❌";
+            var successCount = outcomes.Count(o => o.IsSuccessful);
+            PanelValidationSummary = $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
+            PanelValidationSummaryColor = successCount switch
             {
-                panel.ValidationStatus = "failed";
-                failedPanels.Add(panel.Label);
-                StatusText = $"Validation error on {panel.Label}: {ex.Message}";
-            }
+                2 => "#166534",
+                0 => "#991B1B",
+                _ => "#1D4ED8"
+            };
+        }
+        else
+        {
+            PanelValidationSummary = "No hay fotos para validar.";
+            PanelValidationSummaryColor = "#991B1B";
         }
 
         return failedPanels;
     }
+
+    private async Task<PanelValidationOutcome> ValidatePanelAsync(EvidenceImage panel, CancellationToken cancellationToken)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var validationTask = _transactionsService.ValidatePhotoAsync(panel.Base64!, panel.FileName!, cancellationToken);
+            var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout, cancellationToken);
+            var firstCompleted = await Task.WhenAny(validationTask, softTimeoutTask);
+            if (firstCompleted != validationTask)
+            {
+                StatusText = $"La validación de {panel.Label} sigue procesando en servidor, esperando respuesta final...";
+            }
+
+            var result = await validationTask.WaitAsync(PhotoValidationHardTimeout, cancellationToken);
+
+            byte[]? validatedBytes = null;
+            var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
+            if (!string.IsNullOrWhiteSpace(validatedSource))
+                validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
+
+            return new PanelValidationOutcome(panel.Label, result.IsSuccessful, sw.Elapsed.TotalSeconds, validatedBytes);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = $"Tiempo máximo alcanzado validando {panel.Label} ({PhotoValidationHardTimeout.TotalSeconds:0}s).";
+            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
+        }
+        catch (TimeoutException)
+        {
+            StatusText = $"Timeout final validando {panel.Label} ({PhotoValidationHardTimeout.TotalSeconds:0}s).";
+            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Validation error on {panel.Label}: {ex.Message}";
+            return new PanelValidationOutcome(panel.Label, false, sw.Elapsed.TotalSeconds, null);
+        }
+    }
+
+    private sealed record PanelValidationOutcome(string PanelLabel, bool IsSuccessful, double Elapsed, byte[]? ValidatedBytes);
 
     private static async Task<byte[]?> ResolveValidatedImageBytesAsync(string value)
     {
@@ -689,6 +820,14 @@ public partial class SealInspectionViewModel : ObservableObject
         _profiles.TryGetValue(ContainerId.Trim(), out var profile)
             ? profile
             : new ContainerProfile { EntityId = 100004 };
+
+    private static string ResolveMockSealEpc(int index)
+    {
+        if (index < 0 || index >= MockSealEpcs.Length)
+            return string.Empty;
+
+        return MockSealEpcs[index];
+    }
 
     private static string? NormalizeEpc(string? value)
     {
