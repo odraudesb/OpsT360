@@ -40,6 +40,10 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
     private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
+    // Compat: keep legacy symbols so mixed local files/branches don't break compilation.
+    // Disabled permanently: real reads must come from RFID antenna.
+    private const bool ForceMockSealsForMobileDemo = false;
+    private static readonly string[] MockSealEpcs = Array.Empty<string>();
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
@@ -900,6 +904,7 @@ public partial class SealInspectionViewModel : ObservableObject
             ? profile
             : new ContainerProfile { EntityId = 100004 };
 
+    // Compat helper for older local code paths; returns empty because demo mocks are disabled.
     private static string ResolveMockSealEpc(int index)
     {
         if (index < 0 || index >= MockSealEpcs.Length)
