@@ -78,6 +78,10 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
     [ObservableProperty] private string panelValidationSummary = "Pendiente de validación de fotos.";
     [ObservableProperty] private string panelValidationSummaryColor = "#5E6678";
+    [ObservableProperty] private string panel1StatusText = "Foto 1 pendiente";
+    [ObservableProperty] private string panel1StatusColor = "#5E6678";
+    [ObservableProperty] private string panel2StatusText = "Foto 2 pendiente";
+    [ObservableProperty] private string panel2StatusColor = "#5E6678";
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -122,6 +126,7 @@ public partial class SealInspectionViewModel : ObservableObject
             StatusText = IsInspectionChangeMode
                 ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
                 : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+            UpdatePanelValidationSummaryFromStatuses();
             return;
         }
 
@@ -138,6 +143,8 @@ public partial class SealInspectionViewModel : ObservableObject
         StatusText = IsInspectionChangeMode
             ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
             : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
+
+        UpdatePanelValidationSummaryFromStatuses();
     }
 
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
@@ -736,12 +743,32 @@ public partial class SealInspectionViewModel : ObservableObject
         var firstStatus = panel1Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
         var secondStatus = panel2Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
         var successCount = (panel1Status == "success" ? 1 : 0) + (panel2Status == "success" ? 1 : 0);
-        PanelValidationSummary = $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
+        PanelValidationSummary = _languageState.IsEnglish
+            ? $"AI Result: Photo 1 {firstStatus} | Photo 2 {secondStatus} ({successCount}/2 valid)"
+            : $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
         PanelValidationSummaryColor = successCount switch
         {
             2 => "#166534",
             0 when panel1Status == "failed" && panel2Status == "failed" => "#991B1B",
             _ => "#1D4ED8"
+        };
+
+        (Panel1StatusText, Panel1StatusColor) = ResolvePanelStatusText(panel1Status, 1);
+        (Panel2StatusText, Panel2StatusColor) = ResolvePanelStatusText(panel2Status, 2);
+    }
+
+    private (string Text, string Color) ResolvePanelStatusText(string status, int panelNumber)
+    {
+        return (_languageState.IsEnglish, status) switch
+        {
+            (true, "success") => ($"Photo {panelNumber} valid", "#166534"),
+            (true, "failed") => ($"Photo {panelNumber} rejected", "#991B1B"),
+            (true, "pending") => ($"Validating photo {panelNumber}...", "#1D4ED8"),
+            (false, "success") => ($"Foto {panelNumber} válida", "#166534"),
+            (false, "failed") => ($"Foto {panelNumber} rechazada", "#991B1B"),
+            (false, "pending") => ($"Validando foto {panelNumber}...", "#1D4ED8"),
+            (true, _) => ($"Photo {panelNumber} pending", "#5E6678"),
+            _ => ($"Foto {panelNumber} pendiente", "#5E6678")
         };
     }
 

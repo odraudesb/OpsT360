@@ -106,22 +106,10 @@
                                 </DataTrigger>
                             </Label.Triggers>
                         </Label>
-                        <Label FontSize="12" TextColor="#5E6678" LineBreakMode="TailTruncation" Text="Foto 1 pendiente">
-                            <Label.Triggers>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
-                                    <Setter Property="Text" Value="Foto 1 válida" />
-                                    <Setter Property="TextColor" Value="#166534" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
-                                    <Setter Property="Text" Value="Foto 1 rechazada" />
-                                    <Setter Property="TextColor" Value="#991B1B" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
-                                    <Setter Property="Text" Value="Validando foto 1..." />
-                                    <Setter Property="TextColor" Value="#1D4ED8" />
-                                </DataTrigger>
-                            </Label.Triggers>
-                        </Label>
+                        <Label FontSize="12"
+                               LineBreakMode="TailTruncation"
+                               Text="{Binding Panel1StatusText}"
+                               TextColor="{Binding Panel1StatusColor}" />
                     </HorizontalStackLayout>
                 </Border>
 
@@ -143,22 +131,10 @@
                                 </DataTrigger>
                             </Label.Triggers>
                         </Label>
-                        <Label FontSize="12" TextColor="#5E6678" LineBreakMode="TailTruncation" Text="Foto 2 pendiente">
-                            <Label.Triggers>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
-                                    <Setter Property="Text" Value="Foto 2 válida" />
-                                    <Setter Property="TextColor" Value="#166534" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
-                                    <Setter Property="Text" Value="Foto 2 rechazada" />
-                                    <Setter Property="TextColor" Value="#991B1B" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
-                                    <Setter Property="Text" Value="Validando foto 2..." />
-                                    <Setter Property="TextColor" Value="#1D4ED8" />
-                                </DataTrigger>
-                            </Label.Triggers>
-                        </Label>
+                        <Label FontSize="12"
+                               LineBreakMode="TailTruncation"
+                               Text="{Binding Panel2StatusText}"
+                               TextColor="{Binding Panel2StatusColor}" />
                     </HorizontalStackLayout>
                 </Border>
             </Grid>

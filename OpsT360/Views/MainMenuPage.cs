@@ -233,28 +233,39 @@ public sealed class MainMenuPage : FlyoutPage
             HorizontalTextAlignment = TextAlignment.Start,
             VerticalTextAlignment = TextAlignment.Center,
             FontSize = 15,
-            FontAttributes = FontAttributes.Bold
+            FontAttributes = FontAttributes.Bold,
+            Padding = new Thickness(4, 0)
         };
 
-        var container = new Border
+        var row = new Grid
         {
-            Padding = new Thickness(14, 12),
+            Padding = new Thickness(14, 12, 14, 10),
             BackgroundColor = Colors.Transparent,
-            Stroke = Color.FromArgb("#E5E7EB"),
-            StrokeThickness = 1,
-            StrokeShape = new RoundRectangle
+            RowDefinitions =
             {
-                CornerRadius = new CornerRadius(10)
+                new RowDefinition { Height = GridLength.Auto },
+                new RowDefinition { Height = 1 }
             },
-            Content = label
+            Children =
+            {
+                label,
+                new BoxView
+                {
+                    Color = Color.FromArgb("#D7DCE6"),
+                    HeightRequest = 1,
+                    HorizontalOptions = LayoutOptions.Fill
+                }
+            }
         };
+        Grid.SetRow(label, 0);
+        Grid.SetRow(row.Children[1], 1);
 
-        container.GestureRecognizers.Add(new TapGestureRecognizer
+        row.GestureRecognizers.Add(new TapGestureRecognizer
         {
             Command = new Command(action)
         });
 
-        return container;
+        return row;
     }
 
     private static NavigationPage CreateNavigationPage(Page root)
