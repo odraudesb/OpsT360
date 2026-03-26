@@ -40,14 +40,6 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
     private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
-    private static readonly bool ForceMockSealsForMobileDemo = true; // Temporal para pruebas sin handheld.
-    private static readonly string[] MockSealEpcs =
-    {
-        "E2000017221101441890AA01",
-        "E2000017221101441890AA02",
-        "E2000017221101441890AA03",
-        "E2000017221101441890AA04"
-    };
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;

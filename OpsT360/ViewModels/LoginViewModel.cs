@@ -102,7 +102,7 @@ public class LoginViewModel : INotifyPropertyChanged
         CanLogin ? Color.FromArgb("#4357E8") : Color.FromArgb("#D8DDE5");
 
     public string PasswordToggleIcon =>
-        IsPasswordHidden ? "eye-off-gray" : "eye-gray";
+        IsPasswordHidden ? "eye_off_gray" : "eye_gray";
 
     public LoginViewModel(
         ILoginService loginService,
