@@ -28,7 +28,7 @@
                    HorizontalOptions="Center"
                    Margin="0,0,0,20" />
 
-            <Border BackgroundColor="#E8E8E8"
+            <Border BackgroundColor="#FFFFFF"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 24"
                     Padding="16,8"
@@ -42,7 +42,7 @@
                        IsSpellCheckEnabled="False" />
             </Border>
 
-            <Border BackgroundColor="#E8E8E8"
+            <Border BackgroundColor="#FFFFFF"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 24"
                     Padding="16,8"
