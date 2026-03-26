@@ -33,7 +33,7 @@
                    VerticalOptions="Center" />
         </Grid>
 
-        <Grid Grid.Row="1" Padding="14,12,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
+        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
 
             <Border Grid.Row="0" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 18" Padding="12,2">
                 <Entry Placeholder="{Binding ContainerPlaceholder}"
@@ -69,7 +69,7 @@
             </Grid>
 
             <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="135">
+                <Border BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="114">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="1" />
                     </Border.GestureRecognizers>
@@ -77,7 +77,7 @@
                            Aspect="AspectFill"
                            IsVisible="{Binding SealImages[0].HasImage}" />
                 </Border>
-                <Border Grid.Column="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="135">
+                <Border Grid.Column="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="114">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnPanelPreviewTapped" CommandParameter="2" />
                     </Border.GestureRecognizers>
@@ -87,16 +87,92 @@
                 </Border>
             </Grid>
 
-            <Button Grid.Row="3"
+            <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Border Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                        <Label FontSize="13" VerticalTextAlignment="Center" Text="⏸">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✓" />
+                                    <Setter Property="TextColor" Value="#16A34A" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="✗" />
+                                    <Setter Property="TextColor" Value="#DC2626" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳" />
+                                    <Setter Property="TextColor" Value="#2563EB" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                        <Label FontSize="12" TextColor="#5E6678" LineBreakMode="TailTruncation" Text="Foto 1 pendiente">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="Foto 1 válida" />
+                                    <Setter Property="TextColor" Value="#166534" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="Foto 1 rechazada" />
+                                    <Setter Property="TextColor" Value="#991B1B" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[0].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="Validando foto 1..." />
+                                    <Setter Property="TextColor" Value="#1D4ED8" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <Border Grid.Column="1" Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                        <Label FontSize="13" VerticalTextAlignment="Center" Text="⏸">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="✓" />
+                                    <Setter Property="TextColor" Value="#16A34A" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="✗" />
+                                    <Setter Property="TextColor" Value="#DC2626" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="⏳" />
+                                    <Setter Property="TextColor" Value="#2563EB" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                        <Label FontSize="12" TextColor="#5E6678" LineBreakMode="TailTruncation" Text="Foto 2 pendiente">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="success">
+                                    <Setter Property="Text" Value="Foto 2 válida" />
+                                    <Setter Property="TextColor" Value="#166534" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="failed">
+                                    <Setter Property="Text" Value="Foto 2 rechazada" />
+                                    <Setter Property="TextColor" Value="#991B1B" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Label" Binding="{Binding SealImages[1].ValidationStatus}" Value="pending">
+                                    <Setter Property="Text" Value="Validando foto 2..." />
+                                    <Setter Property="TextColor" Value="#1D4ED8" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </HorizontalStackLayout>
+                </Border>
+            </Grid>
+
+            <Button Grid.Row="4"
                     Text="{Binding ReadSealsButtonText}"
-                    HeightRequest="40"
+                    HeightRequest="38"
                     CornerRadius="20"
                     FontAttributes="Bold"
                     BackgroundColor="#3E5AF1"
                     TextColor="White"
                     Clicked="OnReadNextSealClicked" />
 
-            <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
                     <Entry x:Name="SealEntry1" Placeholder="{Binding Seal1Placeholder}" Text="{Binding Seals[0].Code}" IsReadOnly="True" IsEnabled="False" BackgroundColor="Transparent" HeightRequest="38" TextColor="#596274" />
                 </Border>
@@ -111,17 +187,17 @@
                 </Border>
             </Grid>
 
-            <Grid Grid.Row="5" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+            <Grid Grid.Row="6" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                 <Button Grid.Row="0"
                         Text="{Binding ContainerPhotoButtonText}"
                         FontAttributes="Bold"
-                        HeightRequest="40"
+                        HeightRequest="38"
                         CornerRadius="20"
                         BackgroundColor="#3E5AF1"
                         TextColor="White"
                         Command="{Binding LoadContainerImageCommand}" />
 
-                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="130" WidthRequest="165" HorizontalOptions="Center">
+                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="108" WidthRequest="152" HorizontalOptions="Center">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnContainerPreviewTapped" />
                     </Border.GestureRecognizers>
@@ -132,7 +208,7 @@
 
                 <Button Grid.Row="2"
                         Text="OK"
-                        HeightRequest="44"
+                        HeightRequest="42"
                         WidthRequest="120"
                         CornerRadius="22"
                         FontAttributes="Bold"
