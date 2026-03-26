@@ -14,6 +14,7 @@
 		<AndroidManifest>AndroidManifest.xml</AndroidManifest>
 		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+		<EnableRfidNativeSdk>false</EnableRfidNativeSdk>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -44,6 +45,8 @@
 		<MauiIcon Include="src\assets\images\iconot360app.png" BaseSize="1024,1024" />
 		<MauiImage Include="src\assets\images\logo.png" />
 		<MauiImage Include="src\assets\images\background.jpg" />
+		<MauiImage Include="Resources\Images\eye-gray.svg" />
+		<MauiImage Include="Resources\Images\eye-off-gray.svg" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,13 +58,14 @@
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
-		<RuntimeIdentifiers>android-arm</RuntimeIdentifiers>
+		<!-- Para pruebas en teléfonos actuales (arm64). -->
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
-		<AndroidLibrary Include="Platforms\Android\libs\UHF6_v1.9.7.jar" Bind="false" />
-		<AndroidLibrary Include="Platforms\Android\libs\ModuleAPI_J.jar" Bind="false" />
-		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\*.so" />
+		<AndroidLibrary Include="Platforms\Android\libs\UHF6_v1.9.7.jar" Bind="false" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
+		<AndroidLibrary Include="Platforms\Android\libs\ModuleAPI_J.jar" Bind="false" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
+		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\*.so" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
 	</ItemGroup>
 
 </Project>
