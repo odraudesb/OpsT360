@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,6 +15,8 @@ public partial class SealInspectionViewModel : ObservableObject
     private readonly ITransactionsService _transactionsService;
     private readonly IRfidScannerService _rfidScannerService;
     private readonly IAppLanguageState _languageState;
+    private readonly Dictionary<string, Task> _panelValidationTasks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _panelValidationTokens = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly Dictionary<string, ContainerProfile> _profiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -36,6 +39,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly Regex GenericHexRegex = new("^[0-9A-F]{4,128}$", RegexOptions.Compiled);
     private static readonly TimeSpan RfidReadTimeout = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan RfidBatchReadTimeout = TimeSpan.FromSeconds(14);
+    private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
     private const int RfidSealPlacementFailureEventId = 32;
@@ -64,6 +68,36 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private string seal3Placeholder = "Seal #3";
     [ObservableProperty] private string seal4Placeholder = "Seal #4";
     [ObservableProperty] private string containerPhotoButtonText = "Container Photo";
+    [ObservableProperty] private string panelValidationSummary = "Pendiente de validación de fotos.";
+    [ObservableProperty] private string panelValidationSummaryColor = "#5E6678";
+
+    private string panel1StatusText = "Foto 1 pendiente";
+    public string Panel1StatusText
+    {
+        get => panel1StatusText;
+        set => SetProperty(ref panel1StatusText, value);
+    }
+
+    private string panel1StatusColor = "#5E6678";
+    public string Panel1StatusColor
+    {
+        get => panel1StatusColor;
+        set => SetProperty(ref panel1StatusColor, value);
+    }
+
+    private string panel2StatusText = "Foto 2 pendiente";
+    public string Panel2StatusText
+    {
+        get => panel2StatusText;
+        set => SetProperty(ref panel2StatusText, value);
+    }
+
+    private string panel2StatusColor = "#5E6678";
+    public string Panel2StatusColor
+    {
+        get => panel2StatusColor;
+        set => SetProperty(ref panel2StatusColor, value);
+    }
 
     public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
     public bool CanUploadImages => true;
@@ -108,6 +142,7 @@ public partial class SealInspectionViewModel : ObservableObject
             StatusText = IsInspectionChangeMode
                 ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
                 : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+            UpdatePanelValidationSummaryFromStatuses();
             return;
         }
 
@@ -124,6 +159,8 @@ public partial class SealInspectionViewModel : ObservableObject
         StatusText = IsInspectionChangeMode
             ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
             : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
+
+        UpdatePanelValidationSummaryFromStatuses();
     }
 
     public async Task<bool> TryCaptureSealFromSdkAsync(int sealNumber)
@@ -346,6 +383,8 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
         StatusText = "Waiting for seal #1 read.";
+        PanelValidationSummary = "Pendiente de validación de fotos.";
+        PanelValidationSummaryColor = "#5E6678";
 
         OnPropertyChanged(nameof(CanUploadImages));
         OnPropertyChanged(nameof(CanSend));
@@ -379,18 +418,22 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Take seal photo");
+            result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take seal photo" : "Tomar foto del panel");
         }
         catch (Exception ex)
         {
             StatusText = $"Could not open camera/files: {ex.Message}";
-            await ShowErrorAlertAsync("Photo load error", StatusText);
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
+                StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Upload canceled", "No photo selected for this panel.");
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Upload canceled" : "Carga cancelada",
+                _languageState.IsEnglish ? "No photo selected for this panel." : "No se seleccionó foto para este panel.");
             return;
         }
 
@@ -403,7 +446,10 @@ public partial class SealInspectionViewModel : ObservableObject
         image.FileName = result.FileName;
         image.Bytes = bytes;
         image.Base64 = Convert.ToBase64String(bytes);
-        image.ValidationStatus = "idle";
+        image.ValidationStatus = "pending";
+
+        QueuePanelValidation(image);
+        UpdatePanelValidationSummaryFromStatuses();
 
         OnPropertyChanged(nameof(CanSend));
     }
@@ -414,18 +460,22 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
-            result = await CapturePhotoAsync("Take container photo");
+            result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take container photo" : "Tomar foto del contenedor");
         }
         catch (Exception ex)
         {
             StatusText = $"Could not open camera/files: {ex.Message}";
-            await ShowErrorAlertAsync("Photo load error", StatusText);
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
+                StatusText);
             return;
         }
 
         if (result is null)
         {
-            await ShowErrorAlertAsync("Upload canceled", "No container photo selected.");
+            await ShowErrorAlertAsync(
+                _languageState.IsEnglish ? "Upload canceled" : "Carga cancelada",
+                _languageState.IsEnglish ? "No container photo selected." : "No se seleccionó foto del contenedor.");
             return;
         }
 
@@ -552,11 +602,28 @@ public partial class SealInspectionViewModel : ObservableObject
                     : "Transaction sent successfully."
                 : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
 
-            await Application.Current!.MainPage!.DisplayAlert(sent ? "Sent" : "Error", message, "OK");
+            if (!_languageState.IsEnglish)
+            {
+                message = sent
+                    ? hasFailures
+                        ? $"Transacción enviada. Alertas de validación: {string.Join(", ", failedPanels)}. " +
+                          $"Alerta historial: {(sentFailureEvent ? "OK" : "ERROR")} | Alerta correo: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "OMITIDO")}."
+                        : "Transacción enviada correctamente."
+                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
+            }
+
+            await Application.Current!.MainPage!.DisplayAlert(
+                sent ? (_languageState.IsEnglish ? "Sent" : "Enviado") : (_languageState.IsEnglish ? "Error" : "Error"),
+                message,
+                "OK");
         }
         catch (Exception ex)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Error", $"Error sending transaction: {ex.Message}", "OK");
+            var title = _languageState.IsEnglish ? "Error" : "Error";
+            var body = _languageState.IsEnglish
+                ? $"Error sending transaction: {ex.Message}"
+                : $"Error al enviar transacción: {ex.Message}";
+            await Application.Current!.MainPage!.DisplayAlert(title, body, "OK");
         }
         finally
         {
@@ -564,52 +631,149 @@ public partial class SealInspectionViewModel : ObservableObject
         }
     }
 
-    private async Task<List<string>> ValidateAccessPanelsAsync()
+    private Task<List<string>> ValidateAccessPanelsAsync()
     {
         var failedPanels = new List<string>();
+        var panels = SealImages.Take(2).ToList();
 
-        foreach (var panel in SealImages.Take(2))
+        foreach (var panel in panels)
         {
-            if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
+            var missingImage = string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName);
+            if (missingImage)
             {
                 panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
                 continue;
             }
 
-            panel.ValidationStatus = "pending";
-            try
+            if (panel.ValidationStatus == "failed")
             {
-                var result = await _transactionsService.ValidatePhotoAsync(panel.Base64, panel.FileName);
-
-                var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
-                if (!string.IsNullOrWhiteSpace(validatedSource))
-                {
-                    var validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
-                    if (validatedBytes is { Length: > 0 })
-                    {
-                        panel.Bytes = validatedBytes;
-                        panel.Base64 = Convert.ToBase64String(validatedBytes);
-                        panel.FileName = AppendValidatedSuffix(panel.FileName);
-                    }
-                }
-
-                panel.ValidationStatus = result.IsSuccessful ? "success" : "failed";
-                if (!result.IsSuccessful)
-                {
-                    failedPanels.Add(panel.Label);
-                }
-            }
-            catch (Exception ex)
-            {
-                panel.ValidationStatus = "failed";
                 failedPanels.Add(panel.Label);
-                StatusText = $"Validation error on {panel.Label}: {ex.Message}";
+                continue;
             }
+
+            if (panel.ValidationStatus != "pending")
+                continue;
+
+            failedPanels.Add(panel.Label);
+            StatusText = _languageState.IsEnglish
+                ? $"Panel {panel.Label} is still validating. Send uses current status without re-validating."
+                : $"El panel {panel.Label} aún está validando. El envío usa el estado actual sin revalidar.";
         }
 
-        return failedPanels;
+        UpdatePanelValidationSummaryFromStatuses();
+        return Task.FromResult(failedPanels);
     }
+
+    private void QueuePanelValidation(EvidenceImage panel)
+    {
+        if (string.IsNullOrWhiteSpace(panel.Base64) || string.IsNullOrWhiteSpace(panel.FileName))
+            return;
+
+        var token = Guid.NewGuid().ToString("N");
+        _panelValidationTokens[panel.Label] = token;
+
+        var panelLabel = panel.Label;
+        var base64Snapshot = panel.Base64;
+        var fileNameSnapshot = panel.FileName;
+        var task = ValidatePanelInBackgroundAsync(panelLabel, base64Snapshot!, fileNameSnapshot!, token);
+        _panelValidationTasks[panelLabel] = task;
+    }
+
+    private async Task ValidatePanelInBackgroundAsync(string panelLabel, string base64, string fileName, string token)
+    {
+        var outcome = await ValidatePanelAsync(panelLabel, base64, fileName);
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            if (!_panelValidationTokens.TryGetValue(panelLabel, out var currentToken) || currentToken != token)
+                return;
+
+            var panel = SealImages.FirstOrDefault(p => p.Label == panelLabel);
+            if (panel is null)
+                return;
+
+            ApplyValidationOutcome(panel, outcome);
+            UpdatePanelValidationSummaryFromStatuses();
+        });
+    }
+
+    private void ApplyValidationOutcome(EvidenceImage panel, PanelValidationOutcome outcome)
+    {
+        panel.ValidationStatus = outcome.IsSuccessful ? "success" : "failed";
+        if (outcome.ValidatedBytes is not { Length: > 0 })
+            return;
+
+        panel.Bytes = outcome.ValidatedBytes;
+        panel.Base64 = Convert.ToBase64String(outcome.ValidatedBytes);
+        panel.FileName = AppendValidatedSuffix(panel.FileName ?? $"{panel.Label}.jpg");
+    }
+
+    private void UpdatePanelValidationSummaryFromStatuses()
+    {
+        var panel1Status = SealImages[0].ValidationStatus;
+        var panel2Status = SealImages[1].ValidationStatus;
+        var firstStatus = panel1Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
+        var secondStatus = panel2Status switch { "success" => "✅", "failed" => "❌", _ => "⏳" };
+        var successCount = (panel1Status == "success" ? 1 : 0) + (panel2Status == "success" ? 1 : 0);
+        PanelValidationSummary = _languageState.IsEnglish
+            ? $"AI Result: Photo 1 {firstStatus} | Photo 2 {secondStatus} ({successCount}/2 valid)"
+            : $"Resultado IA: Foto 1 {firstStatus} | Foto 2 {secondStatus} ({successCount}/2 válidas)";
+        PanelValidationSummaryColor = successCount switch
+        {
+            2 => "#166534",
+            0 when panel1Status == "failed" && panel2Status == "failed" => "#991B1B",
+            _ => "#1D4ED8"
+        };
+
+        (Panel1StatusText, Panel1StatusColor) = ResolvePanelStatusText(panel1Status, 1);
+        (Panel2StatusText, Panel2StatusColor) = ResolvePanelStatusText(panel2Status, 2);
+    }
+
+    private (string Text, string Color) ResolvePanelStatusText(string status, int panelNumber)
+    {
+        return (_languageState.IsEnglish, status) switch
+        {
+            (true, "success") => ($"Photo {panelNumber} valid", "#166534"),
+            (true, "failed") => ($"Photo {panelNumber} rejected", "#991B1B"),
+            (true, "pending") => ($"Validating photo {panelNumber}...", "#1D4ED8"),
+            (false, "success") => ($"Foto {panelNumber} válida", "#166534"),
+            (false, "failed") => ($"Foto {panelNumber} rechazada", "#991B1B"),
+            (false, "pending") => ($"Validando foto {panelNumber}...", "#1D4ED8"),
+            (true, _) => ($"Photo {panelNumber} pending", "#5E6678"),
+            _ => ($"Foto {panelNumber} pendiente", "#5E6678")
+        };
+    }
+
+    private async Task<PanelValidationOutcome> ValidatePanelAsync(string panelLabel, string base64, string fileName)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var validationTask = _transactionsService.ValidatePhotoAsync(base64, fileName);
+            var softTimeoutTask = Task.Delay(PhotoValidationSoftTimeout);
+            var firstCompleted = await Task.WhenAny(validationTask, softTimeoutTask);
+            if (firstCompleted != validationTask)
+            {
+                StatusText = $"La validación de {panelLabel} sigue procesando en servidor, esperando respuesta final...";
+            }
+
+            var result = await validationTask;
+
+            byte[]? validatedBytes = null;
+            var validatedSource = result.ValidatedImageBase64 ?? result.OutputImageBase64;
+            if (!string.IsNullOrWhiteSpace(validatedSource))
+                validatedBytes = await ResolveValidatedImageBytesAsync(validatedSource);
+
+            return new PanelValidationOutcome(panelLabel, result.IsSuccessful, sw.Elapsed.TotalSeconds, validatedBytes);
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Validation error on {panelLabel}: {ex.Message}";
+            return new PanelValidationOutcome(panelLabel, false, sw.Elapsed.TotalSeconds, null);
+        }
+    }
+
+    private sealed record PanelValidationOutcome(string PanelLabel, bool IsSuccessful, double Elapsed, byte[]? ValidatedBytes);
 
     private static async Task<byte[]?> ResolveValidatedImageBytesAsync(string value)
     {
@@ -672,6 +836,8 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         var extension = Path.GetExtension(fileName);
         var name = Path.GetFileNameWithoutExtension(fileName);
+        if (name.EndsWith("-validated", StringComparison.OrdinalIgnoreCase))
+            return $"{name}{(string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension)}";
         extension = string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension;
         return $"{name}-validated{extension}";
     }
