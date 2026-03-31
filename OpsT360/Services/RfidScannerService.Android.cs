@@ -167,23 +167,35 @@ namespace OpsT360.Services
                 cancellationToken.ThrowIfCancellationRequested();
 
                 string powerDetail;
-                IntPtr tags;
                 (string? Epc, string? Tid) tagData;
 
                 lock (_readerSync)
                 {
                     powerDetail = TrySetPower(_managerClass, _manager, 30, 30);
                     LogStep($"setPower={powerDetail}");
+                    tagData = (null, null);
+                    for (var attempt = 1; attempt <= 6 && string.IsNullOrWhiteSpace(tagData.Epc); attempt++)
+                    {
+                        var tags = TryInventoryWithTidPreferred(_managerClass, _manager);
+                        tagData = tags == IntPtr.Zero ? (null, null) : TryExtractBestTag(tags);
 
-                    tags = TryInventorySimple(_managerClass, _manager);
-                    tagData = tags == IntPtr.Zero ? (null, null) : TryExtractBestTag(tags);
+                        if (string.IsNullOrWhiteSpace(tagData.Epc))
+                            Thread.Sleep(80);
+                    }
                 }
 
                 if (string.IsNullOrWhiteSpace(tagData.Epc))
                     return RfidReadResult.Fail($"[{RfidImplVersion}] Reader abierto y potencia aplicada, pero no se leyó ningún tag. Acerca más el sticker RFID.");
 
+                if (string.IsNullOrWhiteSpace(tagData.Tid))
+                {
+                    var fallbackTid = TryReadTidMemoryBank(_managerClass, _manager);
+                    if (!string.IsNullOrWhiteSpace(fallbackTid))
+                        tagData = (tagData.Epc, fallbackTid);
+                }
+
                 LogStep($"TryReadSingleEpc ok -> EPC={tagData.Epc} | TID={(string.IsNullOrWhiteSpace(tagData.Tid) ? "(vacío)" : tagData.Tid)}");
-                return RfidReadResult.Ok(tagData.Epc!, null);
+                return RfidReadResult.Ok(tagData.Epc!, tagData.Tid);
             }
             catch (OperationCanceledException)
             {
@@ -443,9 +455,9 @@ namespace OpsT360.Services
                 return (null, null);
 
             var epc = TryExtractByteArrayField(tagInfo, tagClass, "EpcId", "epc");
-          //  var tid = TryExtractTidFromTag(tagInfo, tagClass);
+            var tid = TryExtractTidFromTag(tagInfo, tagClass);
 
-            return (epc, null);
+            return (epc, tid);
         }
 
         private static string? TryExtractTidFromTag(IntPtr tagInfo, IntPtr tagClass)
@@ -472,6 +484,44 @@ namespace OpsT360.Services
                 bytes = bytes[..len];
 
             return bytes.Length == 0 ? null : Convert.ToHexString(bytes).Trim();
+        }
+
+        private static string? TryReadTidMemoryBank(IntPtr managerClass, IntPtr manager)
+        {
+            try
+            {
+                // Banco TID = 2, desde palabra 0, 6 palabras (=12 bytes).
+                var getTagData = JNIEnv.GetMethodID(managerClass, "getTagData", "(III[B[BS)Lcom/uhf/api/cls/Reader$READER_ERR;");
+                if (getTagData == IntPtr.Zero)
+                    return null;
+
+                var readBuffer = new byte[12];
+                var accessPwd = new byte[4];
+                var readBufferArray = JNIEnv.NewArray(readBuffer);
+                var accessPwdArray = JNIEnv.NewArray(accessPwd);
+                var args = new JValue[]
+                {
+                    new(2), // TID bank
+                    new(0), // start address
+                    new(6), // length in words
+                    new(readBufferArray),
+                    new(accessPwdArray),
+                    new((short)1000)
+                };
+
+                var result = JNIEnv.CallObjectMethod(manager, getTagData, args);
+                var errName = ReadEnumName(result);
+                DeleteLocalRefSafe(result);
+                if (!string.Equals(errName, "MT_OK_ERR", StringComparison.Ordinal))
+                    return null;
+
+                var bytes = JNIEnv.GetArray<byte>(readBufferArray);
+                return bytes is { Length: > 0 } ? Convert.ToHexString(bytes).Trim() : null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static string? TryExtractByteArrayField(IntPtr tagInfo, IntPtr tagClass, params string[] fieldNames)
