@@ -14,7 +14,7 @@
 		<AndroidManifest>AndroidManifest.xml</AndroidManifest>
 		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-		<EnableRfidNativeSdk>false</EnableRfidNativeSdk>
+		<EnableRfidNativeSdk>true</EnableRfidNativeSdk>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -58,14 +58,25 @@
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
-		<!-- Para pruebas en teléfonos actuales (arm64). -->
-		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+		<!-- SDK RFID actual solo incluye .so de 32-bit (armeabi-v7a). -->
+		<AndroidSupportedAbis>armeabi-v7a</AndroidSupportedAbis>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 		<AndroidLibrary Include="Platforms\Android\libs\UHF6_v1.9.7.jar" Bind="false" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
 		<AndroidLibrary Include="Platforms\Android\libs\ModuleAPI_J.jar" Bind="false" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
-		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\*.so" Condition="'$(EnableRfidNativeSdk)' == 'true'" />
+		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\libdevapi.so" Condition="'$(EnableRfidNativeSdk)' == 'true'">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\libirdaSerialPort.so" Condition="'$(EnableRfidNativeSdk)' == 'true'">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\libSerialPort.so" Condition="'$(EnableRfidNativeSdk)' == 'true'">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="Platforms\Android\jniLibs\armeabi-v7a\libModuleAPIJni.so" Condition="'$(EnableRfidNativeSdk)' == 'true'">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
 	</ItemGroup>
 
 </Project>
