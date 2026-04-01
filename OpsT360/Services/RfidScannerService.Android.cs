@@ -133,6 +133,7 @@ namespace OpsT360.Services
                 }
 
                 LogStep($"StartAntenna setPower={powerDetail}");
+                PlayReadBeepPattern();
                 return new RfidReadResult(true, "ANTENNA_READY", null, $"[{RfidImplVersion}] Antena RFID lista.");
             }
             catch (OperationCanceledException)

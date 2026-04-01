@@ -42,7 +42,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
     // Compat: keep legacy symbols so mixed local files/branches don't break compilation.
     // Disabled permanently: real reads must come from RFID antenna.
-    private const bool ForceMockSealsForMobileDemo = false;
+    private static readonly bool ForceMockSealsForMobileDemo = false;
     private static readonly string[] MockSealEpcs = Array.Empty<string>();
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
@@ -199,6 +199,18 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            StatusText = "Inicializando antena RFID...";
+            using (var startCts = new CancellationTokenSource(TimeSpan.FromSeconds(4)))
+            {
+                var start = await _rfidScannerService.StartAntennaAsync(startCts.Token);
+                if (!start.Success)
+                {
+                    StatusText = $"No se pudo inicializar antena RFID: {start.Message}";
+                    return false;
+                }
+            }
+
+            StatusText = $"Leyendo sello #{sealNumber} por RFID...";
             using var cts = new CancellationTokenSource(RfidReadTimeout);
             var read = await _rfidScannerService.TryReadSingleEpcAsync(cts.Token);
 
@@ -292,6 +304,18 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            StatusText = "Inicializando antena RFID para lectura múltiple...";
+            using (var startCts = new CancellationTokenSource(TimeSpan.FromSeconds(4)))
+            {
+                var start = await _rfidScannerService.StartAntennaAsync(startCts.Token);
+                if (!start.Success)
+                {
+                    StatusText = $"No se pudo inicializar antena RFID: {start.Message}";
+                    return 0;
+                }
+            }
+
+            StatusText = "Leyendo sellos por RFID...";
             using var cts = new CancellationTokenSource(RfidBatchReadTimeout);
             var batch = await _rfidScannerService.TryReadDistinctEpcsAsync(4, cts.Token);
             if (!batch.Success || batch.Epcs.Count == 0)
