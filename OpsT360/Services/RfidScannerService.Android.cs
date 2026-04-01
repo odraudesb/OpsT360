@@ -551,7 +551,7 @@ namespace OpsT360.Services
         {
             try
             {
-                using var tone = new ToneGenerator(Stream.Notification, 100);
+                using var tone = new ToneGenerator(Android.Media.Stream.Notification, 100);
                 tone.StartTone(Tone.PropBeep, 120);
                 Thread.Sleep(90);
                 tone.StartTone(Tone.PropBeep2, 120);
