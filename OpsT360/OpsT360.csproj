@@ -14,7 +14,7 @@
 		<AndroidManifest>AndroidManifest.xml</AndroidManifest>
 		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
 		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-		<EnableRfidNativeSdk>false</EnableRfidNativeSdk>
+		<EnableRfidNativeSdk>true</EnableRfidNativeSdk>
 	</PropertyGroup>
 
 	<PropertyGroup>
