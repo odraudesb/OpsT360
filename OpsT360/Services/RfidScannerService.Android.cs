@@ -466,9 +466,9 @@ namespace OpsT360.Services
 
         private static string? TryExtractTidFromTag(IntPtr tagInfo, IntPtr tagClass)
         {
-            var dataField = JNIEnv.GetFieldID(tagClass, "EmbededData", "[B");
+            var dataField = TryGetFieldId(tagClass, "EmbededData", "[B");
             if (dataField == IntPtr.Zero)
-                dataField = JNIEnv.GetFieldID(tagClass, "embededData", "[B");
+                dataField = TryGetFieldId(tagClass, "embededData", "[B");
             if (dataField == IntPtr.Zero)
                 return null;
 
@@ -532,7 +532,7 @@ namespace OpsT360.Services
         {
             foreach (var fieldName in fieldNames)
             {
-                var field = JNIEnv.GetFieldID(tagClass, fieldName, "[B");
+                var field = TryGetFieldId(tagClass, fieldName, "[B");
                 if (field == IntPtr.Zero)
                     continue;
 
@@ -565,15 +565,27 @@ namespace OpsT360.Services
 
         private static int TryReadLengthField(IntPtr tagInfo, IntPtr tagClass, string fieldName)
         {
-            var intField = JNIEnv.GetFieldID(tagClass, fieldName, "I");
+            var intField = TryGetFieldId(tagClass, fieldName, "I");
             if (intField != IntPtr.Zero)
                 return JNIEnv.GetIntField(tagInfo, intField);
 
-            var shortField = JNIEnv.GetFieldID(tagClass, fieldName, "S");
+            var shortField = TryGetFieldId(tagClass, fieldName, "S");
             if (shortField != IntPtr.Zero)
                 return JNIEnv.GetShortField(tagInfo, shortField);
 
             return -1;
+        }
+
+        private static IntPtr TryGetFieldId(IntPtr classHandle, string fieldName, string signature)
+        {
+            try
+            {
+                return JNIEnv.GetFieldID(classHandle, fieldName, signature);
+            }
+            catch
+            {
+                return IntPtr.Zero;
+            }
         }
 
         private static string? ReadEnumName(IntPtr enumObj)
