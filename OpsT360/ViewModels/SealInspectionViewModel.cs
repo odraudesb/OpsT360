@@ -42,7 +42,7 @@ public partial class SealInspectionViewModel : ObservableObject
     private static readonly TimeSpan PhotoValidationSoftTimeout = TimeSpan.FromSeconds(5);
     // Compat: keep legacy symbols so mixed local files/branches don't break compilation.
     // Disabled permanently: real reads must come from RFID antenna.
-    private const bool ForceMockSealsForMobileDemo = false;
+    private static readonly bool ForceMockSealsForMobileDemo = false;
     private static readonly string[] MockSealEpcs = Array.Empty<string>();
     private const int RfidSealPlacementEventId = 8;
     private const string RfidSealPlacementEventName = "Colocación de Sello RFID previo Ingreso";
@@ -199,6 +199,18 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            StatusText = "Inicializando antena RFID...";
+            using (var startCts = new CancellationTokenSource(TimeSpan.FromSeconds(4)))
+            {
+                var start = await _rfidScannerService.StartAntennaAsync(startCts.Token);
+                if (!start.Success)
+                {
+                    StatusText = $"No se pudo inicializar antena RFID: {start.Message}";
+                    return false;
+                }
+            }
+
+            StatusText = $"Leyendo sello #{sealNumber} por RFID...";
             using var cts = new CancellationTokenSource(RfidReadTimeout);
             var read = await _rfidScannerService.TryReadSingleEpcAsync(cts.Token);
 
@@ -216,7 +228,7 @@ public partial class SealInspectionViewModel : ObservableObject
             }
 
             Seals[index].Code = normalizedEpc;
-          //  Seals[index].Tid = NormalizeHex(read.Tid) ?? string.Empty;
+            Seals[index].Tid = NormalizeHex(read.Tid) ?? string.Empty;
 
             StatusText = $"EPC captured from SDK: {Seals[index].Code}";
             OnPropertyChanged(nameof(CanUploadImages));
@@ -292,6 +304,18 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            StatusText = "Inicializando antena RFID para lectura múltiple...";
+            using (var startCts = new CancellationTokenSource(TimeSpan.FromSeconds(4)))
+            {
+                var start = await _rfidScannerService.StartAntennaAsync(startCts.Token);
+                if (!start.Success)
+                {
+                    StatusText = $"No se pudo inicializar antena RFID: {start.Message}";
+                    return 0;
+                }
+            }
+
+            StatusText = "Leyendo sellos por RFID...";
             using var cts = new CancellationTokenSource(RfidBatchReadTimeout);
             var batch = await _rfidScannerService.TryReadDistinctEpcsAsync(4, cts.Token);
             if (!batch.Success || batch.Epcs.Count == 0)
@@ -947,6 +971,9 @@ public partial class SealInspectionViewModel : ObservableObject
         var seals = Seals
             .Select((s, i) => string.IsNullOrWhiteSpace(s.Code) ? $"SLL{i + 1}X" : s.Code.Trim().ToUpperInvariant())
             .ToArray();
+        var tids = Seals
+            .Select(s => NormalizeHex(s.Tid) ?? string.Empty)
+            .ToArray();
 
         var now = DateTime.UtcNow.ToString("O");
         var container = ContainerId.Trim().ToUpperInvariant();
@@ -963,7 +990,10 @@ public partial class SealInspectionViewModel : ObservableObject
         sb.Append($"<mercancía>{profile.Goods}</mercancía><booking>{profile.Booking}</booking><peso_origen>{profile.OriginWeight}</peso_origen>");
         sb.Append($"<fecha_ingreso_terminal>{profile.TerminalEntryDate}</fecha_ingreso_terminal><fecha_preaviso>{profile.PreNoticeDate}</fecha_preaviso>");
         sb.Append($"<transportista>{profile.Carrier}</transportista><placa>{profile.Plate}</placa><conductor>{profile.Driver}</conductor>");
-        sb.Append($"<sello-1>{seals[0]}</sello-1><sello-2>{seals[1]}</sello-2><sello-3>{seals[2]}</sello-3><sello-4>{seals[3]}</sello-4>");
+        sb.Append($"<sello-1>{seals[0]}</sello-1><tid-1>{tids[0]}</tid-1>");
+        sb.Append($"<sello-2>{seals[1]}</sello-2><tid-2>{tids[1]}</tid-2>");
+        sb.Append($"<sello-3>{seals[2]}</sello-3><tid-3>{tids[2]}</tid-3>");
+        sb.Append($"<sello-4>{seals[3]}</sello-4><tid-4>{tids[3]}</tid-4>");
         sb.Append($"<sello_aduana>{profile.CustomsSeal}</sello_aduana><observaciones>{profile.Observations}</observaciones>");
         sb.Append($"<fecha_registro>{now}</fecha_registro>");
         sb.Append("</Contenedor>");
@@ -974,6 +1004,9 @@ public partial class SealInspectionViewModel : ObservableObject
     {
         var seals = Seals
             .Select((s, i) => string.IsNullOrWhiteSpace(s.Code) ? $"SLL{i + 1}X" : s.Code.Trim().ToUpperInvariant())
+            .ToArray();
+        var tids = Seals
+            .Select(s => NormalizeHex(s.Tid) ?? string.Empty)
             .ToArray();
         var container = ContainerId.Trim().ToUpperInvariant();
         var failedPhotoNames = string.Join("; ", failedPanels.Where(x => !string.IsNullOrWhiteSpace(x)));
@@ -991,7 +1024,10 @@ public partial class SealInspectionViewModel : ObservableObject
         sb.Append($"<mercancía>{profile.Goods}</mercancía><booking>{profile.Booking}</booking><peso_origen>{profile.OriginWeight}</peso_origen>");
         sb.Append($"<fecha_ingreso_terminal>{profile.TerminalEntryDate}</fecha_ingreso_terminal><fecha_preaviso>{profile.PreNoticeDate}</fecha_preaviso>");
         sb.Append($"<transportista>{profile.Carrier}</transportista><placa>{profile.Plate}</placa><conductor>{profile.Driver}</conductor>");
-        sb.Append($"<sello-1>{seals[0]}</sello-1><sello-2>{seals[1]}</sello-2><sello-3>{seals[2]}</sello-3><sello-4>{seals[3]}</sello-4>");
+        sb.Append($"<sello-1>{seals[0]}</sello-1><tid-1>{tids[0]}</tid-1>");
+        sb.Append($"<sello-2>{seals[1]}</sello-2><tid-2>{tids[1]}</tid-2>");
+        sb.Append($"<sello-3>{seals[2]}</sello-3><tid-3>{tids[2]}</tid-3>");
+        sb.Append($"<sello-4>{seals[3]}</sello-4><tid-4>{tids[3]}</tid-4>");
         sb.Append($"<sello_aduana>{profile.CustomsSeal}</sello_aduana>");
         sb.Append($"<failed_photos>{failedPanels.Count}</failed_photos>");
         sb.Append($"<failed_photo_names>{(string.IsNullOrWhiteSpace(failedPhotoNames) ? "Sin detalle" : failedPhotoNames)}</failed_photo_names>");
