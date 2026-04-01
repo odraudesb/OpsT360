@@ -59,7 +59,11 @@
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
 		<!-- SDK RFID actual solo incluye .so de 32-bit (armeabi-v7a). -->
-		<AndroidSupportedAbis>armeabi-v7a</AndroidSupportedAbis>
+		<RuntimeIdentifier>android-arm</RuntimeIdentifier>
+		<!-- Evita despliegue parcial en Debug que puede omitir .so nativas del RFID SDK. -->
+		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+		<AndroidFastDeploymentType>None</AndroidFastDeploymentType>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
