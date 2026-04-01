@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Android.Runtime;
 using Android.Util;
+using Android.Media;
 using JClass = Java.Lang.Class;
 using Throwable = Java.Lang.Throwable;
 using AndroidApplication = Android.App.Application;
@@ -195,6 +196,7 @@ namespace OpsT360.Services
                 }
 
                 LogStep($"TryReadSingleEpc ok -> EPC={tagData.Epc} | TID={(string.IsNullOrWhiteSpace(tagData.Tid) ? "(vacío)" : tagData.Tid)}");
+                PlayReadBeepPattern();
                 return RfidReadResult.Ok(tagData.Epc!, tagData.Tid);
             }
             catch (OperationCanceledException)
@@ -265,6 +267,7 @@ namespace OpsT360.Services
 
                 var collected = uniqueEpcs.Take(maxCount).ToList();
                 LogStep($"TryReadDistinctEpcs ok -> {string.Join(",", collected)}");
+                PlayReadBeepPattern();
                 return RfidBatchReadResult.Ok(collected, $"[{RfidImplVersion}] EPCs detectados: {collected.Count}/{maxCount}");
             }
             catch (OperationCanceledException)
@@ -542,6 +545,21 @@ namespace OpsT360.Services
             }
 
             return null;
+        }
+
+        private static void PlayReadBeepPattern()
+        {
+            try
+            {
+                using var tone = new ToneGenerator(Stream.Notification, 100);
+                tone.StartTone(Tone.PropBeep, 120);
+                Thread.Sleep(90);
+                tone.StartTone(Tone.PropBeep2, 120);
+            }
+            catch
+            {
+                // No bloquear lectura RFID por fallo de audio.
+            }
         }
 
         private static int TryReadLengthField(IntPtr tagInfo, IntPtr tagClass, string fieldName)
