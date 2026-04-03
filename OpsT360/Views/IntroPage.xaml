@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OpsT360.Views.IntroPage"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="#F2F2F2">
+    <Grid>
+        <Image Source="logo-360.svg"
+               WidthRequest="260"
+               HeightRequest="260"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               Aspect="AspectFit" />
+    </Grid>
+</ContentPage>
