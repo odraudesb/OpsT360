@@ -147,14 +147,19 @@
                        LineBreakMode="TailTruncation" />
             </Border>
 
-            <Button Grid.Row="5"
-                    Text="{Binding ReadSealsButtonText}"
-                    HeightRequest="38"
-                    CornerRadius="20"
-                    FontAttributes="Bold"
-                    BackgroundColor="#3E5AF1"
-                    TextColor="White"
-                    Clicked="OnReadNextSealClicked" />
+            <VerticalStackLayout Grid.Row="5" Spacing="4">
+                <Button Text="{Binding ReadSealsButtonText}"
+                        HeightRequest="38"
+                        CornerRadius="20"
+                        FontAttributes="Bold"
+                        BackgroundColor="#3E5AF1"
+                        TextColor="White"
+                        Clicked="OnReadNextSealClicked" />
+                <Label Text="{Binding StatusText}"
+                       FontSize="11"
+                       TextColor="#4B5563"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
 
             <Grid Grid.Row="6" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
