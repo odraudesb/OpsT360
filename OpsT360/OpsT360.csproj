@@ -44,6 +44,7 @@
 	<ItemGroup>
 		<MauiIcon Include="src\assets\images\iconot360app.png" BaseSize="1024,1024" />
 		<MauiImage Include="src\assets\images\logo.png" />
+		<MauiImage Include="src\assets\images\logo-360.png" />
 		<MauiImage Include="src\assets\images\background.jpg" />
 		<MauiImage Include="Resources\Images\eye_gray.svg" />
 		<MauiImage Include="Resources\Images\eye_off_gray.svg" />

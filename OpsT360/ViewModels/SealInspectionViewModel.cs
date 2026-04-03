@@ -60,7 +60,9 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private int currentSealIndex;
     [ObservableProperty] private bool sealEntryLocked;
     [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusText = "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+    [ObservableProperty] private bool isCaptureInProgress;
+    [ObservableProperty] private string processingText = "Procesando...";
+    [ObservableProperty] private string statusText = string.Empty;
     [ObservableProperty] private bool isInspectionChangeMode;
     [ObservableProperty] private string operationTitle = "RFID Seal [Label] Placement";
     [ObservableProperty] private string containerPlaceholder = "Container Number";
@@ -103,11 +105,17 @@ public partial class SealInspectionViewModel : ObservableObject
         set => SetProperty(ref panel2StatusColor, value);
     }
 
-    public bool AreAllSealsCaptured => Seals.All(s => !string.IsNullOrWhiteSpace(s.Code));
+    public bool AreAllSealsCaptured => Seals.All(s =>
+        !string.IsNullOrWhiteSpace(NormalizeEpc(s.Code)) &&
+        !string.IsNullOrWhiteSpace(NormalizeHex(s.Tid)));
     public bool CanUploadImages => true;
     public bool CanSend => AreAllSealsCaptured
                            && SealImages.Take(2).All(i => i.Bytes is { Length: > 0 })
                            && ContainerImage.Bytes is { Length: > 0 };
+    public bool IsProcessing => IsBusy || IsCaptureInProgress;
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(IsProcessing));
+    partial void OnIsCaptureInProgressChanged(bool value) => OnPropertyChanged(nameof(IsProcessing));
 
     public SealInspectionViewModel(ITransactionsService transactionsService, IRfidScannerService rfidScannerService, IAppLanguageState languageState)
     {
@@ -143,9 +151,7 @@ public partial class SealInspectionViewModel : ObservableObject
             Seal4Placeholder = "Seal #4";
             ContainerPhotoButtonText = "Container Photo";
             OperationTitle = IsInspectionChangeMode ? "RFID Seal Inspection Change" : "RFID Seal [Label] Placement";
-            StatusText = IsInspectionChangeMode
-                ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
-                : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+            StatusText = string.Empty;
             UpdatePanelValidationSummaryFromStatuses();
             return;
         }
@@ -160,9 +166,7 @@ public partial class SealInspectionViewModel : ObservableObject
         Seal4Placeholder = "Sello #4";
         ContainerPhotoButtonText = "Foto Contenedor";
         OperationTitle = IsInspectionChangeMode ? "Cambio de Sellos por Inspección" : "RFID Seal [Label] Placement";
-        StatusText = IsInspectionChangeMode
-            ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
-            : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
+        StatusText = string.Empty;
 
         UpdatePanelValidationSummaryFromStatuses();
     }
@@ -293,7 +297,6 @@ public partial class SealInspectionViewModel : ObservableObject
 
         if (pendingIndexes.Count == 0)
         {
-            StatusText = "All seals were already read.";
             return 0;
         }
 
@@ -304,6 +307,7 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            ProcessingText = _languageState.IsEnglish ? "Reading seals..." : "Leyendo sellos...";
             StatusText = "Inicializando antena RFID para lectura múltiple...";
             using (var startCts = new CancellationTokenSource(TimeSpan.FromSeconds(4)))
             {
@@ -318,16 +322,16 @@ public partial class SealInspectionViewModel : ObservableObject
             StatusText = "Leyendo sellos por RFID...";
             using var cts = new CancellationTokenSource(RfidBatchReadTimeout);
             var batch = await _rfidScannerService.TryReadDistinctEpcsAsync(4, cts.Token);
-            if (!batch.Success || batch.Epcs.Count == 0)
+            if (!batch.Success || batch.Tags.Count == 0)
             {
                 StatusText = batch.Message;
                 return 0;
             }
 
             var loaded = 0;
-            foreach (var rawEpc in batch.Epcs)
+            foreach (var tag in batch.Tags)
             {
-                var epc = NormalizeEpc(rawEpc);
+                var epc = NormalizeEpc(tag.Epc);
                 if (string.IsNullOrWhiteSpace(epc) || existing.Contains(epc))
                     continue;
 
@@ -336,6 +340,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
                 var targetIndex = pendingIndexes[loaded];
                 Seals[targetIndex].Code = epc;
+                Seals[targetIndex].Tid = NormalizeHex(tag.Tid) ?? string.Empty;
                 ReadSeal((targetIndex + 1).ToString());
                 existing.Add(epc);
                 loaded++;
@@ -374,7 +379,10 @@ public partial class SealInspectionViewModel : ObservableObject
 
     partial void OnContainerIdChanged(string value)
     {
-        // Autocomplete de contenedor deshabilitado por requerimiento de UX.
+        // Forzar mayúsculas en el campo contenedor para consistencia de UX y payload.
+        var normalized = value?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (!string.Equals(ContainerId, normalized, StringComparison.Ordinal))
+            ContainerId = normalized;
     }
 
     [RelayCommand]
@@ -453,7 +461,7 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Bytes = null;
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
-        StatusText = "Waiting for seal #1 read.";
+        StatusText = string.Empty;
         PanelValidationSummary = "Pendiente de validación de fotos.";
         PanelValidationSummaryColor = "#5E6678";
 
@@ -489,6 +497,8 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
+            IsCaptureInProgress = true;
+            ProcessingText = _languageState.IsEnglish ? "Opening camera..." : "Abriendo cámara...";
             result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take seal photo" : "Tomar foto del panel");
         }
         catch (Exception ex)
@@ -498,6 +508,10 @@ public partial class SealInspectionViewModel : ObservableObject
                 _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
                 StatusText);
             return;
+        }
+        finally
+        {
+            IsCaptureInProgress = false;
         }
 
         if (result is null)
@@ -531,6 +545,8 @@ public partial class SealInspectionViewModel : ObservableObject
         FileResult? result;
         try
         {
+            IsCaptureInProgress = true;
+            ProcessingText = _languageState.IsEnglish ? "Opening camera..." : "Abriendo cámara...";
             result = await CapturePhotoAsync(_languageState.IsEnglish ? "Take container photo" : "Tomar foto del contenedor");
         }
         catch (Exception ex)
@@ -540,6 +556,10 @@ public partial class SealInspectionViewModel : ObservableObject
                 _languageState.IsEnglish ? "Photo load error" : "Error al cargar foto",
                 StatusText);
             return;
+        }
+        finally
+        {
+            IsCaptureInProgress = false;
         }
 
         if (result is null)
@@ -565,11 +585,14 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private async Task SendAsync()
     {
+        if (IsBusy)
+            return;
+
         var missing = new List<string>();
         if (string.IsNullOrWhiteSpace(ContainerId))
             missing.Add(_languageState.IsEnglish ? "container number" : "número de contenedor");
         if (!AreAllSealsCaptured)
-            missing.Add(_languageState.IsEnglish ? "4 seal EPCs" : "4 EPC de sellos");
+            missing.Add(_languageState.IsEnglish ? "4 seal EPC/TID pairs" : "4 pares EPC/TID de sellos");
         if (SealImages.Take(2).Any(i => i.Bytes is not { Length: > 0 }))
             missing.Add(_languageState.IsEnglish ? "2 panel photos" : "2 fotos de panel");
         if (ContainerImage.Bytes is not { Length: > 0 })
@@ -588,11 +611,12 @@ public partial class SealInspectionViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            ProcessingText = _languageState.IsEnglish ? "Sending transaction..." : "Enviando transacción...";
             var failedPanels = await ValidateAccessPanelsAsync();
 
             var profile = ResolveProfile();
             var xml = BuildXml(profile, RfidSealPlacementEventId, RfidSealPlacementEventName);
-            var now = DateTime.UtcNow.ToString("O");
+            var now = DateTime.Now.ToString("O");
             var containerId = ContainerId.Trim().ToUpperInvariant();
 
             var fields = new Dictionary<string, string>
@@ -667,26 +691,18 @@ public partial class SealInspectionViewModel : ObservableObject
             }
 
             var message = sent
-                ? hasFailures
-                    ? $"Transaction sent. Validation alerts: {string.Join(", ", failedPanels)}. " +
-                      $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "SKIPPED")}."
-                    : "Transaction sent successfully."
-                : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
-
-            if (!_languageState.IsEnglish)
-            {
-                message = sent
-                    ? hasFailures
-                        ? $"Transacción enviada. Alertas de validación: {string.Join(", ", failedPanels)}. " +
-                          $"Alerta historial: {(sentFailureEvent ? "OK" : "ERROR")} | Alerta correo: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "OMITIDO")}."
-                        : "Transacción enviada correctamente."
-                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
-            }
+                ? (_languageState.IsEnglish ? "Transaction succesfull" : "Transacción exitosa")
+                : (_languageState.IsEnglish
+                    ? $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}"
+                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}");
 
             await Application.Current!.MainPage!.DisplayAlert(
                 sent ? (_languageState.IsEnglish ? "Sent" : "Enviado") : (_languageState.IsEnglish ? "Error" : "Error"),
                 message,
                 "OK");
+
+            if (sent)
+                ResetForm();
         }
         catch (Exception ex)
         {
@@ -701,6 +717,11 @@ public partial class SealInspectionViewModel : ObservableObject
             IsBusy = false;
         }
     }
+
+    [RelayCommand]
+    private void ResetTransaction() => ResetForm();
+
+    private void ResetForm() => Cancel();
 
     private Task<List<string>> ValidateAccessPanelsAsync()
     {
