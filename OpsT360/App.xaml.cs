@@ -9,7 +9,7 @@ public partial class App : Application
     {
         InitializeComponent();
 
-        var loginPage = serviceProvider.GetRequiredService<LoginPage>();
-        MainPage = new NavigationPage(loginPage);
+        var introPage = serviceProvider.GetRequiredService<IntroPage>();
+        MainPage = new NavigationPage(introPage);
     }
 }

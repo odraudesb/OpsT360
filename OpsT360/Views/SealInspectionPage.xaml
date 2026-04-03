@@ -33,7 +33,7 @@
                    VerticalOptions="Center" />
         </Grid>
 
-        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
+        <Grid Grid.Row="1" Padding="14,10,14,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
 
             <Border Grid.Row="0" BackgroundColor="White" Stroke="#E2E4EC" StrokeShape="RoundRectangle 18" Padding="12,2">
                 <Entry Placeholder="{Binding ContainerPlaceholder}"
@@ -139,15 +139,7 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="4" Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
-                <Label Text="{Binding PanelValidationSummary}"
-                       TextColor="{Binding PanelValidationSummaryColor}"
-                       FontSize="12"
-                       HorizontalTextAlignment="Center"
-                       LineBreakMode="TailTruncation" />
-            </Border>
-
-            <Button Grid.Row="5"
+            <Button Grid.Row="4"
                     Text="{Binding ReadSealsButtonText}"
                     HeightRequest="38"
                     CornerRadius="20"
@@ -156,7 +148,7 @@
                     TextColor="White"
                     Clicked="OnReadNextSealClicked" />
 
-            <Grid Grid.Row="6" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
+            <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
                     <Entry x:Name="SealEntry1" Placeholder="{Binding Seal1Placeholder}" Text="{Binding Seals[0].Code}" IsReadOnly="True" IsEnabled="False" BackgroundColor="Transparent" HeightRequest="38" TextColor="#596274" />
                 </Border>
@@ -171,17 +163,17 @@
                 </Border>
             </Grid>
 
-            <Grid Grid.Row="7" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+            <Grid Grid.Row="6" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                 <Button Grid.Row="0"
                         Text="{Binding ContainerPhotoButtonText}"
                         FontAttributes="Bold"
-                        HeightRequest="38"
+                        HeightRequest="36"
                         CornerRadius="20"
                         BackgroundColor="#3E5AF1"
                         TextColor="White"
                         Command="{Binding LoadContainerImageCommand}" />
 
-                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="108" WidthRequest="152" HorizontalOptions="Center">
+                <Border Grid.Row="1" BackgroundColor="#ECEEF3" Stroke="#DFE2E8" StrokeShape="RoundRectangle 10" HeightRequest="90" WidthRequest="140" HorizontalOptions="Center">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnContainerPreviewTapped" />
                     </Border.GestureRecognizers>
@@ -190,18 +182,44 @@
                            IsVisible="{Binding ContainerImage.HasImage}" />
                 </Border>
 
-                <Button Grid.Row="2"
-                        Text="OK"
-                        HeightRequest="42"
-                        WidthRequest="120"
-                        CornerRadius="22"
-                        FontAttributes="Bold"
-                        BackgroundColor="#3E5AF1"
-                        TextColor="White"
-                        HorizontalOptions="Center"
-                        Command="{Binding SendCommand}" />
+                <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
+                    <Button Text="OK"
+                            HeightRequest="40"
+                            WidthRequest="110"
+                            CornerRadius="22"
+                            FontAttributes="Bold"
+                            BackgroundColor="#3E5AF1"
+                            TextColor="White"
+                            Command="{Binding SendCommand}" />
+                    <Button Text="Limpiar"
+                            HeightRequest="40"
+                            WidthRequest="110"
+                            CornerRadius="22"
+                            FontAttributes="Bold"
+                            BackgroundColor="#6B7280"
+                            TextColor="White"
+                            Command="{Binding ResetTransactionCommand}" />
+                </HorizontalStackLayout>
             </Grid>
 
+        </Grid>
+
+        <Grid Grid.RowSpan="2"
+              BackgroundColor="#66000000"
+              IsVisible="{Binding IsProcessing}"
+              InputTransparent="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}">
+            <VerticalStackLayout Spacing="10"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
+                <ActivityIndicator IsRunning="{Binding IsProcessing}"
+                                   Color="White"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label Text="{Binding ProcessingText}"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
         </Grid>
     </Grid>
 </ContentPage>
