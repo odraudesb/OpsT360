@@ -233,10 +233,10 @@ namespace OpsT360.Services
                 if (_managerClass == IntPtr.Zero || _manager == IntPtr.Zero)
                     return RfidBatchReadResult.Fail(openMsg);
 
-                var uniqueEpcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var uniqueTags = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
                 var maxAttempts = Math.Max(10, maxCount * 6);
 
-                for (var attempt = 1; attempt <= maxAttempts && uniqueEpcs.Count < maxCount; attempt++)
+                for (var attempt = 1; attempt <= maxAttempts && uniqueTags.Count < maxCount; attempt++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -248,28 +248,40 @@ namespace OpsT360.Services
                         var tags = TryInventoryWithTidPreferred(_managerClass, _manager);
                         if (tags != IntPtr.Zero)
                         {
-                            foreach (var epc in TryExtractUniqueEpcs(tags, maxCount))
+                            foreach (var tag in TryExtractUniqueTags(tags, maxCount))
                             {
-                                if (!string.IsNullOrWhiteSpace(epc))
-                                    uniqueEpcs.Add(epc.Trim().ToUpperInvariant());
+                                if (string.IsNullOrWhiteSpace(tag.Epc))
+                                    continue;
 
-                                if (uniqueEpcs.Count >= maxCount)
+                                var normalizedEpc = tag.Epc.Trim().ToUpperInvariant();
+                                var normalizedTid = NormalizeHex(tag.Tid);
+                                if (!uniqueTags.TryGetValue(normalizedEpc, out var existingTid)
+                                    || (string.IsNullOrWhiteSpace(existingTid) && !string.IsNullOrWhiteSpace(normalizedTid)))
+                                {
+                                    uniqueTags[normalizedEpc] = normalizedTid;
+                                }
+
+                                if (uniqueTags.Count >= maxCount)
                                     break;
                             }
                         }
                     }
 
-                    if (uniqueEpcs.Count < maxCount)
+                    if (uniqueTags.Count < maxCount)
                         await Task.Delay(120, cancellationToken);
                 }
 
-                if (uniqueEpcs.Count == 0)
+                if (uniqueTags.Count == 0)
                     return RfidBatchReadResult.Fail($"[{RfidImplVersion}] No se detectaron tags RFID en inventario.");
 
-                var collected = uniqueEpcs.Take(maxCount).ToList();
-                LogStep($"TryReadDistinctEpcs ok -> {string.Join(",", collected)}");
+                var collected = uniqueTags
+                    .Take(maxCount)
+                    .Select(pair => new RfidTagRead(pair.Key, pair.Value))
+                    .ToList();
+
+                LogStep($"TryReadDistinctEpcs ok -> {string.Join(",", collected.Select(tag => $"{tag.Epc}|{(string.IsNullOrWhiteSpace(tag.Tid) ? "(tid vacío)" : tag.Tid)}"))}");
                 PlayReadBeepPattern();
-                return RfidBatchReadResult.Ok(collected, $"[{RfidImplVersion}] EPCs detectados: {collected.Count}/{maxCount}");
+                return RfidBatchReadResult.Ok(collected, $"[{RfidImplVersion}] EPC/TID detectados: {collected.Count}/{maxCount}");
             }
             catch (OperationCanceledException)
             {
@@ -420,21 +432,21 @@ namespace OpsT360.Services
             return (null, null);
         }
 
-        private static IReadOnlyList<string> TryExtractUniqueEpcs(IntPtr listHandle, int maxCount)
+        private static IReadOnlyList<RfidTagRead> TryExtractUniqueTags(IntPtr listHandle, int maxCount)
         {
-            var epcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var tags = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
             var listClass = JNIEnv.FindClass("java/util/List");
             if (listClass == IntPtr.Zero)
-                return epcs.ToList();
+                return Array.Empty<RfidTagRead>();
 
             var sizeMethod = JNIEnv.GetMethodID(listClass, "size", "()I");
             var getMethod = JNIEnv.GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
             if (sizeMethod == IntPtr.Zero || getMethod == IntPtr.Zero)
-                return epcs.ToList();
+                return Array.Empty<RfidTagRead>();
 
             var size = JNIEnv.CallIntMethod(listHandle, sizeMethod);
-            for (var i = 0; i < size && epcs.Count < maxCount; i++)
+            for (var i = 0; i < size && tags.Count < maxCount; i++)
             {
                 var getArgs = new JValue[] { new JValue(i) };
                 var tagInfo = JNIEnv.CallObjectMethod(listHandle, getMethod, getArgs);
@@ -445,10 +457,16 @@ namespace OpsT360.Services
                 if (string.IsNullOrWhiteSpace(tag.Epc))
                     continue;
 
-                epcs.Add(tag.Epc.Trim().ToUpperInvariant());
+                var normalizedEpc = tag.Epc.Trim().ToUpperInvariant();
+                var normalizedTid = NormalizeHex(tag.Tid);
+                if (!tags.TryGetValue(normalizedEpc, out var existingTid)
+                    || (string.IsNullOrWhiteSpace(existingTid) && !string.IsNullOrWhiteSpace(normalizedTid)))
+                {
+                    tags[normalizedEpc] = normalizedTid;
+                }
             }
 
-            return epcs.ToList();
+            return tags.Select(pair => new RfidTagRead(pair.Key, pair.Value)).ToList();
         }
 
 
@@ -609,6 +627,20 @@ namespace OpsT360.Services
             DeleteLocalRefSafe(nameObj);
             DeleteLocalRefSafe(enumClass);
             return name;
+        }
+
+        private static string? NormalizeHex(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var normalized = value
+                .Trim()
+                .Replace(" ", string.Empty)
+                .Replace("-", string.Empty)
+                .ToUpperInvariant();
+
+            return normalized.Length == 0 ? null : normalized;
         }
 
         private static void LogStep(string message)
