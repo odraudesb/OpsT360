@@ -691,21 +691,10 @@ public partial class SealInspectionViewModel : ObservableObject
             }
 
             var message = sent
-                ? hasFailures
-                    ? $"Transaction sent. Validation alerts: {string.Join(", ", failedPanels)}. " +
-                      $"History alert: {(sentFailureEvent ? "OK" : "ERROR")} | Email alert: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "SKIPPED")}."
-                    : "Transaction successful."
-                : $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
-
-            if (!_languageState.IsEnglish)
-            {
-                message = sent
-                    ? hasFailures
-                        ? $"Transacción enviada. Alertas de validación: {string.Join(", ", failedPanels)}. " +
-                          $"Alerta historial: {(sentFailureEvent ? "OK" : "ERROR")} | Alerta correo: {(EnableFailureAlertEmail ? (sentFailureMail ? "OK" : "ERROR") : "OMITIDO")}."
-                        : "Transacción exitosa."
-                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}";
-            }
+                ? (_languageState.IsEnglish ? "Transaction succesfull" : "Transacción exitosa")
+                : (_languageState.IsEnglish
+                    ? $"Could not send transaction.{(sendException is null ? string.Empty : $" {sendException.Message}")}"
+                    : $"No se pudo enviar la transacción.{(sendException is null ? string.Empty : $" {sendException.Message}")}");
 
             await Application.Current!.MainPage!.DisplayAlert(
                 sent ? (_languageState.IsEnglish ? "Sent" : "Enviado") : (_languageState.IsEnglish ? "Error" : "Error"),
