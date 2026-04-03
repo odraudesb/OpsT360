@@ -47,6 +47,7 @@ public static class MauiProgram
         // Pages y ViewModels visuales: TRANSIENT
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<IntroPage>();
 
         builder.Services.AddTransient<SealInspectionViewModel>();
         builder.Services.AddTransient<SealInspectionPage>();
