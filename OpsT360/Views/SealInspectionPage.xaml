@@ -147,14 +147,19 @@
                        LineBreakMode="TailTruncation" />
             </Border>
 
-            <Button Grid.Row="5"
-                    Text="{Binding ReadSealsButtonText}"
-                    HeightRequest="38"
-                    CornerRadius="20"
-                    FontAttributes="Bold"
-                    BackgroundColor="#3E5AF1"
-                    TextColor="White"
-                    Clicked="OnReadNextSealClicked" />
+            <VerticalStackLayout Grid.Row="5" Spacing="4">
+                <Button Text="{Binding ReadSealsButtonText}"
+                        HeightRequest="38"
+                        CornerRadius="20"
+                        FontAttributes="Bold"
+                        BackgroundColor="#3E5AF1"
+                        TextColor="White"
+                        Clicked="OnReadNextSealClicked" />
+                <Label Text="{Binding StatusText}"
+                       FontSize="11"
+                       TextColor="#4B5563"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
 
             <Grid Grid.Row="6" ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="7">
                 <Border BackgroundColor="#E7E9EE" Stroke="#D9DEE8" StrokeShape="RoundRectangle 16" Padding="10,2">
@@ -190,18 +195,44 @@
                            IsVisible="{Binding ContainerImage.HasImage}" />
                 </Border>
 
-                <Button Grid.Row="2"
-                        Text="OK"
-                        HeightRequest="42"
-                        WidthRequest="120"
-                        CornerRadius="22"
-                        FontAttributes="Bold"
-                        BackgroundColor="#3E5AF1"
-                        TextColor="White"
-                        HorizontalOptions="Center"
-                        Command="{Binding SendCommand}" />
+                <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
+                    <Button Text="OK"
+                            HeightRequest="42"
+                            WidthRequest="120"
+                            CornerRadius="22"
+                            FontAttributes="Bold"
+                            BackgroundColor="#3E5AF1"
+                            TextColor="White"
+                            Command="{Binding SendCommand}" />
+                    <Button Text="Limpiar"
+                            HeightRequest="42"
+                            WidthRequest="120"
+                            CornerRadius="22"
+                            FontAttributes="Bold"
+                            BackgroundColor="#6B7280"
+                            TextColor="White"
+                            Command="{Binding ResetTransactionCommand}" />
+                </HorizontalStackLayout>
             </Grid>
 
+        </Grid>
+
+        <Grid Grid.RowSpan="2"
+              BackgroundColor="#66000000"
+              IsVisible="{Binding IsProcessing}"
+              InputTransparent="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}">
+            <VerticalStackLayout Spacing="10"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
+                <ActivityIndicator IsRunning="{Binding IsProcessing}"
+                                   Color="White"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label Text="{Binding ProcessingText}"
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
         </Grid>
     </Grid>
 </ContentPage>
