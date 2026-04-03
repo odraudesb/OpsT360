@@ -5,7 +5,7 @@
              NavigationPage.HasNavigationBar="False"
              BackgroundColor="#F2F2F2">
     <Grid>
-        <Image Source="iconot360app.png"
+        <Image Source="preloginicona.png"
                WidthRequest="260"
                HeightRequest="260"
                HorizontalOptions="Center"
