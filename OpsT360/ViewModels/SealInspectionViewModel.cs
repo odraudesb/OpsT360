@@ -318,16 +318,16 @@ public partial class SealInspectionViewModel : ObservableObject
             StatusText = "Leyendo sellos por RFID...";
             using var cts = new CancellationTokenSource(RfidBatchReadTimeout);
             var batch = await _rfidScannerService.TryReadDistinctEpcsAsync(4, cts.Token);
-            if (!batch.Success || batch.Epcs.Count == 0)
+            if (!batch.Success || batch.Items.Count == 0)
             {
                 StatusText = batch.Message;
                 return 0;
             }
 
             var loaded = 0;
-            foreach (var rawEpc in batch.Epcs)
+            foreach (var item in batch.Items)
             {
-                var epc = NormalizeEpc(rawEpc);
+                var epc = NormalizeEpc(item.Epc);
                 if (string.IsNullOrWhiteSpace(epc) || existing.Contains(epc))
                     continue;
 
@@ -336,6 +336,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
                 var targetIndex = pendingIndexes[loaded];
                 Seals[targetIndex].Code = epc;
+                Seals[targetIndex].Tid = NormalizeHex(item.Tid) ?? string.Empty;
                 ReadSeal((targetIndex + 1).ToString());
                 existing.Add(epc);
                 loaded++;

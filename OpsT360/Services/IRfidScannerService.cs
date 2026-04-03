@@ -16,11 +16,21 @@ public sealed record RfidReadResult(bool Success, string? Epc, string? Tid, stri
         new(false, null, null, message);
 }
 
-public sealed record RfidBatchReadResult(bool Success, IReadOnlyList<string> Epcs, string Message)
+public sealed record RfidBatchReadItem(string Epc, string? Tid);
+
+public sealed record RfidBatchReadResult(bool Success, IReadOnlyList<RfidBatchReadItem> Items, string Message)
 {
+    public IReadOnlyList<string> Epcs => Items.Select(i => i.Epc).ToList();
+
     public static RfidBatchReadResult Ok(IReadOnlyList<string> epcs, string? message = null) =>
-        new(true, epcs, message ?? "Lectura RFID múltiple OK");
+        new(
+            true,
+            epcs.Select(epc => new RfidBatchReadItem(epc, null)).ToList(),
+            message ?? "Lectura RFID múltiple OK");
+
+    public static RfidBatchReadResult Ok(IReadOnlyList<RfidBatchReadItem> items, string? message = null) =>
+        new(true, items, message ?? "Lectura RFID múltiple OK");
 
     public static RfidBatchReadResult Fail(string message) =>
-        new(false, Array.Empty<string>(), message);
+        new(false, Array.Empty<RfidBatchReadItem>(), message);
 }
