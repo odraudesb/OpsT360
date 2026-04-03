@@ -301,7 +301,6 @@ public partial class SealInspectionViewModel : ObservableObject
 
         if (pendingIndexes.Count == 0)
         {
-            StatusText = "All seals were already read.";
             return 0;
         }
 
