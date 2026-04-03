@@ -62,7 +62,7 @@ public partial class SealInspectionViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private bool isCaptureInProgress;
     [ObservableProperty] private string processingText = "Procesando...";
-    [ObservableProperty] private string statusText = "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+    [ObservableProperty] private string statusText = string.Empty;
     [ObservableProperty] private bool isInspectionChangeMode;
     [ObservableProperty] private string operationTitle = "RFID Seal [Label] Placement";
     [ObservableProperty] private string containerPlaceholder = "Container Number";
@@ -151,9 +151,7 @@ public partial class SealInspectionViewModel : ObservableObject
             Seal4Placeholder = "Seal #4";
             ContainerPhotoButtonText = "Container Photo";
             OperationTitle = IsInspectionChangeMode ? "RFID Seal Inspection Change" : "RFID Seal [Label] Placement";
-            StatusText = IsInspectionChangeMode
-                ? "Inspection mode active: previous seals must be Deactivated (Reason: Inspection) before registering new ones."
-                : "Tap Read Seals to activate the antenna and capture EPC values (ST-E100).";
+            StatusText = string.Empty;
             UpdatePanelValidationSummaryFromStatuses();
             return;
         }
@@ -168,9 +166,7 @@ public partial class SealInspectionViewModel : ObservableObject
         Seal4Placeholder = "Sello #4";
         ContainerPhotoButtonText = "Foto Contenedor";
         OperationTitle = IsInspectionChangeMode ? "Cambio de Sellos por Inspección" : "RFID Seal [Label] Placement";
-        StatusText = IsInspectionChangeMode
-            ? "Modo inspección activo: desactiva los sellos previos (Reason: Inspection) antes de registrar los nuevos."
-            : "Pulsa Leer Sellos para activar la antena y capturar EPC (ST-E100).";
+        StatusText = string.Empty;
 
         UpdatePanelValidationSummaryFromStatuses();
     }
@@ -465,7 +461,7 @@ public partial class SealInspectionViewModel : ObservableObject
         ContainerImage.Bytes = null;
         ContainerImage.Base64 = null;
         ContainerImage.ValidationStatus = "idle";
-        StatusText = "Waiting for seal #1 read.";
+        StatusText = string.Empty;
         PanelValidationSummary = "Pendiente de validación de fotos.";
         PanelValidationSummaryColor = "#5E6678";
 
