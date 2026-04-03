@@ -737,6 +737,8 @@ public partial class SealInspectionViewModel : ObservableObject
     [RelayCommand]
     private void ResetTransaction() => ResetForm();
 
+    private void ResetForm() => Cancel();
+
     private Task<List<string>> ValidateAccessPanelsAsync()
     {
         // Importante: no revalidar en OK. Solo usar estado ya calculado en background.
