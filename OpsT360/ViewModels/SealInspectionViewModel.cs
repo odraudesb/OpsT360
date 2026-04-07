@@ -109,7 +109,8 @@ public partial class SealInspectionViewModel : ObservableObject
         !string.IsNullOrWhiteSpace(NormalizeEpc(s.Code)) &&
         !string.IsNullOrWhiteSpace(NormalizeHex(s.Tid)));
     public bool CanUploadImages => true;
-    public bool CanSend => AreAllSealsCaptured
+    public bool CanSend => ContainerExists(ContainerId)
+                           && AreAllSealsCaptured
                            && SealImages.Take(2).All(i => i.Bytes is { Length: > 0 })
                            && ContainerImage.Bytes is { Length: > 0 };
     public bool IsProcessing => IsBusy || IsCaptureInProgress;
@@ -383,6 +384,8 @@ public partial class SealInspectionViewModel : ObservableObject
         var normalized = value?.Trim().ToUpperInvariant() ?? string.Empty;
         if (!string.Equals(ContainerId, normalized, StringComparison.Ordinal))
             ContainerId = normalized;
+
+        OnPropertyChanged(nameof(CanSend));
     }
 
     [RelayCommand]
@@ -608,6 +611,16 @@ public partial class SealInspectionViewModel : ObservableObject
             return;
         }
 
+        var normalizedContainerId = ContainerId.Trim().ToUpperInvariant();
+        if (!ContainerExists(normalizedContainerId))
+        {
+            await Application.Current!.MainPage!.DisplayAlert(
+                _languageState.IsEnglish ? "Error" : "Error",
+                _languageState.IsEnglish ? "Container does not exist." : "Contenedor no existe.",
+                "OK");
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -617,7 +630,7 @@ public partial class SealInspectionViewModel : ObservableObject
             var profile = ResolveProfile();
             var xml = BuildXml(profile, RfidSealPlacementEventId, RfidSealPlacementEventName);
             var now = DateTime.Now.ToString("O");
-            var containerId = ContainerId.Trim().ToUpperInvariant();
+            var containerId = normalizedContainerId;
 
             var fields = new Dictionary<string, string>
             {
@@ -948,6 +961,12 @@ public partial class SealInspectionViewModel : ObservableObject
         _profiles.TryGetValue(ContainerId.Trim(), out var profile)
             ? profile
             : new ContainerProfile { EntityId = 100004 };
+
+    private bool ContainerExists(string? containerId)
+    {
+        var normalized = containerId?.Trim().ToUpperInvariant();
+        return !string.IsNullOrWhiteSpace(normalized) && _profiles.ContainsKey(normalized);
+    }
 
     // Compat helper for older local code paths; returns empty because demo mocks are disabled.
     private static string ResolveMockSealEpc(int index)
