@@ -33,11 +33,11 @@ public sealed class TransactionsService : ITransactionsService
     private CompanySettingsSnapshot? _settingsSnapshot;
 
     private static readonly CompanySettingsSnapshot FallbackSettings = new(
-        "https://serverless.roboflow.com",
-        "mi-workspace-sihjw",
-        "detect-count-and-visualize-4",
-        "8OQBCU7lFbC9ogYMmbB7",
-        2);
+        Environment.GetEnvironmentVariable("ROBOFLOW_BASE_URL") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_WORKSPACE") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_WORKFLOW") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_API_KEY") ?? string.Empty,
+        ParseValidationLabelFallback());
 
     public TransactionsService(HttpClient httpClient, RoboflowValidationService roboflowValidationService, IAuthState authState)
     {
@@ -49,6 +49,14 @@ public sealed class TransactionsService : ITransactionsService
     public async Task<RoboflowValidationResult> ValidatePhotoAsync(string imageBase64, string fileName, CancellationToken cancellationToken = default)
     {
         var settings = await GetCompanySettingsSnapshotAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(settings.RoboflowBaseUrl) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowWorkspace) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowWorkflow) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowApiKey))
+        {
+            return new RoboflowValidationResult(false, null, null, Array.Empty<ValidationBox>());
+        }
+
         var request = new
         {
             api_key = settings.RoboflowApiKey,
@@ -266,7 +274,13 @@ public sealed class TransactionsService : ITransactionsService
         if (!int.TryParse(value, out var parsed))
             return FallbackSettings.ValidationLabelCount;
 
-        return Math.Clamp(parsed, 0, 2);
+        return parsed >= 1 ? 1 : 0;
+    }
+
+    private static int ParseValidationLabelFallback()
+    {
+        var raw = Environment.GetEnvironmentVariable("VALIDATION_LABEL_VISIBLE");
+        return int.TryParse(raw, out var parsed) && parsed >= 1 ? 1 : 0;
     }
 
     private static (string BaseUrl, string Workspace, string Workflow, string ApiKey) ParseRoboflowConfig(string? value)
@@ -274,10 +288,13 @@ public sealed class TransactionsService : ITransactionsService
         if (string.IsNullOrWhiteSpace(value))
             return (FallbackSettings.RoboflowBaseUrl, FallbackSettings.RoboflowWorkspace, FallbackSettings.RoboflowWorkflow, FallbackSettings.RoboflowApiKey);
 
+        var envName = (Environment.GetEnvironmentVariable("ROBOFLOW_ENV") ?? "prod").Trim();
+        var selectedBlock = ExtractEnvBlock(value, envName) ?? value;
+
         string Resolve(string key, string fallback)
         {
-            var regex = new Regex($@"{key}\s*:\s*'([^']+)'", RegexOptions.IgnoreCase);
-            var match = regex.Match(value);
+            var regex = new Regex($@"{key}\s*:\s*'([^']+)'", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var match = regex.Match(selectedBlock);
             return match.Success ? match.Groups[1].Value : fallback;
         }
 
@@ -287,6 +304,16 @@ public sealed class TransactionsService : ITransactionsService
             Resolve("workflow", FallbackSettings.RoboflowWorkflow),
             Resolve("apiKey", FallbackSettings.RoboflowApiKey)
         );
+    }
+
+    private static string? ExtractEnvBlock(string raw, string envName)
+    {
+        if (string.IsNullOrWhiteSpace(raw) || string.IsNullOrWhiteSpace(envName))
+            return null;
+
+        var envRegex = new Regex($@"\b{Regex.Escape(envName)}\b\s*:\s*\{{(?<body>.*?)\}}", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        var match = envRegex.Match(raw);
+        return match.Success ? match.Groups["body"].Value : null;
     }
 
     private static string ResolveMimeType(string fileName, byte[] content)
