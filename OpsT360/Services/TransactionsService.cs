@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -13,8 +14,12 @@ public sealed class TransactionsService : ITransactionsService
     private readonly RoboflowValidationService _roboflowValidationService;
     private readonly IAuthState _authState;
 
-    private const string RegisterWithFilesUrl = "http://38.242.225.119:3000/api/transactions/register-with-files";
-    private const string RegisterUrl = "http://38.242.225.119:3000/api/transactions/register";
+    private static readonly string RegisterWithFilesUrl = Environment.GetEnvironmentVariable("TRANSACTIONS_REGISTER_WITH_FILES_URL")
+        ?? "http://38.242.225.119:3000/api/transactions/register-with-files";
+    private static readonly string RegisterUrl = Environment.GetEnvironmentVariable("TRANSACTIONS_REGISTER_URL")
+        ?? "http://38.242.225.119:3000/api/transactions/register";
+    private static readonly string CompanySettingsUrl = Environment.GetEnvironmentVariable("COMPANY_SETTINGS_URL")
+        ?? "http://38.242.225.119:3000/api/company-setting";
     private static readonly string[] AlertMailUrls =
     {
         "http://38.242.225.119:3000/api/emails",
@@ -24,33 +29,15 @@ public sealed class TransactionsService : ITransactionsService
     private const string AlertMailTo = "rmurillo@infraportus.com";
     private const string AlertMailCc = "edu1991e@gmail.com";
 
-    private const string ActiveApiEnv = "prod"; // prod | localhost
-    private static readonly Dictionary<string, (string BaseUrl, string Workspace, string Workflow, string ApiKey)> RoboflowConfig = new()
-    {
-        ["prod"] = (
-            "https://serverless.roboflow.com",
-            "mi-workspace-sihjw",
-            "detect-count-and-visualize-4",
-            "8OQBCU7lFbC9ogYMmbB7"
-        ),
-        ["localhost"] = (
-            "http://localhost:9001",
-            "mi-workspace-sihjw",
-            "detect-count-and-visualize-4",
-            "8OQBCU7lFbC9ogYMmbB7"
-        )
-    };
+    private readonly SemaphoreSlim _settingsLock = new(1, 1);
+    private CompanySettingsSnapshot? _settingsSnapshot;
 
-    private static string RoboflowUrl
-    {
-        get
-        {
-            var cfg = RoboflowConfig[ActiveApiEnv];
-            return $"{cfg.BaseUrl.TrimEnd('/')}/{cfg.Workspace}/workflows/{cfg.Workflow}";
-        }
-    }
-
-    private static string RoboflowApiKey => RoboflowConfig[ActiveApiEnv].ApiKey;
+    private static readonly CompanySettingsSnapshot FallbackSettings = new(
+        Environment.GetEnvironmentVariable("ROBOFLOW_BASE_URL") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_WORKSPACE") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_WORKFLOW") ?? string.Empty,
+        Environment.GetEnvironmentVariable("ROBOFLOW_API_KEY") ?? string.Empty,
+        ParseValidationLabelFallback());
 
     public TransactionsService(HttpClient httpClient, RoboflowValidationService roboflowValidationService, IAuthState authState)
     {
@@ -61,9 +48,18 @@ public sealed class TransactionsService : ITransactionsService
 
     public async Task<RoboflowValidationResult> ValidatePhotoAsync(string imageBase64, string fileName, CancellationToken cancellationToken = default)
     {
+        var settings = await GetCompanySettingsSnapshotAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(settings.RoboflowBaseUrl) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowWorkspace) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowWorkflow) ||
+            string.IsNullOrWhiteSpace(settings.RoboflowApiKey))
+        {
+            return new RoboflowValidationResult(false, null, null, Array.Empty<ValidationBox>());
+        }
+
         var request = new
         {
-            api_key = RoboflowApiKey,
+            api_key = settings.RoboflowApiKey,
             inputs = new
             {
                 image = new
@@ -76,7 +72,8 @@ public sealed class TransactionsService : ITransactionsService
             fileName
         };
 
-        var response = await _httpClient.PostAsJsonAsync(RoboflowUrl, request, cancellationToken);
+        var roboflowUrl = $"{settings.RoboflowBaseUrl.TrimEnd('/')}/{settings.RoboflowWorkspace}/workflows/{settings.RoboflowWorkflow}";
+        var response = await _httpClient.PostAsJsonAsync(roboflowUrl, request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             return new RoboflowValidationResult(false, null, null, Array.Empty<ValidationBox>());
@@ -97,6 +94,12 @@ public sealed class TransactionsService : ITransactionsService
         }
 
         return _roboflowValidationService.AnalyzeValidation(node, imageBase64);
+    }
+
+    public async Task<int> GetValidationLabelCountAsync(CancellationToken cancellationToken = default)
+    {
+        var settings = await GetCompanySettingsSnapshotAsync(cancellationToken);
+        return settings.ValidationLabelCount;
     }
 
     public async Task<bool> RegisterWithFilesAsync(Dictionary<string, string> fields, IEnumerable<(string FileName, byte[] Content)> files, CancellationToken cancellationToken = default)
@@ -121,7 +124,9 @@ public sealed class TransactionsService : ITransactionsService
 
         foreach (var file in files)
         {
-            form.Add(new ByteArrayContent(file.Content), "photos", file.FileName);
+            var content = new ByteArrayContent(file.Content);
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse(ResolveMimeType(file.FileName, file.Content));
+            form.Add(content, "photos", file.FileName);
         }
 
         var response = await _httpClient.PostAsync(RegisterWithFilesUrl, form, cancellationToken);
@@ -191,6 +196,156 @@ public sealed class TransactionsService : ITransactionsService
 
         return false;
     }
+
+    private async Task<CompanySettingsSnapshot> GetCompanySettingsSnapshotAsync(CancellationToken cancellationToken)
+    {
+        if (_settingsSnapshot is not null)
+            return _settingsSnapshot;
+
+        await _settingsLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_settingsSnapshot is not null)
+                return _settingsSnapshot;
+
+            _settingsSnapshot = await FetchCompanySettingsAsync(cancellationToken);
+            return _settingsSnapshot;
+        }
+        finally
+        {
+            _settingsLock.Release();
+        }
+    }
+
+    private async Task<CompanySettingsSnapshot> FetchCompanySettingsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            ApplyAuthorizationHeader();
+            var authContext = ResolveAuthContext();
+            var response = await _httpClient.GetAsync($"{CompanySettingsUrl}/{authContext.CompanyId}", cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return FallbackSettings;
+
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(body))
+                return FallbackSettings;
+
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+                return FallbackSettings;
+
+            string? roboflowRaw = null;
+            string? validationLabelRaw = null;
+
+            foreach (var item in data.EnumerateArray())
+            {
+                if (!item.TryGetProperty("id", out var idElement) || !item.TryGetProperty("value", out var valueElement))
+                    continue;
+
+                var id = idElement.GetInt32();
+                var value = valueElement.GetString();
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+
+                if (id == 3)
+                    roboflowRaw = value;
+                else if (id == 2)
+                    validationLabelRaw = value;
+            }
+
+            var parsedRoboflow = ParseRoboflowConfig(roboflowRaw);
+            var labelCount = ParseValidationLabelCount(validationLabelRaw);
+            return new CompanySettingsSnapshot(
+                parsedRoboflow.BaseUrl,
+                parsedRoboflow.Workspace,
+                parsedRoboflow.Workflow,
+                parsedRoboflow.ApiKey,
+                labelCount);
+        }
+        catch
+        {
+            return FallbackSettings;
+        }
+    }
+
+    private static int ParseValidationLabelCount(string? value)
+    {
+        if (!int.TryParse(value, out var parsed))
+            return FallbackSettings.ValidationLabelCount;
+
+        return parsed >= 1 ? 1 : 0;
+    }
+
+    private static int ParseValidationLabelFallback()
+    {
+        var raw = Environment.GetEnvironmentVariable("VALIDATION_LABEL_VISIBLE");
+        return int.TryParse(raw, out var parsed) && parsed >= 1 ? 1 : 0;
+    }
+
+    private static (string BaseUrl, string Workspace, string Workflow, string ApiKey) ParseRoboflowConfig(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return (FallbackSettings.RoboflowBaseUrl, FallbackSettings.RoboflowWorkspace, FallbackSettings.RoboflowWorkflow, FallbackSettings.RoboflowApiKey);
+
+        var envName = (Environment.GetEnvironmentVariable("ROBOFLOW_ENV") ?? "prod").Trim();
+        var selectedBlock = ExtractEnvBlock(value, envName) ?? value;
+
+        string Resolve(string key, string fallback)
+        {
+            var regex = new Regex($@"{key}\s*:\s*'([^']+)'", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var match = regex.Match(selectedBlock);
+            return match.Success ? match.Groups[1].Value : fallback;
+        }
+
+        return (
+            Resolve("baseUrl", FallbackSettings.RoboflowBaseUrl),
+            Resolve("workspace", FallbackSettings.RoboflowWorkspace),
+            Resolve("workflow", FallbackSettings.RoboflowWorkflow),
+            Resolve("apiKey", FallbackSettings.RoboflowApiKey)
+        );
+    }
+
+    private static string? ExtractEnvBlock(string raw, string envName)
+    {
+        if (string.IsNullOrWhiteSpace(raw) || string.IsNullOrWhiteSpace(envName))
+            return null;
+
+        var envRegex = new Regex($@"\b{Regex.Escape(envName)}\b\s*:\s*\{{(?<body>.*?)\}}", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        var match = envRegex.Match(raw);
+        return match.Success ? match.Groups["body"].Value : null;
+    }
+
+    private static string ResolveMimeType(string fileName, byte[] content)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => GuessMimeTypeFromBytes(content)
+        };
+    }
+
+    private static string GuessMimeTypeFromBytes(byte[] content)
+    {
+        if (content.Length >= 8 &&
+            content[0] == 0x89 && content[1] == 0x50 && content[2] == 0x4E && content[3] == 0x47 &&
+            content[4] == 0x0D && content[5] == 0x0A && content[6] == 0x1A && content[7] == 0x0A)
+            return "image/png";
+
+        if (content.Length >= 3 && content[0] == 0xFF && content[1] == 0xD8 && content[2] == 0xFF)
+            return "image/jpeg";
+
+        return "application/octet-stream";
+    }
+
+    private sealed record CompanySettingsSnapshot(
+        string RoboflowBaseUrl,
+        string RoboflowWorkspace,
+        string RoboflowWorkflow,
+        string RoboflowApiKey,
+        int ValidationLabelCount);
 
     private void ApplyAuthorizationHeader()
     {
