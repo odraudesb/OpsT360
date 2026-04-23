@@ -105,6 +105,9 @@ public partial class SealInspectionViewModel : ObservableObject
         set => SetProperty(ref panel2StatusColor, value);
     }
 
+    [ObservableProperty] private bool showPanel1ValidationLabel = true;
+    [ObservableProperty] private bool showPanel2ValidationLabel = true;
+
     public bool AreAllSealsCaptured => Seals.All(s =>
         !string.IsNullOrWhiteSpace(NormalizeEpc(s.Code)) &&
         !string.IsNullOrWhiteSpace(NormalizeHex(s.Tid)));
@@ -125,6 +128,23 @@ public partial class SealInspectionViewModel : ObservableObject
         _languageState = languageState;
         _languageState.LanguageChanged += OnLanguageChanged;
         ApplyLanguageResources(_languageState.IsEnglish);
+        _ = LoadCompanySettingsAsync();
+    }
+
+    private async Task LoadCompanySettingsAsync()
+    {
+        try
+        {
+            var visibleLabels = await _transactionsService.GetValidationLabelCountAsync();
+            var shouldShowValidationLabels = visibleLabels >= 1;
+            ShowPanel1ValidationLabel = shouldShowValidationLabels;
+            ShowPanel2ValidationLabel = shouldShowValidationLabels;
+        }
+        catch
+        {
+            ShowPanel1ValidationLabel = true;
+            ShowPanel2ValidationLabel = true;
+        }
     }
 
     public void ConfigureOperationMode(bool isInspectionChange)
@@ -629,7 +649,7 @@ public partial class SealInspectionViewModel : ObservableObject
 
             var profile = ResolveProfile();
             var xml = BuildXml(profile, RfidSealPlacementEventId, RfidSealPlacementEventName);
-            var now = DateTime.Now.ToString("O");
+            var registerDate = DateTime.Now.ToString("O");
             var containerId = normalizedContainerId;
 
             var fields = new Dictionary<string, string>
@@ -642,8 +662,8 @@ public partial class SealInspectionViewModel : ObservableObject
                 ["details"] = RfidSealPlacementEventName,
                 ["document"] = "PRE-GATE",
                 ["xmlDetails"] = xml,
-                ["recordDate"] = now,
-                ["eventDate"] = now
+                ["recordDate"] = registerDate,
+                ["eventDate"] = registerDate
             };
 
             var files = SealImages
@@ -672,7 +692,8 @@ public partial class SealInspectionViewModel : ObservableObject
             {
                 try
                 {
-                    var failureXml = BuildValidationFailureXml(profile, failedPanels, now);
+                    var failureDate = DateTime.Now.ToString("O");
+                    var failureXml = BuildValidationFailureXml(profile, failedPanels, failureDate);
                     var failedPhotoFiles = SealImages
                         .Take(2)
                         .Where(panel => failedPanels.Contains(panel.Label, StringComparer.OrdinalIgnoreCase))
@@ -681,10 +702,10 @@ public partial class SealInspectionViewModel : ObservableObject
                         .Select(x => (x.Item1, x.Bytes!))
                         .ToList();
 
-                    var failureFields = BuildValidationFailureFields(profile, containerId, failureXml, now);
+                    var failureFields = BuildValidationFailureFields(profile, containerId, failureXml, failureDate);
                     sentFailureEvent = failedPhotoFiles.Count > 0
                         ? await _transactionsService.RegisterWithFilesAsync(failureFields, failedPhotoFiles)
-                        : await _transactionsService.RegisterTransactionAsync(BuildValidationFailurePayload(profile, containerId, failureXml, now));
+                        : await _transactionsService.RegisterTransactionAsync(BuildValidationFailurePayload(profile, containerId, failureXml, failureDate));
 
                     if (EnableFailureAlertEmail)
                     {
