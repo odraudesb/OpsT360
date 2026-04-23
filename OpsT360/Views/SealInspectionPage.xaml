@@ -88,7 +88,7 @@
             </Grid>
 
             <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Border Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
+                <Border Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10" IsVisible="{Binding ShowPanel1ValidationLabel}">
                     <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
                         <Label FontSize="13" VerticalTextAlignment="Center" Text="⏸">
                             <Label.Triggers>
@@ -113,7 +113,7 @@
                     </HorizontalStackLayout>
                 </Border>
 
-                <Border Grid.Column="1" Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10">
+                <Border Grid.Column="1" Padding="8,4" Stroke="#E1E5EE" BackgroundColor="White" StrokeShape="RoundRectangle 10" IsVisible="{Binding ShowPanel2ValidationLabel}">
                     <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
                         <Label FontSize="13" VerticalTextAlignment="Center" Text="⏸">
                             <Label.Triggers>
